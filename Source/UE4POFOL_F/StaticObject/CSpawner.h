@@ -36,6 +36,9 @@ private:
 	class UStaticMeshComponent* StaticMeshSpawner;
 
 	UPROPERTY(VisibleDefaultsOnly)
+	class UStaticMeshComponent* StaticMeshSphere;
+
+	UPROPERTY(VisibleDefaultsOnly)
 	class UCapsuleComponent* CapsuleCollision;
 
 	UPROPERTY()
@@ -44,6 +47,8 @@ private:
 	int32 SpawnedEnemy = 0;
 
 	FTimerHandle SpawnerTimer;
+
+	FHitResult HitResult;
 
 public:
 	ACSpawner();
@@ -68,6 +73,8 @@ private:
 
 	UFUNCTION()
 	void ActivateSpawner(class AActor* InOverlappedActor, class AActor* InOtherActor);
+
+	void CreateLineTrace();
 public:
 	void SpawnEnemy();
 	void DestroySpawner();

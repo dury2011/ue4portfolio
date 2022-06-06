@@ -14,8 +14,10 @@ ACSpawner::ACSpawner()
 
 	CapsuleCollision = CreateDefaultSubobject<UCapsuleComponent>("CapsuleCollision");
 	RootComponent = CapsuleCollision;
-	StaticMeshSpawner = CreateDefaultSubobject<UStaticMeshComponent>("StaticMesh");
+	StaticMeshSpawner = CreateDefaultSubobject<UStaticMeshComponent>("StaticMeshSpanwer");
+	StaticMeshSphere = CreateDefaultSubobject<UStaticMeshComponent>("StaticMeshSphere");
 	StaticMeshSpawner->SetupAttachment(CapsuleCollision);
+	StaticMeshSphere->SetupAttachment(CapsuleCollision);
 	
 	CapsuleCollision->OnComponentBeginOverlap.AddDynamic(this, &ACSpawner::OnBeginOverlap);
 	CapsuleCollision->OnComponentEndOverlap.AddDynamic(this, &ACSpawner::OnEndOverlap);
@@ -55,6 +57,8 @@ void ACSpawner::Tick(float DeltaTime)
 	   기존 스폰 Enemy 중간 즈음에 Spawn 되도록 할 것*/
 	//if (Hp <= 5000.0)
 	//	GetWorldTimerManager().UnPauseTimer(SpawnerTimer);
+
+	CreateLineTrace();
 }
 
 float ACSpawner::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
@@ -101,8 +105,50 @@ void ACSpawner::ActivateSpawner(class AActor* InOverlappedActor, class AActor* I
 		GetWorldTimerManager().SetTimer(SpawnerTimer, this, &ACSpawner::SpawnEnemy, SpawnDelaySecond, true);
 }
 
+void ACSpawner::CreateLineTrace()
+{
+	FTransform staticMeshTransform = StaticMeshSphere->GetComponentToWorld();
+	FVector lineTraceStart = staticMeshTransform.GetLocation();
+	FRotator staticMeshRotator = FRotator
+	(
+		staticMeshTransform.GetRotation().Rotator().Pitch - 45.0f, 
+		staticMeshTransform.GetRotation().Rotator().Yaw,
+		staticMeshTransform.GetRotation().Rotator().Roll
+	);
+	
+	//FVector lineTraceEnd = lineTraceStart + FQuat(staticMeshTransform.GetRotation()).GetForwardVector() * 3000.0f;
+	FVector lineTraceEnd = lineTraceStart + FQuat(staticMeshRotator).GetForwardVector() * 3000.0f;
+
+	TArray<AActor*>lineTraceIgnoreActors;
+	//TEnumAsByte<EDrawDebugTrace::Type> drawDebugType;
+
+	lineTraceIgnoreActors.Add(this);
+
+	UKismetSystemLibrary::LineTraceSingle
+	(
+		GetWorld(),
+		lineTraceStart,
+		lineTraceEnd,
+		ETraceTypeQuery::TraceTypeQuery4,
+		false,
+		lineTraceIgnoreActors,
+		EDrawDebugTrace::ForOneFrame,
+		HitResult,
+		true,
+		FColor(1, 0, 0, 1),
+		FLinearColor::Green,
+		0.0f
+	);
+}
+
 void ACSpawner::SpawnEnemy()
 {
+
+	FVector spawnerFowardVector = GetActorForwardVector();
+	FRotator spawnedEnemyRotation = UKismetMathLibrary::Conv_VectorToRotator(spawnerFowardVector);
+
+	EnemySpawnParticleEffect();
+
 	if (EnemyNormalClass && EnemySpecialClass)
 	{
 		if (SpawnedEnemy >= 20)
@@ -116,7 +162,8 @@ void ACSpawner::SpawnEnemy()
 			ACEnemy* enemy = GetWorld()->SpawnActor<ACEnemy>
 			(
 				EnemyNormalClass,
-				GetActorTransform(),
+				HitResult.ImpactPoint,
+				spawnedEnemyRotation,
 				params
 			);
 
@@ -128,7 +175,8 @@ void ACSpawner::SpawnEnemy()
 			ACEnemy* enemy = GetWorld()->SpawnActor<ACEnemy>
 			(
 				EnemySpecialClass,
-				GetActorTransform(),
+				HitResult.ImpactPoint,
+				spawnedEnemyRotation,
 				params
 			);
 
