@@ -6,8 +6,8 @@
 #include "CPlayer.h"
 #include "Global.h"
 #include "Components/CapsuleComponent.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/InputComponent.h"
 #include "Component/CIKComponent.h"
@@ -287,6 +287,8 @@ void ACPlayer::OnVerticalLook(float AxisValue)
 
 void ACPlayer::OnHorizontalLook(float AxisValue)
 {
+	
+	
 	AddControllerYawInput(AxisValue);
 }
 
@@ -339,7 +341,6 @@ void ACPlayer::OnAim()
 
 		bUseControllerRotationYaw = true;
 		GetCharacterMovement()->bOrientRotationToMovement = false;
-
 		
 		SpringArmComponent->TargetArmLength = 95.0f;
 		SpringArmComponent->SocketOffset = FVector(0, 30, 10);

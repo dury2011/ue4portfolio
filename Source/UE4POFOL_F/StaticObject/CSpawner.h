@@ -11,6 +11,9 @@ class UE4POFOL_F_API ACSpawner : public AActor
 	GENERATED_BODY()
 	
 public:
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly)
+	class UStaticMeshComponent* StaticMeshSphere;
+	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Spawner Setting")
 	float Hp = 15000.0f;
 
@@ -34,9 +37,6 @@ private:
 	
 	UPROPERTY(VisibleDefaultsOnly)
 	class UStaticMeshComponent* StaticMeshSpawner;
-
-	UPROPERTY(VisibleDefaultsOnly)
-	class UStaticMeshComponent* StaticMeshSphere;
 
 	UPROPERTY(VisibleDefaultsOnly)
 	class UCapsuleComponent* CapsuleCollision;

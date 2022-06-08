@@ -2,22 +2,21 @@
 
 #include "CoreMinimal.h"
 #include "StaticObject/CTriggerVolume.h"
-#include "CTriggerVolume_Spawner.generated.h"
+#include "CTriggerVolume_Cannon.generated.h"
 
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSpawnerEventTrigger, class AActor*, OverlappedActor, class AActor*, OtherActor);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FCannonEventTrigger, class AActor*, OverlappedActor, class AActor*, OtherActor);
 
 UCLASS()
-class UE4POFOL_F_API ACTriggerVolume_Spawner : public ACTriggerVolume
+class UE4POFOL_F_API ACTriggerVolume_Cannon : public ACTriggerVolume
 {
 	GENERATED_BODY()
-
+	
 public:
 	UPROPERTY(BlueprintAssignable)
-	FSpawnerEventTrigger OnSpawnerEventTrigger;
-	
+	FCannonEventTrigger OnCannonEventTrigger;
+
 protected:
-	ACTriggerVolume_Spawner();
+	ACTriggerVolume_Cannon();
 
 private:
 	virtual void OnBeginOverlap(class AActor* OverlappedActor, class AActor* OtherActor) override;
