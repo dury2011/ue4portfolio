@@ -8,24 +8,69 @@
 #include "Interface/IRifle.h"
 #include "CEnemy.generated.h"
 
+UENUM(BlueprintType)
+enum class EEnemyStateType : uint8
+{
+	Idle, Walk, Run, Parkour, Attack, Damage, Dead, Max
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEnemyStateTypeChanged, EEnemyStateType, InPreviousType, EEnemyStateType, InCurrentType);
 DECLARE_MULTICAST_DELEGATE(FOnEnemyMontageEnded);
 
 UCLASS()
-class UE4POFOL_F_API ACEnemy : public ACharacter, public IIRifle, public IGenericTeamAgentInterface
+class UE4POFOL_F_API ACEnemy : public ACharacter, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
-	
 public:
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Camera Class")
-	TSubclassOf<class UMatineeCameraShake> CameraShakeClass;
+	UPROPERTY(BlueprintAssignable)
+	FOnEnemyStateTypeChanged OnEnemyStateTypeChanged;
 
+protected:	
 	UPROPERTY()
 	TSubclassOf<class UAnimInstance> AnimInstance;	
 
+	UPROPERTY()
+	class UCCharacterComponent* CharacterComponent;
+	//class ACAIController* PossessedController;	
+	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
+	TSubclassOf<class UMatineeCameraShake> CameraShakeClass;
+	
 	FOnEnemyMontageEnded OnEnemyMontageEnded;
-	class ACAIController* Controller;	
 
 private:
+	//// Player 형 변환을 위한 Character
+	//UPROPERTY()
+	//ACharacter* Character;
+	
+	UPROPERTY()
+	ACharacter* Opponent;
+
+	UPROPERTY()
+	class UBlackboardComponent* Blackboard;
+
+	//UPROPERTY(EditDefaultsOnly, Category = "Rifle Class")
+	//TSubclassOf<class ACRifle> RifleClass;
+
+	//UPROPERTY()
+	//class ACRifle* Rifle;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
+	float HealthBarDisplayTime;
+
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
+	TMap<UUserWidget*, FVector> HitNumbers;
+
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
+	float HitNumberDestroyTime;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	class UBehaviorTree* BehaviorTree;
+	
+	EEnemyStateType CurrentStateType = EEnemyStateType::Max;
+
+	FTimerHandle HealthBarTimer;
+
 	struct FDamaged
 	{
 		float DamageAmount;
@@ -33,45 +78,6 @@ private:
 		class AController* EventInstigator;
 		class AActor* DamageCauser;
 	} Damaged;
-
-	// Player 형 변환을 위한 Character
-	UPROPERTY()
-	ACharacter* Character;
-
-	UPROPERTY()
-	ACharacter* Opponent;
-
-	UPROPERTY()
-	class UBlackboardComponent* Blackboard;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Rifle Class")
-	TSubclassOf<class ACRifle> RifleClass;
-
-	UPROPERTY()
-	class ACRifle* Rifle;
-
-	class UMaterialInstanceDynamic* Materials[2];
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	float HealthBarDisplayTime;
-
-	FTimerHandle HealthBarTimer;
-
-	FTimerHandle TakeDamageIntervalTimerHandle;
-
-	UPROPERTY(VisibleAnywhere, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	TMap<UUserWidget*, FVector> HitNumbers;
-
-	UPROPERTY(EditAnywhere, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	float HitNumberDestroyTime;
-
-	UPROPERTY(EditDefaultsOnly, Category = "AI")
-	class UBehaviorTree* BehaviorTree;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Team")
-	uint8 TeamId = 2;
-
-	FVector Pos;
 
 public:
 	ACEnemy();
@@ -89,13 +95,6 @@ private:
 	void DoAction();
 	void Damage();
 	void Dead();
-
-public:
-	void OnUnarmedMode();
-
-public:
-	UFUNCTION()
-	void MontageEnded(UAnimMontage* InMontage, bool Ininterruped);
 
 private:
 	void ShakeCamera(FDamaged damage);
@@ -120,10 +119,26 @@ protected:
 public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowHitNumber(int32 InDamage, FVector InHitLocation);
-
-	virtual FGenericTeamId GetGenericTeamId() const override { return FGenericTeamId(TeamId); }
 	
 	FORCEINLINE class UBehaviorTree* GetBehaviorTree() { return BehaviorTree; }
-	FORCEINLINE class ACRifle* GetRifle() override { return Rifle; }
+
+	FORCEINLINE UBlackboardComponent* GetBlackboard() { return Blackboard; }
 	FORCEINLINE void SetBlackboard(class UBlackboardComponent* InBlackboard) { Blackboard = InBlackboard; }
+	
+	FORCEINLINE ACharacter* GetOpponent() { return Opponent; }
+
+protected:
+	void OnStateTypeChange(EEnemyStateType InCurrentStateType);
+
+	UFUNCTION()
+	virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	virtual void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	virtual void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	UFUNCTION()
+	void OnMontageEnded(UAnimMontage* InMontage, bool InInterrupted);
 };

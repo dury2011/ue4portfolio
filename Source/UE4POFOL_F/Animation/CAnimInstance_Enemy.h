@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "Enemy/CEnemy.h"
 #include "CAnimInstance_Enemy.generated.h"
 
 UCLASS()
@@ -12,14 +13,6 @@ class UE4POFOL_F_API UCAnimInstance_Enemy : public UAnimInstance
 	GENERATED_BODY()
 	
 public:
-	//UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
-	//EAIStateType AIStateType;
-
-	//UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
-	//EAIStateType_Onehand AIStateTypeOnehand;
-
-	//UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
-	//EAIStateType_Rifle AIStateTypeRifle;
 
 protected:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character Movement")
@@ -34,42 +27,24 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Chracter State")
 	bool bFalling;
 
-	//UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Chracter State")
-	//bool bRifleEquipped;
+	UPROPERTY(BlueprintReadOnly)
+	EEnemyStateType CurrentEnemyStateType;
 
-	//UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Chracter State")
-	//bool bRifleAiming;
-
-	//UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Chracter State")
-	//bool bRifleEquippedAndHide;
+	UPROPERTY(BlueprintReadOnly)
+	EEnemyStateType PreviousEnemyStateType;
 
 private:
 	UPROPERTY()
-	TArray<class AActor*> ActorsTagEnemyBossFriend;
-	
-	UPROPERTY()
-	class ACharacter* OwnerCharacter;
+	class ACEnemy* Enemy;
 	
 	//UPROPERTY()
-	//class UCAIStateComponent* AIStateComponent;
-
-	//UPROPERTY()
-	//class UCWeaponComponent* WeaponComponent;
-
-	//UPROPERTY()
-	//class UCParkourComponent* ParkourComponent;
-
+	//TArray<class AActor*> ActorsTagEnemyBossFriend;
+	
 public:
 	virtual void NativeBeginPlay() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 	
 private:
-	//UFUNCTION()
-	//void OnAIStateTypeChanged(EAIStateType InNewType);
+	void OnEnemyStateTypeChanged(EEnemyStateType InPreviousType, EEnemyStateType InCurrentType);
 
-	//UFUNCTION()
-	//void OnAIStateTypeOnehandChanged(EAIStateType_Onehand InNewType);
-
-	//UFUNCTION()
-	//void OnAIStateTypeRifleChanged(EAIStateType_Rifle InNewType);
 };

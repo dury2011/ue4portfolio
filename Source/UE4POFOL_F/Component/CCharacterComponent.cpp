@@ -48,7 +48,7 @@ void UCCharacterComponent::SetSp(float InSp)
 	Sp += InSp;
 }
 
-void UCCharacterComponent::SetCurrnetStateType(EStateType InType)
+void UCCharacterComponent::SetCurrentStateType(EStateType InType)
 {
 	ChangeStateType(InType);
 }

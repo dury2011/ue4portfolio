@@ -252,7 +252,7 @@ void ACPlayer::OnMoveForward(float AxisValue)
 	//}
 	CheckFalse(CharacterComponent->GetbCanMove());
 
-	CharacterComponent->SetCurrnetStateType(EStateType::Move);
+	CharacterComponent->SetCurrentStateType(EStateType::Move);
 
 	FRotator rotation = FRotator(0, GetControlRotation().Yaw, 0);
 	FVector direction = FQuat(rotation).GetForwardVector().GetSafeNormal2D();
@@ -272,7 +272,7 @@ void ACPlayer::OnMoveRight(float AxisValue)
 	//}
 	CheckFalse(CharacterComponent->GetbCanMove());
 
-	CharacterComponent->SetCurrnetStateType(EStateType::Move);
+	CharacterComponent->SetCurrentStateType(EStateType::Move);
 
 	FRotator rotation = FRotator(0, GetControlRotation().Yaw, 0);
 	FVector direction = FQuat(rotation).GetRightVector().GetSafeNormal2D();
@@ -311,7 +311,7 @@ void ACPlayer::InZooming(float Infloat)
 
 void ACPlayer::OnJump()
 {
-	CharacterComponent->SetCurrnetStateType(EStateType::Move);
+	CharacterComponent->SetCurrentStateType(EStateType::Move);
 
 	//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
 
@@ -320,7 +320,7 @@ void ACPlayer::OnJump()
 
 void ACPlayer::OffJump()
 {
-	CharacterComponent->SetCurrnetStateType(EStateType::Idle);
+	CharacterComponent->SetCurrentStateType(EStateType::Idle);
 
 	StopJumping();
 }
@@ -456,7 +456,7 @@ void ACPlayer::OnAction()
 	CheckTrue(bAiming);
 
 	CharacterComponent->SetIsMontagePlaying(true);
-	CharacterComponent->SetCurrnetStateType(EStateType::Attack);
+	CharacterComponent->SetCurrentStateType(EStateType::Attack);
 
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
@@ -482,7 +482,7 @@ void ACPlayer::OnCriticalOne()
 	{	
 		bAiming = true;
 
-		CharacterComponent->SetCurrnetStateType(EStateType::Attack);
+		CharacterComponent->SetCurrentStateType(EStateType::Attack);
 		WidgetComponent->SetbCrosshairVisible(false);
 		Crosshair_SpellMeteor = ACCrosshair::SpawnCrosshair(this, Crosshair_SpellMeteorClass);
 		Crosshair_SpellMeteor->SetOwner(this);
@@ -512,7 +512,7 @@ void ACPlayer::OffCriticalOne()
 		WidgetComponent->SetbCrosshairVisible(true);
 
 		CharacterComponent->SetIsMontagePlaying(true);
-		CharacterComponent->SetCurrnetStateType(EStateType::Attack);
+		CharacterComponent->SetCurrentStateType(EStateType::Attack);
 
 		CharacterComponent->GetCriticalDatasSpell(0).PlayMontage(this);
 
@@ -535,7 +535,7 @@ void ACPlayer::OnCriticalTwo()
 	}
 	else if (CharacterComponent->GetIsWeaponSpellMode())
 	{
-		CharacterComponent->SetCurrnetStateType(EStateType::Attack);
+		CharacterComponent->SetCurrentStateType(EStateType::Attack);
 		CharacterComponent->SetIsMontagePlaying(true);
 
 		CharacterComponent->GetCriticalDatasSpell(1).PlayMontage(this);

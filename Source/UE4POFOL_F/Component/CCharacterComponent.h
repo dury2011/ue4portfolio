@@ -142,7 +142,7 @@ public:
 	void SetSp(float InSp);
 
 	// EEnemyStateType: Idle, Move, Attack, Damage, Dead, Max
-	void SetCurrnetStateType(EStateType InType);
+	void SetCurrentStateType(EStateType InType);
 	// EEnemyWeaponType: Onehand, Rifle, Spell, Max
 	void SetCurrentWeaponType(EWeaponType InType);
 
@@ -179,7 +179,7 @@ public:
 	FORCEINLINE bool GetIsMontagePlaying() { return IsMontagePlaying; }
 	FORCEINLINE void SetIsMontagePlaying(bool InIsMontagePlaying) { IsMontagePlaying = InIsMontagePlaying; }
 
-	FORCEINLINE EStateType GetCurrnetStateType() { return CurrentStateType; }
+	FORCEINLINE EStateType GetCurrentStateType() { return CurrentStateType; }
 	FORCEINLINE EWeaponType GetCurrentWeaponType() { return CurrentWeaponType; }
 
 	UFUNCTION(BlueprintCallable)

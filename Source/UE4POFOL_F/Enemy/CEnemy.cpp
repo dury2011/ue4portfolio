@@ -16,8 +16,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "DrawDebugHelpers.h"
 #include "BehaviorTree/BlackboardComponent.h"
-
-//UAnimMontage* ACEnemy::DefaultHitMontage = NULL;
+#include "Component/CCharacterComponent.h"
 
 //#define DEBUG_CENEMY
 
@@ -26,68 +25,27 @@ ACEnemy::ACEnemy()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	
-	{
-		USkeletalMesh* mesh;
-		CHelpers::GetAsset<USkeletalMesh>(&mesh, "SkeletalMesh'/Game/ParagonKallari/Characters/Heroes/Kallari/Meshes/Kallari.Kallari'");
-		GetMesh()->SetSkeletalMesh(mesh);
-		GetMesh()->SetRelativeLocation(FVector(0, 0, -90));
-		GetMesh()->SetRelativeRotation(FRotator(0, -90, 0));
-	}
-	
-	{
-		CHelpers::GetClass<UAnimInstance>(&AnimInstance, "AnimBlueprint'/Game/FORUE4POFOL/Enemy/Blueprint/ABP_CEnemy.ABP_CEnemy_C'");
-		GetMesh()->SetAnimInstanceClass(AnimInstance);
-	}
-
 	RootComponent = GetCapsuleComponent();
-
-	// 몽타주 할당
-	//ConstructorHelpers::FObjectFinder<UAnimMontage> ATTACKBLOCKED_MONTAGE(TEXT("AnimMontage'/Game/FORUE4POFOL/Enemy/Montage/Damage/Enemy_AttackBlocked_Montage.Enemy_AttackBlocked_Montage'"));
-	//
-	//if (ATTACKBLOCKED_MONTAGE.Succeeded())
-	//{
-	//	AttackBlockedMontage = ATTACKBLOCKED_MONTAGE.Object;
-	//}
 }
 
 void ACEnemy::BeginPlay()
 {
 	Super::BeginPlay(); 
 
-	if (!!RifleClass)
+	TArray<UCapsuleComponent*> CapsuleCollisions;
+
+	GetComponents<UCapsuleComponent>(CapsuleCollisions);
+
+	for (UShapeComponent* collision : CapsuleCollisions)
 	{
-		FActorSpawnParameters params;
-
-		params.Owner = this;
-		Rifle = GetWorld()->SpawnActor<ACRifle>(RifleClass, params);
+		collision->OnComponentBeginOverlap.AddDynamic(this, &ACEnemy::OnBeginOverlap);
+		collision->OnComponentEndOverlap.AddDynamic(this, &ACEnemy::OnEndOverlap);
+		collision->OnComponentHit.AddDynamic(this, &ACEnemy::OnHit);
 	}
-	
-	//
-	// AI Controller 가져오기 
-	//Controller = Cast<ACAIController>(GetController());
-	//
-	//const FVector worldPatrolPoint = UKismetMathLibrary::TransformLocation(GetActorTransform(), PatrolPoint);
-	//const FVector worldPatrolPoint2 = UKismetMathLibrary::TransformLocation(GetActorTransform(), PatrolPoint2);
-	//
-	//WorldAttackPoint = UKismetMathLibrary::TransformLocation(GetActorTransform(), WorldAttackPoint);
-	//WorldAttackPoint2 = UKismetMathLibrary::TransformLocation(GetActorTransform(), WorldAttackPoint2);
-	//
-	//if (Controller)
-	//{
-	//	Controller->GetBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint"), worldPatrolPoint);
-	//	Controller->GetBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint2"), worldPatrolPoint2);
-	//	Controller->GetBlackboardComponent()->SetValueAsVector(TEXT("AttackPoint"), WorldAttackPoint);
-	//	Controller->GetBlackboardComponent()->SetValueAsVector(TEXT("AttackPoint2"), WorldAttackPoint2);
-	//}
-	//
-	//
-	// STUDY: BeginPlay()에서 OnOnehandMode()를 하면 AI가 작동을 안 함 왜 그런거지?
-	//OnOnehandMode()
 
-#ifdef DEBUG_CENEMY
-	DrawDebugSphere(GetWorld(), worldPatrolPoint, 25.f, 12, FColor::Red, true);
-	DrawDebugSphere(GetWorld(), worldPatrolPoint2, 25.f, 12, FColor::Red, true);
-#endif DEBUG_CENEMY
+	GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACEnemy::OnMontageEnded);
+
+	OnStateTypeChange(EEnemyStateType::Idle);
 }
 
 void ACEnemy::Tick(float DeltaTime)
@@ -178,6 +136,8 @@ void ACEnemy::DoAction()
 
 void ACEnemy::Damage()
 {
+	ShowHealthBar();
+	
 	Damaged.DamageAmount = 0.0f;
 	
 	FVector start = GetActorLocation();
@@ -187,7 +147,6 @@ void ACEnemy::Damage()
 	if (!!Damaged.DamageEvent)
 	{
 		FDamageData* DamageData = Damaged.DamageEvent->DamageData;
-
 
 		//if (StateComponent->IsAttackSkillMode())
 		//{
@@ -212,22 +171,11 @@ void ACEnemy::Damage()
 		DamageData->PlaySoundCue(GetWorld(), GetActorLocation());
 	}
 
-	ShowHealthBar();
-
 }
 
 void ACEnemy::Dead()
 {
-
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-}
-
-void ACEnemy::MontageEnded(UAnimMontage* InMontage, bool Ininterrupted)
-{
-	if (OnEnemyMontageEnded.IsBound())
-		OnEnemyMontageEnded.Broadcast();
-	
-	Pos = GetActorLocation();
 }
 
 void ACEnemy::ShakeCamera(FDamaged damage)
@@ -269,4 +217,33 @@ void ACEnemy::ShowHealthBar_Implementation()
 {
 	GetWorldTimerManager().ClearTimer(HealthBarTimer);
 	GetWorldTimerManager().SetTimer(HealthBarTimer, this, &ACEnemy::HideHealthBar, HealthBarDisplayTime);
+}
+
+void ACEnemy::OnStateTypeChange(EEnemyStateType InCurrentStateType)
+{
+	EEnemyStateType PreviousStateType = CurrentStateType;
+	CurrentStateType = InCurrentStateType;
+
+	if (OnEnemyStateTypeChanged.IsBound())
+		OnEnemyStateTypeChanged.Broadcast(PreviousStateType, CurrentStateType);
+}
+
+void ACEnemy::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+
+}
+
+void ACEnemy::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+
+}
+
+void ACEnemy::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+
+}
+
+void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool InInterrupted)
+{
+	CharacterComponent->SetIsMontagePlaying(false);
 }

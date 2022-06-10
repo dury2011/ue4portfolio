@@ -54,7 +54,7 @@ void ACElevator::ActivateElevator(class AActor* InOverlappedActor, class AActor*
 			GetActorRotation(),
 			true,
 			true,
-			60.0f,
+			180.0f,
 			false,
 			EMoveComponentAction::Move,
 			info
