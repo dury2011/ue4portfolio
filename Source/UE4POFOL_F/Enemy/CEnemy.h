@@ -21,6 +21,7 @@ UCLASS()
 class UE4POFOL_F_API ACEnemy : public ACharacter, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
+	
 public:
 	UPROPERTY(BlueprintAssignable)
 	FOnEnemyStateTypeChanged OnEnemyStateTypeChanged;
@@ -29,7 +30,7 @@ protected:
 	UPROPERTY()
 	TSubclassOf<class UAnimInstance> AnimInstance;	
 
-	UPROPERTY()
+	UPROPERTY(EditDefaultsOnly)
 	class UCCharacterComponent* CharacterComponent;
 	//class ACAIController* PossessedController;	
 	
@@ -44,7 +45,10 @@ private:
 	//ACharacter* Character;
 	
 	UPROPERTY()
-	ACharacter* Opponent;
+	TArray<class UCapsuleComponent*> CapsuleCollisions;
+	
+	UPROPERTY()
+	class ACharacter* Opponent;
 
 	UPROPERTY()
 	class UBlackboardComponent* Blackboard;
@@ -78,6 +82,8 @@ private:
 		class AController* EventInstigator;
 		class AActor* DamageCauser;
 	} Damaged;
+
+	bool bDamage;
 
 public:
 	ACEnemy();
@@ -124,11 +130,8 @@ public:
 
 	FORCEINLINE UBlackboardComponent* GetBlackboard() { return Blackboard; }
 	FORCEINLINE void SetBlackboard(class UBlackboardComponent* InBlackboard) { Blackboard = InBlackboard; }
-	
-	FORCEINLINE ACharacter* GetOpponent() { return Opponent; }
 
 protected:
-	void OnStateTypeChange(EEnemyStateType InCurrentStateType);
 
 	UFUNCTION()
 	virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -141,4 +144,11 @@ protected:
 
 	UFUNCTION()
 	void OnMontageEnded(UAnimMontage* InMontage, bool InInterrupted);
+
+public:
+	void OnStateTypeChange(EEnemyStateType InCurrentStateType);
+	FORCEINLINE bool GetbDamage() { return bDamage; }
+	FORCEINLINE ACharacter* GetOpponent() { return Opponent; }
+	FORCEINLINE UCCharacterComponent* GetCharacterComponent() { return CharacterComponent; }
+	FORCEINLINE EEnemyStateType GetCurrentEnemyStateType() { return CurrentStateType; }
 };

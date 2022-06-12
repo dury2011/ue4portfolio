@@ -32,8 +32,6 @@ void ACEnemy::BeginPlay()
 {
 	Super::BeginPlay(); 
 
-	TArray<UCapsuleComponent*> CapsuleCollisions;
-
 	GetComponents<UCapsuleComponent>(CapsuleCollisions);
 
 	for (UShapeComponent* collision : CapsuleCollisions)
@@ -43,8 +41,9 @@ void ACEnemy::BeginPlay()
 		collision->OnComponentHit.AddDynamic(this, &ACEnemy::OnHit);
 	}
 
-	GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACEnemy::OnMontageEnded);
-
+	if (GetMesh()->GetAnimInstance())
+		GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACEnemy::OnMontageEnded);
+	
 	OnStateTypeChange(EEnemyStateType::Idle);
 }
 
@@ -122,6 +121,9 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 	Damaged.EventInstigator = EventInstigator;
 	Damaged.DamageCauser = DamageCauser;
 
+	//TODO: 이렇게 해도 될 지 모르겠다.
+	bDamage = true;
+
 	ShakeCamera(Damaged);
 	ShowHitNumber(DamageAmount, this->GetActorLocation());
 
@@ -169,6 +171,8 @@ void ACEnemy::Damage()
 		DamageData->PlayEffect(GetWorld(), this);
 		DamageData->PlayHitStop(GetWorld());
 		DamageData->PlaySoundCue(GetWorld(), GetActorLocation());
+
+		bDamage = false;
 	}
 
 }

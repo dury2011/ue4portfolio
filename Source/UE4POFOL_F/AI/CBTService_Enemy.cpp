@@ -9,6 +9,7 @@
 #include "GameFramework/Character.h"
 
 #include "DrawDebugHelpers.h"
+#include "Component/CCharacterComponent.h"
 
 //#define LOG_CBTSERVICE_ENEMY
 
@@ -26,41 +27,52 @@ void UCBTService_Enemy::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 
 	ACAIController* controller = Cast<ACAIController>(OwnerComp.GetOwner());
 	ACEnemy* enemy = Cast<ACEnemy>(controller->GetPawn());
+	ACharacter* opponent = enemy->GetOpponent();
+
+	float distance = enemy->GetDistanceTo(opponent);
 	//UCStateComponent* stateComponent = CHelpers::GetComponent<UCStateComponent>(enemy);
 	//UCAIStateComponent* aIStateComponent = CHelpers::GetComponent<UCAIStateComponent>(enemy);
 	//UCWeaponComponent* weaponComponent = CHelpers::GetComponent<UCWeaponComponent>(enemy);
 	//ACPlayer* player = aIStateComponent->GetTargetPlayer();
 	//float distance = enemy->GetDistanceTo(player);
 
+	if (opponent)
+	{
+		if (distance <= 450.0f)
+			enemy->OnStateTypeChange(EEnemyStateType::Attack);
+		else
+			enemy->OnStateTypeChange(EEnemyStateType::Walk);
+	}
+
 	//if (player)
 	//{
-
+	//
 	//}
-
+	//
 	//if (player == nullptr) 
 	//{
-
+	//
 	//}
 	//else
 	//{
 		//if (distance >= 900.f)
 		//{
 		//	aIStateComponent->SetAttackRifleMode();
-
+	//
 		//	return;
 		//}
-		
+		//
 		//{
 			//if (distance <= 400.f)
 			//{
 				//aIStateComponent->SetAttackOnehandMode();
-
+	//
 				//return;
 			//}
 			//else
 			//{
 				//aIStateComponent->SetApproachMode();
-			
+		//	
 			//	return;
 			//}
 		//}	

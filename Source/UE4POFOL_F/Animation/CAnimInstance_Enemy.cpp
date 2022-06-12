@@ -27,7 +27,7 @@ void UCAnimInstance_Enemy::NativeUpdateAnimation(float DeltaSeconds)
 	Direction = CalculateDirection(Enemy->GetVelocity(), Enemy->GetActorRotation());
 	Pitch = Enemy->GetBaseAimRotation().Pitch;
 	bFalling = Enemy->GetCharacterMovement()->IsFalling();
-	
+	bDamage = Enemy->GetbDamage();
 	//UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Enemy_BossFriend"), ActorsTagEnemyBossFriend);
 	//for (AActor* actor : ActorsTagEnemyBossFriend)
 	//{

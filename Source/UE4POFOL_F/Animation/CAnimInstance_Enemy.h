@@ -27,6 +27,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Chracter State")
 	bool bFalling;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Character State")
+	bool bDamage;
+
 	UPROPERTY(BlueprintReadOnly)
 	EEnemyStateType CurrentEnemyStateType;
 
@@ -45,6 +48,7 @@ public:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 	
 private:
+	UFUNCTION()
 	void OnEnemyStateTypeChanged(EEnemyStateType InPreviousType, EEnemyStateType InCurrentType);
 
 };

@@ -143,14 +143,13 @@ void ACSpawner::CreateLineTrace()
 
 void ACSpawner::SpawnEnemy()
 {
-
 	FVector spawnerFowardVector = GetActorForwardVector();
 	FRotator spawnedEnemyRotation = UKismetMathLibrary::Conv_VectorToRotator(spawnerFowardVector);
 
 	EnemySpawnParticleEffect();
 
-	if (EnemyNormalClass && EnemySpecialClass)
-	{
+	//if (EnemyNormalClass && EnemySpecialClass)
+	//{
 		if (SpawnedEnemy >= 20)
 			return;
 		
@@ -169,6 +168,8 @@ void ACSpawner::SpawnEnemy()
 
 			if (enemy)
 				SpawnedEnemy++;
+
+			GLog->Log("ACSpawner::SpawnEnemy() Normal");
 		}
 		else
 		{
@@ -182,8 +183,10 @@ void ACSpawner::SpawnEnemy()
 
 			if (enemy)
 				SpawnedEnemy++;
+
+			GLog->Log("ACSpawner::SpawnEnemy() Special");
 		}
-	}
+	//}
 }
 
 void ACSpawner::DestroySpawner()
