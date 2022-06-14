@@ -10,13 +10,23 @@ class UE4POFOL_F_API ACAIController : public AAIController
 {
 	GENERATED_BODY()
 	
-private:
-	UPROPERTY(VisibleDefaultsOnly)
-	class UAIPerceptionComponent* Perception;
+	//UPROPERTY(VisibleDefaultsOnly)
+	//class UAIPerceptionComponent* Perception;
+	//
+	//UPROPERTY()
+	//class ACEnemy* Enemy;
+	//
+	//UPROPERTY()
+	//class UAISenseConfig_Sight* Sight;
 
-	class ACEnemy* Enemy;
-	class UAISenseConfig_Sight* Sight;
-	//class UCAIStateComponent* AIStateComponent;
+	//UPROPERTY()
+	//class UBlackboardData* Blackboard;
+private:
+	FTimerHandle Timer;
+
+public:
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "AIController Setting")
+	class UBehaviorTree* BehaviorTree;
 
 public:
 	ACAIController();
@@ -27,6 +37,8 @@ protected:
 	virtual void OnUnPossess() override;
 
 private:
-	UFUNCTION()
-	void OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors);
+	//UFUNCTION()
+	//void OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors);
+
+	void OnRepeatTimer();
 };

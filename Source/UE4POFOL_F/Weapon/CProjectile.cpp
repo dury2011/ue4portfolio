@@ -31,6 +31,7 @@ ACProjectile* ACProjectile::SpawnProjectile(ACharacter* InSpawner, TSubclassOf<c
 {
 	FActorSpawnParameters params;
 	params.Owner = InSpawner;
+	params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 	//ACProjectile* projectile = InSpawner->GetWorld()->SpawnActor<ACProjectile>
 	//(

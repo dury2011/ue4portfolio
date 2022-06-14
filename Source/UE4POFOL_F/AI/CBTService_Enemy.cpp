@@ -28,7 +28,6 @@ void UCBTService_Enemy::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 	ACAIController* controller = Cast<ACAIController>(OwnerComp.GetOwner());
 	ACEnemy* enemy = Cast<ACEnemy>(controller->GetPawn());
 	ACharacter* opponent = enemy->GetOpponent();
-
 	float distance = enemy->GetDistanceTo(opponent);
 	//UCStateComponent* stateComponent = CHelpers::GetComponent<UCStateComponent>(enemy);
 	//UCAIStateComponent* aIStateComponent = CHelpers::GetComponent<UCAIStateComponent>(enemy);
@@ -40,7 +39,7 @@ void UCBTService_Enemy::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 	{
 		if (distance <= 450.0f)
 			enemy->OnStateTypeChange(EEnemyStateType::Attack);
-		else
+		if (distance > 450.0f)
 			enemy->OnStateTypeChange(EEnemyStateType::Walk);
 	}
 

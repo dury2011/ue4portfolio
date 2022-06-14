@@ -30,7 +30,7 @@ protected:
 	UPROPERTY()
 	TSubclassOf<class UAnimInstance> AnimInstance;	
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(VisibleDefaultsOnly)
 	class UCCharacterComponent* CharacterComponent;
 	//class ACAIController* PossessedController;	
 	
@@ -68,8 +68,8 @@ private:
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
 	float HitNumberDestroyTime;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	class UBehaviorTree* BehaviorTree;
+	//UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	//class UBehaviorTree* BehaviorTree;
 	
 	EEnemyStateType CurrentStateType = EEnemyStateType::Max;
 
@@ -126,10 +126,10 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowHitNumber(int32 InDamage, FVector InHitLocation);
 	
-	FORCEINLINE class UBehaviorTree* GetBehaviorTree() { return BehaviorTree; }
+	//FORCEINLINE class UBehaviorTree* GetBehaviorTree() { return BehaviorTree; }
 
-	FORCEINLINE UBlackboardComponent* GetBlackboard() { return Blackboard; }
-	FORCEINLINE void SetBlackboard(class UBlackboardComponent* InBlackboard) { Blackboard = InBlackboard; }
+	//FORCEINLINE UBlackboardComponent* GetBlackboard() { return Blackboard; }
+	//FORCEINLINE void SetBlackboard(class UBlackboardComponent* InBlackboard) { Blackboard = InBlackboard; }
 
 protected:
 

@@ -155,6 +155,7 @@ void ACSpawner::SpawnEnemy()
 		
 		FActorSpawnParameters params;
 		params.Owner = this;
+		params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 		if (Hp > 5000.0f)
 		{

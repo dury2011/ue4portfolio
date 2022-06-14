@@ -577,8 +577,7 @@ void ACPlayer::SpawnSpellProjectileR()
 	SpellProjectileR->SetOwner(this);
 
 	SpellProjectileR->SetActorRotation(CameraComponent->GetComponentRotation());
-	SpellProjectileR->ShootProjectile(CameraComponent->GetForwardVector());
-
+	
 	ShootSpawnedProjectile(SpellProjectileR, "Spawn_Spell_Projectile_R");
 }
 

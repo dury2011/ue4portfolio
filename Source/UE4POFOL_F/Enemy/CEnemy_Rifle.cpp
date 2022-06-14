@@ -29,11 +29,13 @@ ACEnemy_Rifle::ACEnemy_Rifle()
 		GetMesh()->SetAnimInstanceClass(AnimInstance);
 	}
 
-	ConstructorHelpers::FClassFinder<ACProjectile> assetClass(*FString("Blueprint'/Game/FORUE4POFOL/Weapon/BP_CProjectile_Enemy_Rifle.BP_CProjectile_Enemy_Rifle_C'"));
+	ConstructorHelpers::FClassFinder<ACProjectile> assetClass(*FString("Blueprint'/Game/FORUE4POFOL/Weapon/BP_CProjectile_Enemy_Rifle'"));
 	
 	if (assetClass.Succeeded())
 		ProjectileClass = assetClass.Class;
 	
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
 	CharacterComponent = CreateDefaultSubobject<UCCharacterComponent>("CharacterComponent");
 	CharacterComponent->SetCurrentStateType(EStateType::Idle);
 }
@@ -56,19 +58,26 @@ void ACEnemy_Rifle::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 void ACEnemy_Rifle::SpawnAndShootProjectile()
 {
-	Projectile = ACProjectile::SpawnProjectile(this, ProjectileClass, "Muzzle_Front");
+	Projectile = ACProjectile::SpawnProjectile(this, CharacterComponent->GetProjectileClass(), FName("Muzzle_Front"));
 	Projectile->SetOwner(this);
 	Projectile->SetActorRotation(GetActorRotation());
-	Projectile->ShootProjectile(UKismetMathLibrary::GetDirectionUnitVector(GetMesh()->GetSocketLocation("Muzzle_Front"), GetOpponent()->GetActorLocation()));
+	Projectile->ShootProjectile(UKismetMathLibrary::GetDirectionUnitVector(GetMesh()->GetSocketLocation(FName("Muzzle_Front")), GetOpponent()->GetActorLocation()));
 }
 
 void ACEnemy_Rifle::OnFire()
 {
-	CharacterComponent->SetCurrentWeaponType(EWeaponType::Spell);
-	CharacterComponent->SetCurrentStateType(EStateType::Attack);
+	if (GetOpponent())
+	{
+		CheckTrue(CharacterComponent->GetIsMontagePlaying());
 	
-	CharacterComponent->SetIsMontagePlaying(true);
-	CharacterComponent->GetActionDatasSpell(0).PlayMontage(this);
+		//CharacterComponent->SetCurrentWeaponType(EWeaponType::Spell);
+		//CharacterComponent->SetCurrentStateType(EStateType::Attack);
+		
+		CharacterComponent->SetIsMontagePlaying(true);
+		CharacterComponent->GetActionDatasSpell(0).PlayMontage(this);
+
+		GLog->Log("ACEnemy_Rifle::OnFire()");
+	}
 }
 
 void ACEnemy_Rifle::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

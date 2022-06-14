@@ -8,10 +8,13 @@ UCLASS()
 class UE4POFOL_F_API UCBTTaskNode_EnemyRifleAttack : public UBTTaskNode
 {
 	GENERATED_BODY()
+
+private:
+	UPROPERTY()
+	class ACEnemy_Rifle* EnemyRifle;
 	
 private:
-	virtual FName GetNodeIconName() const override;
+	UCBTTaskNode_EnemyRifleAttack();
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)override;
-	virtual EBTNodeResult::Type AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)override;
 	virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)override;
 };
