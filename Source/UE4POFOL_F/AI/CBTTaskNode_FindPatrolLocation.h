@@ -9,4 +9,7 @@ class UE4POFOL_F_API UCBTTaskNode_FindPatrolLocation : public UBTTaskNode
 {
 	GENERATED_BODY()
 	
+public:
+	UCBTTaskNode_FindPatrolLocation();
+	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)override;
 };
