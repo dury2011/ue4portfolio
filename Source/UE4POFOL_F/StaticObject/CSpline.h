@@ -20,15 +20,20 @@ protected:
 	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly, Category = "Spline Setting")
 	class USplineComponent* SplineComponent;
 
-	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly, Category = "Spline Setting")
-	TSubclassOf<class AActor> ActorToFollowClass;
-
-	UPROPERTY()
-	class AActor* EnemyToFollow;
-
-	float StartTime = 0.0f;
-	bool bCanMoveActor = false;
+	//UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Spline Setting")
+	//TSubclassOf<class AActor> ActorToFollowClass;
+	//
+	//UPROPERTY()
+	//class AActor* EnemyToFollow;
+	//
+	//float TotalPathTimeController = 10.0f;
+	//float StartTime = 0.0f;
+	//bool bCanMoveActor = false;
+	//bool bSplineInLoop = true;
 	
+	int32 TargetSplinePointIndex;
+	bool bReverse;
+	float AcceptanceDistance = 150.0f;
 public:	
 	ACSpline();
 
@@ -38,4 +43,6 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
+	bool GetMoveToSplinePoint(FVector& OutLocation, float& OutAcceptanceDistance);
+	void SetUpdateMoveToSplinePoint();
 };

@@ -13,9 +13,11 @@ class UE4POFOL_F_API ACAIController : public AAIController
 	//UPROPERTY(VisibleDefaultsOnly)
 	//class UAIPerceptionComponent* Perception;
 	//
-	//UPROPERTY()
-	//class ACEnemy* Enemy;
-	//
+	UPROPERTY()
+	class ACPlayer* Player;
+
+	UPROPERTY()
+	class ACEnemy* Enemy;
 	//UPROPERTY()
 	//class UAISenseConfig_Sight* Sight;
 

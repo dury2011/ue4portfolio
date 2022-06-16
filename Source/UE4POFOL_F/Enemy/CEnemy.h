@@ -147,7 +147,9 @@ protected:
 
 public:
 	void OnStateTypeChange(EEnemyStateType InCurrentStateType);
+	
 	FORCEINLINE bool GetbDamage() { return bDamage; }
+	FORCEINLINE void SetOpponent(ACharacter* InOpponent) { Opponent = InOpponent; }
 	FORCEINLINE ACharacter* GetOpponent() { return Opponent; }
 	FORCEINLINE UCCharacterComponent* GetCharacterComponent() { return CharacterComponent; }
 	FORCEINLINE EEnemyStateType GetCurrentEnemyStateType() { return CurrentStateType; }

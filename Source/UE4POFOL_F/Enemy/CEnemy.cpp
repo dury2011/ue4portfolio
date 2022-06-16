@@ -51,8 +51,8 @@ void ACEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
-	if(Blackboard)
-		Opponent = Cast<ACharacter>(Blackboard->GetValueAsObject(FName("Player")));
+	//if(Blackboard)
+		//Opponent = Cast<ACharacter>(Blackboard->GetValueAsObject(FName("Player")));
 	
 	if (Opponent)
 	{
@@ -127,6 +127,7 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 	ShakeCamera(Damaged);
 	ShowHitNumber(DamageAmount, this->GetActorLocation());
 
+	Damage();
 	// BUG: 컴포넌트 생성 후 리턴 값 수정해야된다.
 	return 0.0f;
 }

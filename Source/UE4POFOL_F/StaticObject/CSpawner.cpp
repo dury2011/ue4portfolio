@@ -150,7 +150,7 @@ void ACSpawner::SpawnEnemy()
 
 	//if (EnemyNormalClass && EnemySpecialClass)
 	//{
-		if (SpawnedEnemy >= 20)
+		if (SpawnedEnemy >= 10)
 			return;
 		
 		FActorSpawnParameters params;
@@ -162,7 +162,7 @@ void ACSpawner::SpawnEnemy()
 			ACEnemy* enemy = GetWorld()->SpawnActor<ACEnemy>
 			(
 				EnemyNormalClass,
-				HitResult.ImpactPoint,
+				FVector(HitResult.ImpactPoint.X, HitResult.ImpactPoint.Y, HitResult.ImpactPoint.Z + 150.0f),
 				spawnedEnemyRotation,
 				params
 			);
@@ -177,7 +177,7 @@ void ACSpawner::SpawnEnemy()
 			ACEnemy* enemy = GetWorld()->SpawnActor<ACEnemy>
 			(
 				EnemySpecialClass,
-				HitResult.ImpactPoint,
+				FVector(HitResult.ImpactPoint.X, HitResult.ImpactPoint.Y, HitResult.ImpactPoint.Z + 150.0f),
 				spawnedEnemyRotation,
 				params
 			);

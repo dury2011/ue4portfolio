@@ -18,6 +18,11 @@ private:
 	UPROPERTY()
 	class ACProjectile* Projectile;
 
+	UPROPERTY()
+	TArray<class ACSpline*> Splines;
+
+	int32 Index;
+
 public:
 	ACEnemy_Rifle();
 
@@ -38,4 +43,7 @@ private:
 	virtual void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)override;
 
 	virtual void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)override;
+
+public:
+	FORCEINLINE ACSpline* GetSpline() { if (Splines[Index]) return Splines[Index]; else return nullptr; }
 };

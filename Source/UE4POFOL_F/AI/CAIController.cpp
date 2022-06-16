@@ -11,7 +11,7 @@
 //#include "Perception/AISenseConfig_Sight.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
-#include "Enemy/CEnemy_Rifle.h"
+#include "Enemy/CEnemy.h"
 
 
 ACAIController::ACAIController()
@@ -56,9 +56,19 @@ void ACAIController::OnPossess(APawn* InPawn)
 		Blackboard->SetValueAsVector("SpawnLocation", InPawn->GetActorLocation());
 	}
 
+	TArray<AActor*> outActorArr;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), outActorArr);
+
+	for (int i = 0; i < outActorArr.Num(); i++)
+		Player = dynamic_cast<ACPlayer*>(outActorArr[i]);
+
+	if (Player)
+	{
+		Enemy = Cast<ACEnemy>(InPawn);
+		Enemy->SetOpponent(dynamic_cast<ACharacter*>(Player));
+	}
 	
 	////InPawn을 Enemy로 cast 
-	//Enemy = Cast<ACEnemy_Rifle>(InPawn);
 	////Enemy의 TeamId 설정
 	////SetGenericTeamId(Enemy->GetTeamId());
 	////Enemy의 BehavorTree를 통해 Blackboard에 할당

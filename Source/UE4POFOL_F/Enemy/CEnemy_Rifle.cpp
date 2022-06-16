@@ -4,6 +4,9 @@
 #include "Components/CapsuleComponent.h"
 #include "Component/CCharacterComponent.h"
 #include "Weapon/CProjectile.h"
+#include "StaticObject/CSpline.h"
+
+#define MaxSplineCount 5
 
 ACEnemy_Rifle::ACEnemy_Rifle()
 {
@@ -44,6 +47,14 @@ void ACEnemy_Rifle::BeginPlay()
 {
 	Super::BeginPlay();
 
+
+	TArray<AActor*> outActorArr;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACSpline::StaticClass(), outActorArr);
+
+	for (int i = 0; i < outActorArr.Num(); i++)
+		Splines.Add(dynamic_cast<ACSpline*>(outActorArr[i]));
+
+	Index = UKismetMathLibrary::RandomInteger(MaxSplineCount);
 } 
 
 void ACEnemy_Rifle::Tick(float DeltaTime)
