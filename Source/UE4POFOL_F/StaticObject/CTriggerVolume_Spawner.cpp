@@ -1,5 +1,6 @@
 #include "StaticObject/CTriggerVolume_Spawner.h"
 #include "Global.h"
+#include "Weapon/CProjectile.h"
 
 ACTriggerVolume_Spawner::ACTriggerVolume_Spawner()
 {
@@ -13,6 +14,9 @@ ACTriggerVolume_Spawner::ACTriggerVolume_Spawner()
 
 void ACTriggerVolume_Spawner::OnBeginOverlap(class AActor* OverlappedActor, class AActor* OtherActor)
 {
+	if (OtherActor->GetClass() == ACProjectile::StaticClass())
+		return;
+	
 	Super::OnBeginOverlap(OverlappedActor, OtherActor);
 
 	if (OnSpawnerEventTrigger.IsBound())
@@ -25,6 +29,9 @@ void ACTriggerVolume_Spawner::OnBeginOverlap(class AActor* OverlappedActor, clas
 
 void ACTriggerVolume_Spawner::OnEndOverlap(class AActor* OverlappedActor, class AActor* OtherActor)
 {
+	if (OtherActor->GetClass() == ACProjectile::StaticClass())
+		return;
+	
 	Super::OnEndOverlap(OverlappedActor, OtherActor);
 
 	if (GetbCanTrigger())

@@ -24,7 +24,7 @@ void UCAnimInstance_Enemy::NativeUpdateAnimation(float DeltaSeconds)
 	CheckNull(Enemy);
 	
 	Speed = Enemy->GetVelocity().Size2D();
-	Direction = CalculateDirection(Enemy->GetVelocity(), Enemy->GetActorRotation());
+	Direction = CalculateDirection(Enemy->GetVelocity(), Enemy->GetControlRotation());
 	Pitch = Enemy->GetBaseAimRotation().Pitch;
 	bFalling = Enemy->GetCharacterMovement()->IsFalling();
 	bDamage = Enemy->GetbDamage();

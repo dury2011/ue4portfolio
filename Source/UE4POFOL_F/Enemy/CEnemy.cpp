@@ -129,7 +129,7 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 
 	Damage();
 	// BUG: 컴포넌트 생성 후 리턴 값 수정해야된다.
-	return 0.0f;
+	return Damaged.DamageAmount;
 }
 
 void ACEnemy::DoAction()
@@ -186,8 +186,9 @@ void ACEnemy::Dead()
 void ACEnemy::ShakeCamera(FDamaged damage)
 {
 	APlayerController* controller = Cast<APlayerController>(damage.EventInstigator);
-
-	controller->PlayerCameraManager->StartCameraShake(CameraShakeClass);
+	
+	if (controller)
+		controller->PlayerCameraManager->StartCameraShake(CameraShakeClass);
 }
 
 void ACEnemy::StoreHitNumber(UUserWidget* InHitNumber, FVector InLocation)
@@ -251,4 +252,14 @@ void ACEnemy::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrim
 void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool InInterrupted)
 {
 	CharacterComponent->SetIsMontagePlaying(false);
+}
+
+void ACEnemy::EnemySpawn()
+{
+
+}
+
+void ACEnemy::EnemyDestroy()
+{
+	Destroy();
 }

@@ -7,6 +7,7 @@
 #include "StaticObject/CTriggerVolume_Spawner.h"
 #include "Components/BrushComponent.h"
 #include "GameFramework/Character.h"
+#include "Player/CPlayer.h"
 
 ACSpawner::ACSpawner()
 {
@@ -101,7 +102,9 @@ void ACSpawner::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPr
 
 void ACSpawner::ActivateSpawner(class AActor* InOverlappedActor, class AActor* InOtherActor)
 {
-	if (GetWorld()->GetFirstPlayerController() == Cast<ACharacter>(InOtherActor)->GetController())
+	//if (InOtherActor->GetClass() == ACPlayer::StaticClass())
+		// 아래 코드 if 조건문 true, false 판단전에 InOtherActor Cast 하는 과정에서 InOtherActor가 Projectile이면 Controller가 없으므로 nullptr로 터짐
+		//if (GetWorld()->GetFirstPlayerController() == Cast<ACharacter>(InOtherActor)->GetController())
 		GetWorldTimerManager().SetTimer(SpawnerTimer, this, &ACSpawner::SpawnEnemy, SpawnDelaySecond, true);
 }
 

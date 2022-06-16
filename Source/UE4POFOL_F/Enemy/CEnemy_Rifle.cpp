@@ -4,7 +4,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Component/CCharacterComponent.h"
 #include "Weapon/CProjectile.h"
-#include "StaticObject/CSpline.h"
+#include "StaticObject/CTriggerVolume_Spawner.h"
 
 #define MaxSplineCount 5
 
@@ -47,14 +47,13 @@ void ACEnemy_Rifle::BeginPlay()
 {
 	Super::BeginPlay();
 
-
 	TArray<AActor*> outActorArr;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACSpline::StaticClass(), outActorArr);
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACTriggerVolume_Spawner::StaticClass(), outActorArr);
 
 	for (int i = 0; i < outActorArr.Num(); i++)
-		Splines.Add(dynamic_cast<ACSpline*>(outActorArr[i]));
+		TriggerVolumeSpanwer = dynamic_cast<ACTriggerVolume_Spawner*>(outActorArr[i]);
 
-	Index = UKismetMathLibrary::RandomInteger(MaxSplineCount);
+	//Index = UKismetMathLibrary::RandomInteger(MaxSplineCount);
 } 
 
 void ACEnemy_Rifle::Tick(float DeltaTime)
@@ -91,6 +90,12 @@ void ACEnemy_Rifle::OnFire()
 	}
 }
 
+void ACEnemy_Rifle::GetMoveToLocation(FVector& OutLocation)
+{
+	if (TriggerVolumeSpanwer)
+		OutLocation = TriggerVolumeSpanwer->GetActorLocation();
+}
+
 void ACEnemy_Rifle::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	Super::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
@@ -109,6 +114,8 @@ void ACEnemy_Rifle::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
 	
 	CharacterComponent->SetCurrentStateType(EStateType::Damage);
 }
+
+
 
 
 

@@ -25,10 +25,13 @@ EBTNodeResult::Type UCBTTaskNode_FindPatrolLocation::ExecuteTask(UBehaviorTreeCo
 
 	FVector origin = OwnerComp.GetBlackboardComponent()->GetValueAsVector("SpawnLocation");
 	FNavLocation nextPatrol;
-	
-	if (navSystem->GetRandomPointInNavigableRadius(FVector::ZeroVector, 500.0f, nextPatrol))
+	FVector current = controllingPawn->GetActorLocation();
+
+	if (navSystem->GetRandomPointInNavigableRadius(current, 500.0f, nextPatrol))
 	{
-		OwnerComp.GetBlackboardComponent()->SetValueAsVector("PatrolLocation", nextPatrol.Location);
+		current = FVector(nextPatrol.Location.X, nextPatrol.Location.Y - 300.0f, nextPatrol.Location.Z);
+		
+		OwnerComp.GetBlackboardComponent()->SetValueAsVector("PatrolLocation", current);
 		
 		return EBTNodeResult::Succeeded;
 	}
