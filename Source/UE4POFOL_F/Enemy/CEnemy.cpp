@@ -43,6 +43,12 @@ void ACEnemy::BeginPlay()
 
 	if (GetMesh()->GetAnimInstance())
 		GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACEnemy::OnMontageEnded);
+
+	TArray<AActor*> outActorArr;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), outActorArr);
+
+	for (int i = 0; i < outActorArr.Num(); i++)
+		Opponent = dynamic_cast<ACPlayer*>(outActorArr[i]);
 	
 	OnStateTypeChange(EEnemyStateType::Idle);
 }
@@ -60,7 +66,7 @@ void ACEnemy::Tick(float DeltaTime)
 		directionToOpponent.Z = 0.0f;
 		FRotator targetRotation = FRotationMatrix::MakeFromX(directionToOpponent).Rotator();
 
-		SetActorRotation(FMath::RInterpTo(GetActorRotation(), targetRotation, GetWorld()->GetDeltaSeconds(), 5.0f));
+		SetActorRotation(FMath::RInterpTo(GetActorRotation(), targetRotation, DeltaTime, RotationSpeed));
 	}
 
 	UpdateHitNumbers();
@@ -116,12 +122,16 @@ void ACEnemy::Tick(float DeltaTime)
 
 float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
+	//TODO: 임시 나중에 Tag로 바꿀 예정 
+	if (EventInstigator != GetWorld()->GetFirstPlayerController())
+		return DamageAmount;
+
 	Damaged.DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	Damaged.DamageEvent = (FActionDamageEvent*)&DamageEvent; // EXPLAIN: 여기서 TakeDamage할 Character의 HitData가 할당됨
 	Damaged.EventInstigator = EventInstigator;
 	Damaged.DamageCauser = DamageCauser;
 
-	//TODO: 이렇게 해도 될 지 모르겠다.
+	//TODO: 이렇게 해도 될 지 모르겠다. 결과: 된다.
 	bDamage = true;
 
 	ShakeCamera(Damaged);
@@ -130,11 +140,6 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 	Damage();
 	// BUG: 컴포넌트 생성 후 리턴 값 수정해야된다.
 	return Damaged.DamageAmount;
-}
-
-void ACEnemy::DoAction()
-{
-
 }
 
 void ACEnemy::Damage()
@@ -149,7 +154,7 @@ void ACEnemy::Damage()
 	
 	if (!!Damaged.DamageEvent)
 	{
-		FDamageData* DamageData = Damaged.DamageEvent->DamageData;
+		FDamageData* damageData = Damaged.DamageEvent->DamageData;
 
 		//if (StateComponent->IsAttackSkillMode())
 		//{
@@ -166,21 +171,22 @@ void ACEnemy::Damage()
 		FTransform transform;
 		transform.SetLocation(GetActorLocation());
 		
-		LaunchCharacter(-direction * DamageData->Launch, true, false);
+		LaunchCharacter(-direction * damageData->Launch, true, false);
 
-		DamageData->PlayMontage(this);
-		DamageData->PlayEffect(GetWorld(), this);
-		DamageData->PlayHitStop(GetWorld());
-		DamageData->PlaySoundCue(GetWorld(), GetActorLocation());
+		damageData->PlayMontage(this);
+		damageData->PlayEffect(GetWorld(), this);
+		damageData->PlayHitStop(GetWorld());
+		damageData->PlaySoundCue(GetWorld(), GetActorLocation());
 
 		bDamage = false;
 	}
-
 }
 
 void ACEnemy::Dead()
 {
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	DestroyEnemy();
 }
 
 void ACEnemy::ShakeCamera(FDamaged damage)
@@ -254,12 +260,12 @@ void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool InInterrupted)
 	CharacterComponent->SetIsMontagePlaying(false);
 }
 
-void ACEnemy::EnemySpawn()
+void ACEnemy::SpawnEnemy()
 {
-
+	//TODO: 나중에 
 }
 
-void ACEnemy::EnemyDestroy()
+void ACEnemy::DestroyEnemy()
 {
 	Destroy();
 }

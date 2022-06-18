@@ -20,11 +20,11 @@ class UE4POFOL_F_API ACAIController : public AAIController
 	class ACEnemy* Enemy;
 	//UPROPERTY()
 	//class UAISenseConfig_Sight* Sight;
-
+	//
 	//UPROPERTY()
 	//class UBlackboardData* Blackboard;
-private:
-	FTimerHandle Timer;
+//private:
+	//FTimerHandle Timer;
 
 public:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "AIController Setting")

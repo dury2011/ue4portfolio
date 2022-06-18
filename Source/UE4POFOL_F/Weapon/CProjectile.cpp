@@ -60,6 +60,38 @@ ACProjectile* ACProjectile::SpawnProjectile(ACharacter* InSpawner, TSubclassOf<c
 		);
 }
 
+ACProjectile* ACProjectile::SpawnProjectile(ACharacter* InSpawner, TSubclassOf<class ACProjectile> InProjectileClass, FVector InSpawnLocation)
+{
+	FActorSpawnParameters params;
+	params.Owner = InSpawner;
+	params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	//ACProjectile* projectile = InSpawner->GetWorld()->SpawnActor<ACProjectile>
+	//(
+	//	InProjectileClass, 
+	//	InSpawner->GetMesh()->GetSocketLocation(InSpawnSocketName),
+	//	FRotator::ZeroRotator,
+	//	params
+	//);
+	//
+	//projectile->SetOwner(InSpawner);
+	//
+	//if (projectile)
+	//{
+	//	UCameraComponent* camera = Cast<UCameraComponent>(InSpawner->GetComponentByClass(UCameraComponent::StaticClass()));
+	//
+	//	projectile->SetActorRotation(camera->GetComponentRotation());
+	//	projectile->ShootProjectile(camera->GetForwardVector());
+	//}
+
+	return InSpawner->GetWorld()->SpawnActor<ACProjectile>
+		(
+			InProjectileClass,
+			InSpawnLocation,
+			FRotator::ZeroRotator,
+			params
+		);
+}
 
 
 void ACProjectile::ShootProjectile(const FVector& InDirection)

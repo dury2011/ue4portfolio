@@ -47,6 +47,7 @@ protected:
 
 public:
 	static ACProjectile* SpawnProjectile(ACharacter* InSpawner, TSubclassOf<class ACProjectile> InProjectileClass, FName InSpawnSocketName);
+	static ACProjectile* SpawnProjectile(ACharacter* InSpawner, TSubclassOf<class ACProjectile> InProjectileClass, FVector InSpawnLocation);
 
 	void ShootProjectile(const FVector& InDirection);
 

@@ -6,7 +6,7 @@
 #include "Weapon/CProjectile.h"
 #include "StaticObject/CTriggerVolume_Spawner.h"
 
-#define MaxSplineCount 5
+//#define MaxSplineCount 5
 
 ACEnemy_Rifle::ACEnemy_Rifle()
 {
@@ -69,9 +69,13 @@ void ACEnemy_Rifle::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 void ACEnemy_Rifle::SpawnAndShootProjectile()
 {
 	Projectile = ACProjectile::SpawnProjectile(this, CharacterComponent->GetProjectileClass(), FName("Muzzle_Front"));
-	Projectile->SetOwner(this);
-	Projectile->SetActorRotation(GetActorRotation());
-	Projectile->ShootProjectile(UKismetMathLibrary::GetDirectionUnitVector(GetMesh()->GetSocketLocation(FName("Muzzle_Front")), GetOpponent()->GetActorLocation()));
+	
+	if (Projectile)
+	{
+		Projectile->SetOwner(this);
+		Projectile->SetActorRotation(GetActorRotation());
+		Projectile->ShootProjectile(UKismetMathLibrary::GetDirectionUnitVector(GetMesh()->GetSocketLocation(FName("Muzzle_Front")), GetOpponent()->GetActorLocation()));
+	}
 }
 
 void ACEnemy_Rifle::OnFire()

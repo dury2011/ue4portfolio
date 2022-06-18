@@ -21,7 +21,7 @@ private:
 	UPROPERTY()
 	class ACTriggerVolume_Spawner* TriggerVolumeSpanwer;
 
-	int32 Index;
+	//int32 Index;
 
 public:
 	ACEnemy_Rifle();

@@ -26,6 +26,9 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnEnemyStateTypeChanged OnEnemyStateTypeChanged;
 
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
+	float RotationSpeed = 3.0f;
+	
 protected:	
 	UPROPERTY()
 	TSubclassOf<class UAnimInstance> AnimInstance;	
@@ -98,7 +101,6 @@ public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
 private:
-	void DoAction();
 	void Damage();
 	void Dead();
 
@@ -131,8 +133,8 @@ public:
 	//FORCEINLINE UBlackboardComponent* GetBlackboard() { return Blackboard; }
 	//FORCEINLINE void SetBlackboard(class UBlackboardComponent* InBlackboard) { Blackboard = InBlackboard; }
 
-	void EnemySpawn();
-	void EnemyDestroy();
+	void SpawnEnemy();
+	void DestroyEnemy();
 
 protected:
 	UFUNCTION()
@@ -151,7 +153,7 @@ public:
 	void OnStateTypeChange(EEnemyStateType InCurrentStateType);
 	
 	FORCEINLINE bool GetbDamage() { return bDamage; }
-	FORCEINLINE void SetOpponent(ACharacter* InOpponent) { Opponent = InOpponent; }
+	//FORCEINLINE void SetOpponent(ACharacter* InOpponent) { Opponent = InOpponent; }
 	FORCEINLINE ACharacter* GetOpponent() { return Opponent; }
 	FORCEINLINE UCCharacterComponent* GetCharacterComponent() { return CharacterComponent; }
 	FORCEINLINE EEnemyStateType GetCurrentEnemyStateType() { return CurrentStateType; }
