@@ -168,8 +168,8 @@ void ACPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	bUseControllerRotationYaw = false;
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+	//bUseControllerRotationYaw = false;
+	//GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	Zooming = SpringArmComponent->TargetArmLength;
 

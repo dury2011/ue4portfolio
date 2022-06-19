@@ -156,5 +156,6 @@ public:
 	//FORCEINLINE void SetOpponent(ACharacter* InOpponent) { Opponent = InOpponent; }
 	FORCEINLINE ACharacter* GetOpponent() { return Opponent; }
 	FORCEINLINE UCCharacterComponent* GetCharacterComponent() { return CharacterComponent; }
+	FORCEINLINE void SetCurrentEnemyStateType(EEnemyStateType InType) { CurrentStateType = InType; }
 	FORCEINLINE EEnemyStateType GetCurrentEnemyStateType() { return CurrentStateType; }
 };

@@ -42,20 +42,35 @@ void ACAIController::BeginPlay()
 	//Perception->OnPerceptionUpdated.AddDynamic(this, &ACAIController::OnPerceptionUpdated);
 }
 
+void ACAIController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	
+	if (Enemy)
+	{
+		if (Enemy->GetOpponent())
+			Blackboard->SetValueAsObject("Player", Enemy->GetOpponent());
+	}
+}
+
 void ACAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	
 	//GetWorld()->GetTimerManager().SetTimer(Timer, this, &ACAIController::OnRepeatTimer, 2.0f, true);
+	Enemy = Cast<ACEnemy>(InPawn);
 
 	if (BehaviorTree)
 	{
+		
 		if(UseBlackboard(BehaviorTree->BlackboardAsset, Blackboard))
 			RunBehaviorTree(BehaviorTree);
 
 		Blackboard->SetValueAsVector("SpawnLocation", InPawn->GetActorLocation());
-	}
 
+		if (Enemy->GetOpponent())
+			Blackboard->SetValueAsObject("Player", Enemy->GetOpponent());
+	}
 	//TODO: 아래 코드 주석 건너뛰는 부분 전까지, Spawn되는 Actor에서는 동작을 하는데 Play전에 Viewport에 Placed된 Actor에서는 동작을 안 함
 	//TArray<AActor*> outActorArr;
 	//UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), outActorArr);
@@ -68,6 +83,8 @@ void ACAIController::OnPossess(APawn* InPawn)
 	//	Enemy = Cast<ACEnemy>(InPawn);
 	//	Enemy->SetOpponent(dynamic_cast<ACharacter*>(Player));
 	//}
+
+	
 	
 	////InPawn을 Enemy로 cast 
 	////Enemy의 TeamId 설정

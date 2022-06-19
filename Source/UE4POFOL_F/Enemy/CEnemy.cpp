@@ -26,6 +26,7 @@ ACEnemy::ACEnemy()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	RootComponent = GetCapsuleComponent();
+	
 }
 
 void ACEnemy::BeginPlay()
@@ -44,13 +45,14 @@ void ACEnemy::BeginPlay()
 	if (GetMesh()->GetAnimInstance())
 		GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACEnemy::OnMontageEnded);
 
+	
+	OnStateTypeChange(EEnemyStateType::Idle);
+	
 	TArray<AActor*> outActorArr;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), outActorArr);
 
 	for (int i = 0; i < outActorArr.Num(); i++)
 		Opponent = dynamic_cast<ACPlayer*>(outActorArr[i]);
-	
-	OnStateTypeChange(EEnemyStateType::Idle);
 }
 
 void ACEnemy::Tick(float DeltaTime)
