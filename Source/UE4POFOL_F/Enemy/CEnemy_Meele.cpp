@@ -47,6 +47,8 @@ void ACEnemy_Meele::SetupPlayerInputComponent(class UInputComponent* PlayerInput
 
 void ACEnemy_Meele::OnAttack()
 {
+	CheckTrue(bDamage);
+
 	CharacterComponent->SetIsMontagePlaying(true);
 
 	CharacterComponent->GetActionDatasOnehand(0).PlayMontage(this);

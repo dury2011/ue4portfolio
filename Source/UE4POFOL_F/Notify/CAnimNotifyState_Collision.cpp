@@ -4,6 +4,8 @@
 #include "Weapon/CWeapon.h"
 #include "Component/CBossComponent.h"
 #include "Boss/CDataAsset_Boss.h"
+#include "Enemy/CEnemy.h"
+#include "Component/CCharacterComponent.h"
 
 FString UCAnimNotifyState_Collision::GetNotifyName_Implementation() const
 {
@@ -19,12 +21,14 @@ void UCAnimNotifyState_Collision::NotifyBegin(USkeletalMeshComponent * MeshComp,
 
 	//UCWeaponComponent* weaponComponent = CHelpers::GetComponent<UCWeaponComponent>(MeshComp->GetOwner());
 	UCBossComponent* bossComponent = CHelpers::GetComponent<UCBossComponent>(MeshComp->GetOwner());
+	UCCharacterComponent* characterComponent = CHelpers::GetComponent<UCCharacterComponent>(MeshComp->GetOwner());
 
 	//if (weaponComponent)
 		//weaponComponent->GetWeapon()->OnCollision();
 	if (bossComponent)
 		bossComponent->GetDataAsset()->GetWeapon()->OnCollision();
-
+	else if (characterComponent)
+		characterComponent->GetNormalWeapon(EWeaponType::Onehand)->OnCollision();
 }
 
 void UCAnimNotifyState_Collision::NotifyEnd(USkeletalMeshComponent * MeshComp, UAnimSequenceBase * Animation)
@@ -36,12 +40,14 @@ void UCAnimNotifyState_Collision::NotifyEnd(USkeletalMeshComponent * MeshComp, U
 
 	//UCWeaponComponent* weaponComponent = CHelpers::GetComponent<UCWeaponComponent>(MeshComp->GetOwner());
 	UCBossComponent* bossComponent = CHelpers::GetComponent<UCBossComponent>(MeshComp->GetOwner());
+	UCCharacterComponent* characterComponent = CHelpers::GetComponent<UCCharacterComponent>(MeshComp->GetOwner());
 
 	//if (!!weaponComponent)
 		//if(!!weaponComponent->GetWeapon())
 			//weaponComponent->GetWeapon()->OffCollision();
 	
-	if (!!bossComponent)
-		if(!!bossComponent->GetDataAsset()->GetWeapon())
-			bossComponent->GetDataAsset()->GetWeapon()->OffCollision();
+	if (bossComponent)
+		bossComponent->GetDataAsset()->GetWeapon()->OffCollision();
+	else if (characterComponent)
+		characterComponent->GetNormalWeapon(EWeaponType::Onehand)->OffCollision();
 }

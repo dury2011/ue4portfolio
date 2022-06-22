@@ -1,10 +1,8 @@
 #include "Notify/CAnimNotify_LaunchUp.h"
 #include "Global.h"
-
 #include "Kismet/KismetSystemLibrary.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
-//#include "Component/CSkillComponent.h"
 
 
 FString UCAnimNotify_LaunchUp::GetNotifyName_Implementation() const

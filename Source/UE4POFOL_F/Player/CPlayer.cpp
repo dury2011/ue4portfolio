@@ -40,8 +40,8 @@ ACPlayer::ACPlayer()
 		USkeletalMesh* mesh;
 		CHelpers::GetAsset<USkeletalMesh>(&mesh, "SkeletalMesh'/Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon.Gideon'");
 		GetMesh()->SetSkeletalMesh(mesh);
-		GetMesh()->SetRelativeLocation(FVector(0, 0, -90));
-		GetMesh()->SetRelativeRotation(FRotator(0, -90, 0));
+		GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -100.0f));
+		GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
 
 		GetMesh()->SetupAttachment(GetCapsuleComponent());
 	}
@@ -73,8 +73,8 @@ ACPlayer::ACPlayer()
 	}
 
 	{
-		CHelpers::GetClass<UAnimInstance>(&AnimInstance, "AnimBlueprint'/Game/FORUE4POFOL/Player/ABP_CPlayer'");
-		GetMesh()->SetAnimInstanceClass(AnimInstance);
+		//CHelpers::GetClass<UAnimInstance>(&AnimInstance, "AnimBlueprint'/Game/FORUE4POFOL/Player/ABP_CPlayer'");
+		//GetMesh()->SetAnimInstanceClass(AnimInstance);
 	}
 
 	//{
@@ -286,9 +286,7 @@ void ACPlayer::OnVerticalLook(float AxisValue)
 }
 
 void ACPlayer::OnHorizontalLook(float AxisValue)
-{
-	
-	
+{	
 	AddControllerYawInput(AxisValue);
 }
 
@@ -312,8 +310,6 @@ void ACPlayer::InZooming(float Infloat)
 void ACPlayer::OnJump()
 {
 	CharacterComponent->SetCurrentStateType(EStateType::Move);
-
-	//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
 
 	Jump();
 }
@@ -396,7 +392,7 @@ void ACPlayer::OnDash()
 	//CheckTrue(bDashing);
 	//
 	//StateComponent->SetParkourMode();
-
+	//
 	//if (ParkourComponent->IsJumpMode())
 	//{	
 	//	//CheckFalse(//WeaponComponent->IsOnehandMode());
@@ -420,16 +416,16 @@ void ACPlayer::OnDash()
 	//	//	latentInfo
 	//	//);
 	//	
-
+	//
 	//	bDashing = true;
-
+	//
 	//	return;
 	//}
-
+	//
 	//bDashing = true;
-
+	//
 	////WeaponComponent->GetWeaponData(0)->GetDoActionData(4).PlayMontage(this);
-
+	//
 	//GetCharacterMovement()->MaxWalkSpeed = DashSpeed;
 	//GetCharacterMovement()->MaxAcceleration = 4096.0f;
 }
@@ -445,7 +441,7 @@ void ACPlayer::OffDash()
 void ACPlayer::OnParkour()
 {
 	//CheckTrue(//WeaponComponent->IsRifleMode());
-	
+	//
 	//ParkourComponent->DoParkour();
 }
 
@@ -460,6 +456,14 @@ void ACPlayer::OnAction()
 
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
+		bCanCombo = true;
+		
+		if (Index >= 3)
+			Index = 0;
+		
+		CharacterComponent->GetActionDatasOnehand(Index).PlayMontage(this);
+
+		GLog->Log("ACPlayer::OnAction() OnehandAttack");
 	}
 	
 	else if (CharacterComponent->GetIsWeaponSpellMode())
@@ -468,7 +472,6 @@ void ACPlayer::OnAction()
 
 		GLog->Log("ACPlayer::OnAction() SpellAttack");
 	}
-
 }
 
 void ACPlayer::OnCriticalOne()
@@ -623,6 +626,8 @@ void ACPlayer::SetPlayerPortalLocation()
 	
 	FVector portalLocation = PortalCrosshair->GetHitResult().ImpactPoint;
 	
+	CurrentCameraEffectType = ECameraEffectType::Teleport;
+
 	SpawnCameraEffect();
 
 	SetActorLocation(FVector(portalLocation.X + 20.0f, portalLocation.Y + 20.0f, portalLocation.Z + 150.0f));
@@ -711,23 +716,23 @@ void ACPlayer::OnOnehandSpell()
 
 void ACPlayer::OnShield()
 {
-	SpringArmComponent->TargetArmLength = 250.0f;
-	
-	GLog->Log("On Shield");
+	//SpringArmComponent->TargetArmLength = 250.0f;
+	//
+	//GLog->Log("On Shield");
 }
 
 void ACPlayer::ShieldDefencing()
 {
-	//PlayAnimMontage(BlockAnimMontage, 0.8f);
-
-	if (OnPlayerActiveBlock.IsBound())
-	{
-		OnPlayerActiveBlock.Broadcast(true);
-		
-		LaunchCharacter(GetActorForwardVector() * -1000.0f, false, false);
-
-		GLog->Log("My(Player) ShieldDefencing Successed!");
-	}
+	////PlayAnimMontage(BlockAnimMontage, 0.8f);
+	//
+	//if (OnPlayerActiveBlock.IsBound())
+	//{
+	//	OnPlayerActiveBlock.Broadcast(true);
+	//	
+	//	LaunchCharacter(GetActorForwardVector() * -1000.0f, false, false);
+	//
+	//	GLog->Log("My(Player) ShieldDefencing Successed!");
+	//}
 }
 
 void ACPlayer::OffShield()
@@ -747,15 +752,15 @@ float ACPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& Damage
 	
 	CharacterComponent->SetHp(-Damaged.DamageAmount);
 
-	CharacterComponent->SetIsMontagePlaying(true);
+	CurrentCameraEffectType = ECameraEffectType::Damage;
+	//CharacterComponent->SetIsMontagePlaying(true);
+
+	SpawnCameraEffect();
 	
 	if (CharacterComponent->GetCurrentHp() <= 0.0f)
 	{
 		// TODO: Dead Montage BP에서 아직 할당 안했음 할 것
-		CharacterComponent->GetDamageData(2).PlayMontage(this);
-
-		if(CharacterComponent->GetIsMontagePlaying() == false)
-			Destroy();
+		//CharacterComponent->GetDamageData(1).PlayMontage(this);
 
 		GLog->Log("ACPlayer::TakeDamage() And Dead");
 
@@ -838,6 +843,9 @@ void ACPlayer::MontageEnded(UAnimMontage* InMontage, bool Ininterrupted)
 		CharacterComponent->SetbCanMove(true);
 	if (!CharacterComponent->GetbFixedCamera())
 		CharacterComponent->SetbFixedCamera(true);
+
+	bCanCombo = false;
+	Index = 0;
 
 	CharacterComponent->SetIsMontagePlaying(false);
 }

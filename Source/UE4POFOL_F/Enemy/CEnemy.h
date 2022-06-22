@@ -27,8 +27,9 @@ public:
 	FOnEnemyStateTypeChanged OnEnemyStateTypeChanged;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
-	float RotationSpeed = 3.0f;
 	
+	float RotationSpeed = 3.0f;
+
 protected:	
 	UPROPERTY()
 	TSubclassOf<class UAnimInstance> AnimInstance;	
@@ -41,6 +42,8 @@ protected:
 	TSubclassOf<class UMatineeCameraShake> CameraShakeClass;
 	
 	FOnEnemyMontageEnded OnEnemyMontageEnded;
+	
+	bool bDamage = false;
 
 private:
 	//// Player 형 변환을 위한 Character
@@ -85,8 +88,6 @@ private:
 		class AController* EventInstigator;
 		class AActor* DamageCauser;
 	} Damaged;
-
-	bool bDamage;
 
 public:
 	ACEnemy();

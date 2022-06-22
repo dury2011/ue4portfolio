@@ -176,12 +176,12 @@ void FDamageData::PlayMontage(ACharacter * InOwnerCharacter)
 	//if (!!stateComponent)
 	//	bCanMove ? stateComponent->SetMove() : stateComponent->SetStop();
 
-	//if (!!Montage)
-	//{
-	//	InOwnerCharacter->PlayAnimMontage(Montage, PlayRatio);
+	if (!!Montage)
+	{
+		InOwnerCharacter->PlayAnimMontage(Montage, PlayRatio);
 
-	//	return;
-	//}
+		return;
+	}
 
 	//InOwnerCharacter->PlayAnimMontage(UCWeaponStructure::GetDefaultHitMontage(), PlayRatio);
 }

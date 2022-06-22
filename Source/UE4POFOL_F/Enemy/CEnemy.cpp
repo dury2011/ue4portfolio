@@ -124,17 +124,17 @@ void ACEnemy::Tick(float DeltaTime)
 
 float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
+	bDamage = true;
 	//TODO: 임시 나중에 Tag로 바꿀 예정 
 	if (EventInstigator != GetWorld()->GetFirstPlayerController())
 		return DamageAmount;
 
 	Damaged.DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	Damaged.DamageEvent = (FActionDamageEvent*)&DamageEvent; // EXPLAIN: 여기서 TakeDamage할 Character의 HitData가 할당됨
+	//Damaged.DamageEvent = /* (FActionDamageEvent*)&DamageEvent; */ // EXPLAIN: 여기서 TakeDamage할 Character의 HitData가 할당됨
 	Damaged.EventInstigator = EventInstigator;
 	Damaged.DamageCauser = DamageCauser;
 
 	//TODO: 이렇게 해도 될 지 모르겠다. 결과: 된다.
-	bDamage = true;
 
 	ShakeCamera(Damaged);
 	ShowHitNumber(DamageAmount, this->GetActorLocation());
@@ -146,17 +146,33 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 
 void ACEnemy::Damage()
 {
+	CharacterComponent->SetHp(-Damaged.DamageAmount);
+	
 	ShowHealthBar();
 	
-	Damaged.DamageAmount = 0.0f;
+	//Damaged.DamageAmount = 0.0f;
 	
 	FVector start = GetActorLocation();
 	FVector target = Damaged.EventInstigator->GetPawn()->GetActorLocation();
 	SetActorRotation(UKismetMathLibrary::FindLookAtRotation(start, target));
 	
-	if (!!Damaged.DamageEvent)
+	FVector direction = target - start;
+	direction.Normalize();
+
+	FTransform transform;
+	transform.SetLocation(GetActorLocation());
+
+	if (CharacterComponent->GetDamageData(0).Montage)
 	{
-		FDamageData* damageData = Damaged.DamageEvent->DamageData;
+		CharacterComponent->GetDamageData(0).PlayMontage(this);
+		LaunchCharacter(-direction * CharacterComponent->GetDamageData(0).Launch, true, false);
+	}
+	
+	bDamage = false;
+
+	//if (!!Damaged.DamageEvent)
+	//{
+		//FDamageData* damageData = Damaged.DamageEvent->DamageData;
 
 		//if (StateComponent->IsAttackSkillMode())
 		//{
@@ -166,22 +182,22 @@ void ACEnemy::Damage()
 		//
 		//	return;
 		//}
-		
-		FVector direction = target - start;
-		direction.Normalize();
-		
-		FTransform transform;
-		transform.SetLocation(GetActorLocation());
-		
-		LaunchCharacter(-direction * damageData->Launch, true, false);
-
-		damageData->PlayMontage(this);
-		damageData->PlayEffect(GetWorld(), this);
-		damageData->PlayHitStop(GetWorld());
-		damageData->PlaySoundCue(GetWorld(), GetActorLocation());
-
-		bDamage = false;
-	}
+		//
+		//FVector direction = target - start;
+		//direction.Normalize();
+		//
+		//FTransform transform;
+		//transform.SetLocation(GetActorLocation());
+		//
+		//LaunchCharacter(-direction * damageData->Launch, true, false);
+		//
+		//damageData->PlayMontage(this);
+		//damageData->PlayEffect(GetWorld(), this);
+		//damageData->PlayHitStop(GetWorld());
+		//damageData->PlaySoundCue(GetWorld(), GetActorLocation());
+		//
+		//bDamage = false;
+	//}
 }
 
 void ACEnemy::Dead()

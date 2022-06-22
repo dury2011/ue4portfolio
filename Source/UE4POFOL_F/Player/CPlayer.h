@@ -14,6 +14,12 @@
 #include "Components/TimelineComponent.h"
 #include "CPlayer.generated.h"
 
+UENUM(BlueprintType)
+enum class ECameraEffectType : uint8
+{
+	Damage, LowHp, Teleport, Max
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerCollision);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnPlayerOverlap, class ACharacter*, InAttacker, class AActor*, InAttackCauser, class ACharacter*, InOtherCharacter);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerActiveBlock, bool, IsBlocked);
@@ -61,6 +67,9 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bPortalTeleporting = false;
+
+	UPROPERTY(BlueprintReadOnly)
+	ECameraEffectType CurrentCameraEffectType;
 
 private:
 	struct FDamaged
@@ -152,6 +161,7 @@ private:
 	FTimerHandle ComboCountTimer;
 	float Zooming;
 	float ZoomInterpSpeed = 2.0f;
+	int32 Index = 0;
 	bool bAiming = false;
 	bool bCanCritical = false;;
 	bool bEquipping = false;
@@ -160,6 +170,8 @@ private:
 	bool bDashing = false;
 	bool bJumping = false;
 	bool bOnCriticalReady = false;
+
+	bool bCanCombo = false;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class ACProjectile> SpellThrowProjectileClass;
@@ -285,5 +297,9 @@ public:
 private:
 	FVector CalculateMeshSocketToVectorLocation(FName InSocketName, FVector InDirectionTo);
 
+public:
 	FORCEINLINE bool GetbAiming() { return bAiming; }
+	FORCEINLINE void SetbCanCombo(bool Inbool) { bCanCombo = Inbool; }
+	FORCEINLINE bool GetbCanCombo() { return bCanCombo; }
+	FORCEINLINE void SetIncreaseIndex() { Index++; }
 };
