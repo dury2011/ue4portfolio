@@ -55,11 +55,24 @@ public:
 	FWeaponHit OnWeaponHit;
 
 private:
-	UPROPERTY(EditAnywhere)
-	float Damage;
-
 	UPROPERTY(VisibleDefaultsOnly)
 	class USceneComponent* Root;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Setting")
+	int32 PureDamage = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Setting")
+	float CriticalPercentage = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Setting")
+	int32 CriticalDamage = 0.0f;
+
+	/* Add 0~RandomDeviation To Apply Damage */
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Setting")
+	int32 RandomDeviation = 0.0f;
+
+	UPROPERTY(VisibleDefaultsOnly, Category = "Weapon Setting")
+	int32 ApplyDamage = 0.0;
 
 	FTimerHandle ComboCountTimer;
 

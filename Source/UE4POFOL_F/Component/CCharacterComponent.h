@@ -200,6 +200,15 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE float GetCurrentSp() { if (Sp <= 0.0f) return Sp = 0.0f; else return Sp; }
 	
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE float GetCurrentHpPercentage() { return (Hp / MaxHp) * 100.0f; }
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE float GetCurrentMpPercentage() { return (Mp / MaxMp) * 100.0f; }
+	
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE float GetCurrentSpPercentage() { return (Sp / MaxSp) * 100.0f; }
+	
 	FORCEINLINE bool GetIsStateIdleMode() { return CurrentStateType == EStateType::Idle; }
 	FORCEINLINE bool GetIsStateMoveMode() { return CurrentStateType == EStateType::Move; }
 	FORCEINLINE bool GetIsStateAttackMode() { return CurrentStateType == EStateType::Attack; }
@@ -215,5 +224,7 @@ public:
 
 	FORCEINLINE bool GetbFixedCamera() { return bFixedCamera; }
 	FORCEINLINE void SetbFixedCamera(bool Inbool) { bFixedCamera = Inbool; }
+
+
 
 };

@@ -34,7 +34,7 @@ protected:
 	UPROPERTY()
 	TSubclassOf<class UAnimInstance> AnimInstance;	
 
-	UPROPERTY(VisibleDefaultsOnly)
+	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
 	class UCCharacterComponent* CharacterComponent;
 	//class ACAIController* PossessedController;	
 	
@@ -124,6 +124,9 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void HideHealthBar();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ActivateDissolve();
 
 public:
 	UFUNCTION(BlueprintImplementableEvent)

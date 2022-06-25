@@ -11,7 +11,6 @@
 #include "Component/CCharacterComponent.h"
 
 ACWeapon::ACWeapon()
-	: Damage (20.0f)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	CHelpers::CreateComponent<USceneComponent>(this, &Root, "Root");
@@ -120,11 +119,23 @@ void ACWeapon::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 		//OverlappedActorCharacterComponent->GetDamageData(0).PlayMontage(Cast<ACharacter>(OtherActor));
 		// BUG: Apply Damage 여기 확인하기 
 	//}
-
-	// TODO: SendDamage, TakeDamage 연구하기
-	UGameplayStatics::ApplyDamage(OtherActor, 10.0f, OwnerCharacter->GetController(), this, NULL);
-
-	//DestroyWeapon();
+	
+	float percentage = UKismetMathLibrary::RandomFloatInRange(0.0f, 100.0f);
+	float randomDeviation = UKismetMathLibrary::RandomIntegerInRange(0,RandomDeviation);
+	int32 pureDamage = PureDamage;
+	int32 criticalDamage = CriticalDamage;
+	int32 applyDamage = ApplyDamage;
+	
+	if ((percentage / 100) <= CriticalPercentage)
+	{
+		pureDamage += CriticalDamage;
+		applyDamage = pureDamage + randomDeviation;
+	}
+	else
+		applyDamage = pureDamage + randomDeviation;
+	
+	/* TODO: 2번 째 인수 float BaseDamage는 0.f 이하이면 함수 몸체에서 도입에서 if 문으로 걸러져서 몸체 전체가 작동하지 않음 */
+	UGameplayStatics::ApplyDamage(OtherActor, applyDamage, OwnerCharacter->GetController(), this, NULL);
 
 	GLog->Log("ACWeapon::WeaponBeginOverlap()");
 	

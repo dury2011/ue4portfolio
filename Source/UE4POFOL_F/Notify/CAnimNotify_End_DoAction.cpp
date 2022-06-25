@@ -2,10 +2,11 @@
 #include "Global.h"
 //#include "Component/CWeaponComponent.h"
 #include "Weapon/CDoAction.h"
+#include "Player/CPlayer.h"
 
 FString UCAnimNotify_End_DoAction::GetNotifyName_Implementation() const
 {
-	return "End DoAction";
+	return "End This Action";
 }
 
 void UCAnimNotify_End_DoAction::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
@@ -14,7 +15,8 @@ void UCAnimNotify_End_DoAction::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
 	CheckNull(MeshComp);
 	CheckNull(MeshComp->GetOwner());
 
-	//UCWeaponComponent* weaponComponent = CHelpers::GetComponent<UCWeaponComponent>(MeshComp->GetOwner());
-	//if (!!weaponComponent)
-		//weaponComponent->GetDoAction()->End_DoAction();
+	ACPlayer* player = Cast<ACPlayer>(MeshComp->GetOwner());
+
+	if (player)
+		player->EndThisAction();
 }

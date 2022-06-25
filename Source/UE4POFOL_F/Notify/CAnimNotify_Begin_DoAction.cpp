@@ -2,11 +2,11 @@
 #include "CAnimNotify_Begin_DoAction.h"
 #include "Global.h"
 //#include "Component/CWeaponComponent.h"
-#include "Weapon/CDoAction.h"
+#include "Player/CPlayer.h"
 
 FString UCAnimNotify_Begin_DoAction::GetNotifyName_Implementation() const
 {
-	return "Begin DoAction";
+	return "Begin Next Action";
 }
 
 void UCAnimNotify_Begin_DoAction::Notify(USkeletalMeshComponent * MeshComp, UAnimSequenceBase * Animation)
@@ -15,8 +15,8 @@ void UCAnimNotify_Begin_DoAction::Notify(USkeletalMeshComponent * MeshComp, UAni
 	CheckNull(MeshComp);
 	CheckNull(MeshComp->GetOwner());
 
-	//UCWeaponComponent* weaponComponent = CHelpers::GetComponent<UCWeaponComponent>(MeshComp->GetOwner());
-	
-	//if (!!weaponComponent)
-		//weaponComponent->GetDoAction()->Begin_DoAction();
+	ACPlayer* player = Cast<ACPlayer>(MeshComp->GetOwner());
+
+	if (player)
+		player->BeginNextAction();
 }

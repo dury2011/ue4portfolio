@@ -59,6 +59,7 @@ void ACEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
+	CheckTrue(CharacterComponent->GetIsStateDeadMode());
 	//if(Blackboard)
 		//Opponent = Cast<ACharacter>(Blackboard->GetValueAsObject(FName("Player")));
 	
@@ -146,11 +147,11 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 
 void ACEnemy::Damage()
 {
+	CheckTrue(CharacterComponent->GetIsStateDeadMode());
+
 	CharacterComponent->SetHp(-Damaged.DamageAmount);
 	
 	ShowHealthBar();
-	
-	//Damaged.DamageAmount = 0.0f;
 	
 	FVector start = GetActorLocation();
 	FVector target = Damaged.EventInstigator->GetPawn()->GetActorLocation();
@@ -161,6 +162,26 @@ void ACEnemy::Damage()
 
 	FTransform transform;
 	transform.SetLocation(GetActorLocation());
+	
+	if (CharacterComponent->GetCurrentHp() <= 0.0f)
+	{
+		//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		
+		CharacterComponent->SetCurrentStateType(EStateType::Dead);
+		
+		CharacterComponent->SetIsMontagePlaying(true);
+
+		if (CharacterComponent->GetDamageData(1).Montage)
+		{
+			CharacterComponent->GetDamageData(1).PlayMontage(this);
+			LaunchCharacter(-direction * CharacterComponent->GetDamageData(1).Launch, true, false);
+			ActivateDissolve();
+		}
+
+		bDamage = false;
+
+		return;
+	}
 
 	if (CharacterComponent->GetDamageData(0).Montage)
 	{
@@ -173,7 +194,7 @@ void ACEnemy::Damage()
 	//if (!!Damaged.DamageEvent)
 	//{
 		//FDamageData* damageData = Damaged.DamageEvent->DamageData;
-
+		//
 		//if (StateComponent->IsAttackSkillMode())
 		//{
 		//	hitData->PlayMontage(this);

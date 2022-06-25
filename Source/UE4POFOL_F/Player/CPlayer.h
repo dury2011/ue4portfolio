@@ -170,8 +170,10 @@ private:
 	bool bDashing = false;
 	bool bJumping = false;
 	bool bOnCriticalReady = false;
-
+	bool bCanNextAction;
+	bool bAttacking = false;
 	bool bCanCombo = false;
+
 
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class ACProjectile> SpellThrowProjectileClass;
@@ -235,8 +237,8 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void PlaySpellPortalOffAimSound();
 
-	void BeginAction();
-	void EndAction();
+	void BeginNextAction();
+	void EndThisAction();
 
 private:
 	void OnOnehand();

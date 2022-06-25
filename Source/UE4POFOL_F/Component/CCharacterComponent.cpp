@@ -15,6 +15,10 @@ UCCharacterComponent::UCCharacterComponent()
 void UCCharacterComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	Hp = MaxHp;
+	Mp = MaxMp;
+	Sp = MaxSp;
 	
 	OwnerCharacter = Cast<ACharacter>(GetOwner());
 

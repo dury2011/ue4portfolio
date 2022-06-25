@@ -251,6 +251,7 @@ void ACPlayer::OnMoveForward(float AxisValue)
 	//	return;
 	//}
 	CheckFalse(CharacterComponent->GetbCanMove());
+	CheckTrue(bAttacking);
 
 	CharacterComponent->SetCurrentStateType(EStateType::Move);
 
@@ -271,6 +272,7 @@ void ACPlayer::OnMoveRight(float AxisValue)
 	//	return;
 	//}
 	CheckFalse(CharacterComponent->GetbCanMove());
+	CheckTrue(bAttacking);
 
 	CharacterComponent->SetCurrentStateType(EStateType::Move);
 
@@ -309,6 +311,9 @@ void ACPlayer::InZooming(float Infloat)
 
 void ACPlayer::OnJump()
 {
+	CheckFalse(CharacterComponent->GetbCanMove());
+	CheckTrue(bAttacking);
+	
 	CharacterComponent->SetCurrentStateType(EStateType::Move);
 
 	Jump();
@@ -447,27 +452,48 @@ void ACPlayer::OnParkour()
 
 void ACPlayer::OnAction()
 {
-	CheckTrue(CharacterComponent->GetIsMontagePlaying());
 	CheckTrue(CharacterComponent->GetIsWeaponUnarmedMode());
 	CheckTrue(bAiming);
 
-	CharacterComponent->SetIsMontagePlaying(true);
-	CharacterComponent->SetCurrentStateType(EStateType::Attack);
-
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
-		bCanCombo = true;
+		if (GetMovementComponent()->IsFalling())
+		{
+			//bAttacking = true;
+
+			CharacterComponent->GetActionDatasOnehand(3).PlayMontage(this);
+
+			return;
+		}
 		
 		if (Index >= 3)
 			Index = 0;
 		
-		CharacterComponent->GetActionDatasOnehand(Index).PlayMontage(this);
+		if (bCanCombo)
+		{
+			bCanNextAction = true;
+			bCanCombo = false;
 
-		GLog->Log("ACPlayer::OnAction() OnehandAttack");
-	}
-	
+			return;
+		}
+
+		if (!bAttacking)
+		{
+			//CharacterComponent->SetIsMontagePlaying(true);
+			//CharacterComponent->SetCurrentStateType(EStateType::Attack);
+			/* BUG: 클래스 데이터 멤버 불 변수로 바꾸니까 잘 작동을 한다. 
+			 * 아마도 시간 복잡도? 뭐 그런 문제 때문에 이 부분에 들어오면 안됬는데 들어와버렸던 것 같다.
+			 * 1번 째 공격도 가끔씩 클릭 할 때마다 다시 시작하는 것으로 인해 확신하여 수정하였다. */
+			bAttacking = true;
+			CharacterComponent->GetActionDatasOnehand(Index).PlayMontage(this);
+			GLog->Log("ACPlayer::OnAction() OnehandAttack");
+		}
+
+	}	
 	else if (CharacterComponent->GetIsWeaponSpellMode())
 	{
+		CharacterComponent->SetIsMontagePlaying(true);
+		//CharacterComponent->SetCurrentStateType(EStateType::Attack);		
 		CharacterComponent->GetActionDatasSpell((int32)FMath::RandRange(0, 1)).PlayMontage(this);
 
 		GLog->Log("ACPlayer::OnAction() SpellAttack");
@@ -633,14 +659,24 @@ void ACPlayer::SetPlayerPortalLocation()
 	SetActorLocation(FVector(portalLocation.X + 20.0f, portalLocation.Y + 20.0f, portalLocation.Z + 150.0f));
 }
 
-void ACPlayer::BeginAction()
+void ACPlayer::BeginNextAction()
 {
+	if (bCanNextAction)
+	{
+		bCanNextAction = false;
 
+		Index++;
+
+		CharacterComponent->GetActionDatasOnehand(Index).PlayMontage(this);
+	}
 }
 
-void ACPlayer::EndAction()
+void ACPlayer::EndThisAction()
 {
-
+	Index = 0;
+	bCanCombo = false;
+	bCanNextAction = false;
+	bAttacking = false;
 }
 
 void ACPlayer::OnOnehand()
@@ -744,6 +780,8 @@ void ACPlayer::OffShield()
 
 float ACPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
+	CharacterComponent->SetCurrentStateType(EStateType::Damage);
+	
 	Damaged.DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser); // damage float
 	//Damaged.DamageEvent = (FActionDamageEvent*)&DamageEvent;  // Hit 에니메이션 몽타주
 	Damaged.EventInstigator = EventInstigator; // Player 이므로 Enemy controller
@@ -767,7 +805,7 @@ float ACPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& Damage
 		return Damaged.DamageAmount;
 	}
 	
-	CharacterComponent->GetDamageData(0).PlayMontage(this);
+	//CharacterComponent->GetDamageData(0).PlayMontage(this);
 
 	GLog->Log("ACPlayer::TakeDamage()");
 
@@ -844,8 +882,10 @@ void ACPlayer::MontageEnded(UAnimMontage* InMontage, bool Ininterrupted)
 	if (!CharacterComponent->GetbFixedCamera())
 		CharacterComponent->SetbFixedCamera(true);
 
-	bCanCombo = false;
-	Index = 0;
+	//if (bAttacking)
+		//bAttacking = false;
+	//bCanCombo = false;
+	//Index = 0;
 
 	CharacterComponent->SetIsMontagePlaying(false);
 }
