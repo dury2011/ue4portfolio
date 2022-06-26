@@ -27,7 +27,7 @@ ACEnemy_Meele::ACEnemy_Meele()
 
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
-	CharacterComponent = CreateDefaultSubobject<UCCharacterComponent>("Character Component");
+	//CharacterComponent = CreateDefaultSubobject<UCCharacterComponent>("Character Component");
 }
 
 void ACEnemy_Meele::BeginPlay()

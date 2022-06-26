@@ -22,7 +22,7 @@ ACEnemy_Helix::ACEnemy_Helix()
 		GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
 	}
 
-	ConstructorHelpers::FClassFinder<UAnimInstance> animInstance(*FString("AnimBlueprint'/Game/FORUE4POFOL/Enemy/Blueprint/ABP_Enemy_Helix.ABP_Enemy_Helix_C'"));
+	ConstructorHelpers::FClassFinder<UAnimInstance> animInstance(*FString("AnimBlueprint'/Game/FORUE4POFOL/Enemy/Enemy_Helix/Blueprint/ABP_Enemy_Helix.ABP_Enemy_Helix_C'"));
 
 	if (animInstance.Succeeded())
 	{
@@ -35,7 +35,7 @@ ACEnemy_Helix::ACEnemy_Helix()
 	if (assetClass.Succeeded())
 		ProjectileClass = assetClass.Class;
 	
-	CharacterComponent = CreateDefaultSubobject<UCCharacterComponent>("CharacterComponent");
+	//CharacterComponent = CreateDefaultSubobject<UCCharacterComponent>("CharacterComponent");
 	CharacterComponent->SetCurrentStateType(EStateType::Idle);
 }
 

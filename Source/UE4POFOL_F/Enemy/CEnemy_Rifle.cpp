@@ -24,7 +24,7 @@ ACEnemy_Rifle::ACEnemy_Rifle()
 		GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
 	}
 
-	ConstructorHelpers::FClassFinder<UAnimInstance> animInstance(*FString("AnimBlueprint'/Game/FORUE4POFOL/Enemy/Blueprint/ABP_CEnemy_Rifle.ABP_CEnemy_Rifle_C'"));
+	ConstructorHelpers::FClassFinder<UAnimInstance> animInstance(*FString("AnimBlueprint'/Game/FORUE4POFOL/Enemy/Enemy_Rifle/ABP_CEnemy_Rifle.ABP_CEnemy_Rifle_C'"));
 
 	if (animInstance.Succeeded())
 	{
@@ -39,7 +39,7 @@ ACEnemy_Rifle::ACEnemy_Rifle()
 	
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
-	CharacterComponent = CreateDefaultSubobject<UCCharacterComponent>("CharacterComponent");
+	//CharacterComponent = CreateDefaultSubobject<UCCharacterComponent>("CharacterComponent");
 	CharacterComponent->SetCurrentStateType(EStateType::Idle);
 }
 

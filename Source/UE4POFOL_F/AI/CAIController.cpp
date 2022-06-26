@@ -55,8 +55,6 @@ void ACAIController::Tick(float DeltaTime)
 		if (Enemy->GetCharacterComponent()->GetIsStateDeadMode())
 			StopMovement();
 	}
-
-	
 }
 
 void ACAIController::OnPossess(APawn* InPawn)

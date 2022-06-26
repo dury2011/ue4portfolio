@@ -34,7 +34,7 @@ protected:
 	UPROPERTY()
 	TSubclassOf<class UAnimInstance> AnimInstance;	
 
-	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
 	class UCCharacterComponent* CharacterComponent;
 	//class ACAIController* PossessedController;	
 	
@@ -44,6 +44,7 @@ protected:
 	FOnEnemyMontageEnded OnEnemyMontageEnded;
 	
 	bool bDamage = false;
+	bool bActivateRotateToOpponent = true;
 
 private:
 	//// Player 형 변환을 위한 Character

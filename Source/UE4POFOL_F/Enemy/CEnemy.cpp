@@ -26,7 +26,8 @@ ACEnemy::ACEnemy()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	RootComponent = GetCapsuleComponent();
-	
+
+	CharacterComponent = CreateDefaultSubobject<UCCharacterComponent>(FName("CCharacter Component"));
 }
 
 void ACEnemy::BeginPlay()
@@ -63,7 +64,7 @@ void ACEnemy::Tick(float DeltaTime)
 	//if(Blackboard)
 		//Opponent = Cast<ACharacter>(Blackboard->GetValueAsObject(FName("Player")));
 	
-	if (Opponent)
+	if (Opponent && bActivateRotateToOpponent)
 	{
 		FVector directionToOpponent = Opponent->GetActorLocation() - GetActorLocation();
 		directionToOpponent.Z = 0.0f;
@@ -155,11 +156,10 @@ void ACEnemy::Damage()
 	
 	FVector start = GetActorLocation();
 	FVector target = Damaged.EventInstigator->GetPawn()->GetActorLocation();
-	SetActorRotation(UKismetMathLibrary::FindLookAtRotation(start, target));
 	
 	FVector direction = target - start;
 	direction.Normalize();
-
+	
 	FTransform transform;
 	transform.SetLocation(GetActorLocation());
 	
@@ -173,8 +173,10 @@ void ACEnemy::Damage()
 
 		if (CharacterComponent->GetDamageData(1).Montage)
 		{
+			SetActorRotation(FRotator(direction.Rotation().Pitch, direction.Rotation().Yaw - 90.0f, direction.Rotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
+			//LaunchCharacter(-direction * CharacterComponent->GetDamageData(1).Launch, true, false);
 			CharacterComponent->GetDamageData(1).PlayMontage(this);
-			LaunchCharacter(-direction * CharacterComponent->GetDamageData(1).Launch, true, false);
+			
 			ActivateDissolve();
 		}
 

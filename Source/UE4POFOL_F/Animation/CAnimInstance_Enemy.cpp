@@ -20,14 +20,40 @@ void UCAnimInstance_Enemy::NativeBeginPlay()
 void UCAnimInstance_Enemy::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
+	
 
 	CheckNull(Enemy);
 	
 	Speed = Enemy->GetVelocity().Size2D();
 	Direction = CalculateDirection(Enemy->GetVelocity(), Enemy->GetControlRotation());
-	Pitch = Enemy->GetBaseAimRotation().Pitch;
+	Pitch = (Enemy->GetOpponent()->GetActorLocation() - Enemy->GetActorLocation()).Rotation().Pitch;
+	Yaw = (Enemy->GetOpponent()->GetActorLocation() - Enemy->GetActorLocation()).Rotation().Yaw;
 	bFalling = Enemy->GetCharacterMovement()->IsFalling();
 	bDamage = Enemy->GetbDamage();
+	
+	if (Yaw >= -61.0f && Yaw <= 61.0f)
+		bCanRotate = false;
+
+	if (bCanRotate)
+	{
+		if (Yaw < -60.0f)
+		{
+			FRotator currentEnemyRotation = Enemy->GetActorRotation();
+			FRotator targetEnemyRotation = FRotator(currentEnemyRotation.Pitch, currentEnemyRotation.Yaw -90.0f, currentEnemyRotation.Roll);
+			Enemy->SetActorRotation(FMath::RInterpTo(currentEnemyRotation, targetEnemyRotation, DeltaSeconds, 5.0f));
+
+			bCanRotate = false;
+		}
+		else if (Yaw > 60.0f)
+		{
+			FRotator currentEnemyRotation = Enemy->GetActorRotation();
+			FRotator targetEnemyRotation = FRotator(currentEnemyRotation.Pitch, currentEnemyRotation.Yaw + 90.0f, currentEnemyRotation.Roll);
+			Enemy->SetActorRotation(FMath::RInterpTo(currentEnemyRotation, targetEnemyRotation, DeltaSeconds, 5.0f));
+
+			bCanRotate = true;
+		}
+	}
+	//Pitch = Enemy->GetBaseAimRotation().Pitch;
 	//UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Enemy_BossFriend"), ActorsTagEnemyBossFriend);
 	//for (AActor* actor : ActorsTagEnemyBossFriend)
 	//{

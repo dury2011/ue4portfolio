@@ -15,14 +15,17 @@ class UE4POFOL_F_API UCAnimInstance_Enemy : public UAnimInstance
 public:
 
 protected:
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character Movement")
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Chracter State")
 	float Speed;
 
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character Movement")
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Chracter State")
 	float Direction;
 
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character Movement")
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Chracter State")
 	float Pitch;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Chracter State")
+	float Yaw;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Chracter State")
 	bool bFalling;
@@ -35,6 +38,10 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly)
 	EEnemyStateType PreviousEnemyStateType;
+
+	bool bCanRotate;
+	float TargetYawLeft = -61.0f;
+	float TargetYawRight = 61.0f;
 
 private:
 	UPROPERTY()
