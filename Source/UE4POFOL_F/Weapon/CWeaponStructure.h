@@ -68,12 +68,12 @@ public:
 	UPROPERTY(EditAnywhere)
 	float StopTime;
 
-	//UPROPERTY(EditAnywhere)
-	//class UFXSystemAsset* Effect;
-	//
+	UPROPERTY(EditAnywhere)
+	class UFXSystemAsset* Effect;
+	
 	//UPROPERTY(EditAnywhere)
 	//FTransform EffectTransform;
-	//
+	
 	//UPROPERTY(EditAnywhere)
 	//class USoundCue* SoundCue;
 public:

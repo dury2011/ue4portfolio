@@ -28,7 +28,13 @@ void UCAnimNotifyState_Collision::NotifyBegin(USkeletalMeshComponent * MeshComp,
 	if (bossComponent)
 		bossComponent->GetDataAsset()->GetWeapon()->OnCollision();
 	else if (characterComponent)
-		characterComponent->GetNormalWeapon(EWeaponType::Onehand)->OnCollision();
+	{
+		if(characterComponent->GetNormalWeapon(EWeaponType::Onehand))
+			characterComponent->GetNormalWeapon(EWeaponType::Onehand)->OnCollision();
+		
+		if (characterComponent->GetNormalWeapon(EWeaponType::Spell))
+			characterComponent->GetNormalWeapon(EWeaponType::Spell)->OnCollision();
+	}
 }
 
 void UCAnimNotifyState_Collision::NotifyEnd(USkeletalMeshComponent * MeshComp, UAnimSequenceBase * Animation)
@@ -49,5 +55,11 @@ void UCAnimNotifyState_Collision::NotifyEnd(USkeletalMeshComponent * MeshComp, U
 	if (bossComponent)
 		bossComponent->GetDataAsset()->GetWeapon()->OffCollision();
 	else if (characterComponent)
-		characterComponent->GetNormalWeapon(EWeaponType::Onehand)->OffCollision();
+	{
+		if (characterComponent->GetNormalWeapon(EWeaponType::Onehand))
+			characterComponent->GetNormalWeapon(EWeaponType::Onehand)->OffCollision();
+
+		if (characterComponent->GetNormalWeapon(EWeaponType::Spell))
+			characterComponent->GetNormalWeapon(EWeaponType::Spell)->OffCollision();
+	}
 }

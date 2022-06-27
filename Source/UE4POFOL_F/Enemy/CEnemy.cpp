@@ -46,14 +46,16 @@ void ACEnemy::BeginPlay()
 	if (GetMesh()->GetAnimInstance())
 		GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACEnemy::OnMontageEnded);
 
-	
-	OnStateTypeChange(EEnemyStateType::Idle);
-	
 	TArray<AActor*> outActorArr;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), outActorArr);
 
 	for (int i = 0; i < outActorArr.Num(); i++)
 		Opponent = dynamic_cast<ACPlayer*>(outActorArr[i]);
+
+	CurrentStateType = EEnemyStateType::Idle;
+
+	
+
 }
 
 void ACEnemy::Tick(float DeltaTime)
@@ -126,6 +128,9 @@ void ACEnemy::Tick(float DeltaTime)
 
 float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
+	if (CurrentStateType == EEnemyStateType::Dead)
+		return 0.0f;
+	
 	bDamage = true;
 	//TODO: 임시 나중에 Tag로 바꿀 예정 
 	if (EventInstigator != GetWorld()->GetFirstPlayerController())
@@ -165,10 +170,7 @@ void ACEnemy::Damage()
 	
 	if (CharacterComponent->GetCurrentHp() <= 0.0f)
 	{
-		//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		
-		CharacterComponent->SetCurrentStateType(EStateType::Dead);
-		
+		CurrentStateType = EEnemyStateType::Dead;
 		CharacterComponent->SetIsMontagePlaying(true);
 
 		if (CharacterComponent->GetDamageData(1).Montage)
@@ -187,10 +189,14 @@ void ACEnemy::Damage()
 
 	if (CharacterComponent->GetDamageData(0).Montage)
 	{
+		CurrentStateType = EEnemyStateType::Damage;
+
 		CharacterComponent->GetDamageData(0).PlayMontage(this);
+		//CharacterComponent->GetDamageData(0).PlayHitStop(GetWorld());
+		CharacterComponent->GetDamageData(0).PlayEffect(GetWorld(), this);
 		LaunchCharacter(-direction * CharacterComponent->GetDamageData(0).Launch, true, false);
 	}
-	
+
 	bDamage = false;
 
 	//if (!!Damaged.DamageEvent)
@@ -301,9 +307,20 @@ void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool InInterrupted)
 	CharacterComponent->SetIsMontagePlaying(false);
 }
 
-void ACEnemy::SpawnEnemy()
+void ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass)
 {
-	//TODO: 나중에 
+	if (InSpawnEnemyClass)
+	{
+		FActorSpawnParameters params;
+		params.Owner = InSpawner;
+		
+		InSpawner->GetWorld()->SpawnActor<ACEnemy>
+		(
+			InSpawnEnemyClass,
+			InSpawner->GetActorTransform(),
+			params
+		);
+	}
 }
 
 void ACEnemy::DestroyEnemy()

@@ -10,7 +10,7 @@ UCLASS()
 class UE4POFOL_F_API ACTriggerVolume_Elevator : public ACTriggerVolume
 {
 	GENERATED_BODY()
-	
+
 public:
 	UPROPERTY(BlueprintAssignable)
 	FElevatorEventTrigger OnElevatorEventTrigger;

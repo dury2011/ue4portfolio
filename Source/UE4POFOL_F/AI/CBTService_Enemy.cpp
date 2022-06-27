@@ -35,12 +35,18 @@ void UCBTService_Enemy::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 	//ACPlayer* player = aIStateComponent->GetTargetPlayer();
 	//float distance = enemy->GetDistanceTo(player);
 
+
+	
+
 	if (opponent)
 	{
-		if (distance <= 450.0f)
-			enemy->OnStateTypeChange(EEnemyStateType::Attack);
-		if (distance > 450.0f)
-			enemy->OnStateTypeChange(EEnemyStateType::Walk);
+		//if (distance <= 450.0f)
+		//	enemy->OnStateTypeChange(EEnemyStateType::Attack);
+		//if (distance > 450.0f)
+		//	enemy->OnStateTypeChange(EEnemyStateType::Walk);
+
+		
+			
 	}
 
 	//if (player)

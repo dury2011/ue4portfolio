@@ -52,8 +52,7 @@ void ACAIController::Tick(float DeltaTime)
 		if (Enemy->GetOpponent())
 			Blackboard->SetValueAsObject("Player", Enemy->GetOpponent());
 	
-		if (Enemy->GetCharacterComponent()->GetIsStateDeadMode())
-			StopMovement();
+		Blackboard->SetValueAsEnum("State", (uint8)Enemy->GetCurrentEnemyStateType());		
 	}
 }
 
@@ -88,7 +87,7 @@ void ACAIController::OnPossess(APawn* InPawn)
 	//	Enemy = Cast<ACEnemy>(InPawn);
 	//	Enemy->SetOpponent(dynamic_cast<ACharacter*>(Player));
 	//}
-
+	//
 	////InPawn을 Enemy로 cast 
 	////Enemy의 TeamId 설정
 	////SetGenericTeamId(Enemy->GetTeamId());

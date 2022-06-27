@@ -23,8 +23,23 @@ public:
 	class UParticleSystemComponent* ParticleEmitter;
 
 private:
+	UPROPERTY(EditDefaultsOnly, Category = "Elevator Setting")
+	TSubclassOf<class ACEnemy> EnemyHelixClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Elevator Setting")
+	TSubclassOf<class ACEnemy> EnemyMeleeClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Elevator Setting")
+	TSubclassOf<class ACEnemy> EnemyRifleClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Elevator Setting")
+	TSubclassOf<class ACEnemy> EnemyBuffRedClass;
+
 	UPROPERTY()
 	class ACTriggerVolume_Elevator* TriggerVolume;
+
+	FTimerHandle Timer;
+	int32 EnemyCount = 0;
 	
 public:	
 	ACElevator();
@@ -37,6 +52,8 @@ public:
 
 	UFUNCTION()
 	void ActivateElevator(class AActor* InOverlappedActor, class AActor* InOtherActor);
+
+	void SpawnEnemy();
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void LiftStart();

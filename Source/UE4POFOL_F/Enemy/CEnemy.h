@@ -34,7 +34,7 @@ protected:
 	UPROPERTY()
 	TSubclassOf<class UAnimInstance> AnimInstance;	
 
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
 	class UCCharacterComponent* CharacterComponent;
 	//class ACAIController* PossessedController;	
 	
@@ -138,7 +138,7 @@ public:
 	//FORCEINLINE UBlackboardComponent* GetBlackboard() { return Blackboard; }
 	//FORCEINLINE void SetBlackboard(class UBlackboardComponent* InBlackboard) { Blackboard = InBlackboard; }
 
-	void SpawnEnemy();
+	static void SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass);
 	void DestroyEnemy();
 
 protected:

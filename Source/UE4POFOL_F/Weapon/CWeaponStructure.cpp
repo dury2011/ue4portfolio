@@ -107,17 +107,17 @@ void FActionData::EndAction(ACharacter * InOwnerCharacter)
 
 void FDamageData::PlayEffect(UWorld * InWorld, ACharacter * InOwner)
 {
-	//CheckNull(Effect);
+	CheckNull(Effect);
 
-	//FTransform transform = EffectTransform;
+	FTransform transform = InOwner->GetTransform();
 
-	//FVector ownerLocation = InOwner->GetActorLocation();
+	FVector ownerLocation = InOwner->GetActorLocation();
 	//ownerLocation += InOwner->GetActorRotation().RotateVector(transform.GetLocation());
 
-	//transform.SetLocation(ownerLocation);
-	//transform.SetRotation(FQuat(InOwner->GetActorRotation()));
+	transform.SetLocation(ownerLocation);
+	transform.SetRotation(FQuat(InOwner->GetActorRotation()));
 
-	//CHelpers::PlayEffect(InWorld, Effect, transform);
+	CHelpers::PlayEffect(InWorld, Effect, transform);
 }
 
 void FDamageData::PlayHitStop(UWorld * InWorld)

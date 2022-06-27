@@ -27,10 +27,6 @@ ACEnemy_Buff_Red::ACEnemy_Buff_Red()
 
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
-	//CharacterComponent = CreateDefaultSubobject<UCCharacterComponent>(FName("CCharacter Component"));
-
-	SetCurrentEnemyStateType(EEnemyStateType::Idle);
-
 	bActivateRotateToOpponent = false;
 }
 
@@ -42,4 +38,37 @@ void ACEnemy_Buff_Red::BeginPlay()
 void ACEnemy_Buff_Red::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void ACEnemy_Buff_Red::OnAttack()
+{
+	bActivateRotateToOpponent = true;
+	
+	CharacterComponent->SetIsMontagePlaying(true);
+
+	int select = UKismetMathLibrary::RandomInteger(2);
+
+	switch (select)
+	{
+		case 0:
+		{
+			CharacterComponent->GetActionDatasOnehand(0).PlayMontage(this);
+
+			break;
+		}
+		case 1:
+		{
+			CharacterComponent->GetActionDatasOnehand(1).PlayMontage(this);
+
+			break;
+		}
+		case 2:
+		{
+			CharacterComponent->GetActionDatasOnehand(2).PlayMontage(this);
+
+			break;
+		}
+		default:
+			break;
+	}
 }

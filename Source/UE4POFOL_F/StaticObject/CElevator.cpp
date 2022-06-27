@@ -5,6 +5,7 @@
 #include "Particles/ParticleSystemcomponent.h"
 #include "StaticObject/CTriggerVolume_Elevator.h"
 #include "GameFramework/Character.h"
+#include "Enemy/CEnemy.h"
 
 ACElevator::ACElevator()
 {
@@ -32,6 +33,8 @@ void ACElevator::BeginPlay()
 
 	if (TriggerVolume)
 		TriggerVolume->OnElevatorEventTrigger.AddDynamic(this, &ACElevator::ActivateElevator);
+
+
 }
 
 void ACElevator::Tick(float DeltaTime)
@@ -62,3 +65,59 @@ void ACElevator::ActivateElevator(class AActor* InOverlappedActor, class AActor*
 	}
 }
 
+void ACElevator::SpawnEnemy()
+{
+	FActorSpawnParameters params;
+	params.Owner = this;
+	
+	float spawnPercentage = UKismetMathLibrary::RandomFloatInRange(0.0f, 100.0f);
+	int32 select = UKismetMathLibrary::RandomIntegerInRange(0, 1);
+
+	if (spawnPercentage <= 70.0f)
+	{
+		switch (select)
+		{
+			case 0:
+			{
+				if (EnemyMeleeClass)
+				{
+					ACEnemy::SpawnEnemy(this, EnemyMeleeClass);
+
+					break;
+				}
+			}
+			case 1:
+			{
+				if (EnemyRifleClass)
+				{
+					ACEnemy::SpawnEnemy(this, EnemyRifleClass);
+
+					break;
+				}
+			}
+			default:
+				break;
+		}
+	}
+	else
+	{
+		switch (select)
+		{
+			case 0:
+				{
+					ACEnemy::SpawnEnemy(this, EnemyBuffRedClass);
+					
+					break;
+				}
+			case 1:
+				{
+					ACEnemy::SpawnEnemy(this, EnemyHelixClass);
+					
+					break;
+				}
+			default:
+				break;
+
+		}
+	}
+}
