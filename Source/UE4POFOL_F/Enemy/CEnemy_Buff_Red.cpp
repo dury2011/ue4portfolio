@@ -17,13 +17,13 @@ ACEnemy_Buff_Red::ACEnemy_Buff_Red()
 		GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
 	}
 
-	ConstructorHelpers::FClassFinder<UAnimInstance> animInstance(*FString("AnimBlueprint'/Game/FORUE4POFOL/Enemy/Enemy_Buff_Red/Blueprint/ABP_Enemy_Buff_Red.ABP_Enemy_Buff_Red_C'"));
+	//ConstructorHelpers::FClassFinder<UAnimInstance> animInstance(*FString("AnimBlueprint'/Game/FORUE4POFOL/Enemy/Enemy_Buff_Red/Blueprint/ABP_Enemy_Buff_Red.ABP_Enemy_Buff_Red_C'"));
 
-	if (animInstance.Succeeded())
-	{
-		AnimInstance = animInstance.Class;
-		GetMesh()->SetAnimInstanceClass(AnimInstance);
-	}
+	//if (animInstance.Succeeded())
+	//{
+	//	AnimInstance = animInstance.Class;
+	//	GetMesh()->SetAnimInstanceClass(AnimInstance);
+	//}
 
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 

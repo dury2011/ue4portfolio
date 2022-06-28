@@ -71,6 +71,9 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	ECameraEffectType CurrentCameraEffectType;
 
+	UPROPERTY(BlueprintReadOnly)
+	bool bTargetting = false;
+
 private:
 	struct FDamaged
 	{
@@ -157,11 +160,17 @@ private:
 
 	UPROPERTY()
 	class ACProjectile* SpellProjectileR;
-	
+
+	UPROPERTY()
+	TArray<AActor*> OutTargettingActorArr;
+
 	FTimerHandle ComboCountTimer;
 	float Zooming;
 	float ZoomInterpSpeed = 2.0f;
 	int32 Index = 0;
+	int32 IndexTargetting = 0;
+	FVector TargetLocation;
+	FRotator TargetRotator;
 	bool bAiming = false;
 	bool bCanCritical = false;;
 	bool bEquipping = false;
@@ -173,8 +182,7 @@ private:
 	bool bCanNextAction;
 	bool bAttacking = false;
 	bool bCanCombo = false;
-
-
+ 
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class ACProjectile> SpellThrowProjectileClass;
 
@@ -198,10 +206,12 @@ private:
 	void OnHorizontalLook(float AxisValue);
 	void OnZoom(float AxisValue);
 	void InZooming(float Infloat);
-	void OnAim();
-	void OffAim();
 	void OnJump();
 	void OffJump();
+	void OnAim();
+	void OffAim();
+	void TargettingSelectLeft();
+	void TargettingSelectRight();
 	void OnRun();
 	void OffRun();
 	void OnDash();
