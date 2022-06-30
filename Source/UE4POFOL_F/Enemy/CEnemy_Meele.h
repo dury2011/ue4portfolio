@@ -18,7 +18,5 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	void OnAttack();
+	virtual void OnAttack() override;
 };

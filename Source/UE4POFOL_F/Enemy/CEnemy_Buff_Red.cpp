@@ -15,17 +15,8 @@ ACEnemy_Buff_Red::ACEnemy_Buff_Red()
 		GetMesh()->SetupAttachment(GetCapsuleComponent());
 		GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -90.0f));
 		GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
+		GetMesh()->SetAnimInstanceClass(AnimBlueprint);
 	}
-
-	//ConstructorHelpers::FClassFinder<UAnimInstance> animInstance(*FString("AnimBlueprint'/Game/FORUE4POFOL/Enemy/Enemy_Buff_Red/Blueprint/ABP_Enemy_Buff_Red.ABP_Enemy_Buff_Red_C'"));
-
-	//if (animInstance.Succeeded())
-	//{
-	//	AnimInstance = animInstance.Class;
-	//	GetMesh()->SetAnimInstanceClass(AnimInstance);
-	//}
-
-	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
 	bActivateRotateToOpponent = false;
 }
@@ -44,27 +35,27 @@ void ACEnemy_Buff_Red::OnAttack()
 {
 	bActivateRotateToOpponent = true;
 	
-	CharacterComponent->SetIsMontagePlaying(true);
-
 	int select = UKismetMathLibrary::RandomInteger(2);
 
 	switch (select)
 	{
+		Super::OnAttack();
+	
 		case 0:
 		{
-			CharacterComponent->GetActionDatasOnehand(0).PlayMontage(this);
+			ActionDatas[0].PlayMontage(this);
 
 			break;
 		}
 		case 1:
 		{
-			CharacterComponent->GetActionDatasOnehand(1).PlayMontage(this);
+			ActionDatas[1].PlayMontage(this);
 
 			break;
 		}
 		case 2:
 		{
-			CharacterComponent->GetActionDatasOnehand(2).PlayMontage(this);
+			ActionDatas[2].PlayMontage(this);
 
 			break;
 		}

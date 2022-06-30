@@ -5,7 +5,6 @@
 #include "GameFramework/Character.h"
 #include "Weapon/CWeaponStructure.h"
 #include "GenericTeamAgentInterface.h"
-#include "Interface/IRifle.h"
 #include "CEnemy.generated.h"
 
 UENUM(BlueprintType)
@@ -23,60 +22,74 @@ class UE4POFOL_F_API ACEnemy : public ACharacter, public IGenericTeamAgentInterf
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(BlueprintAssignable)
+	//UPROPERTY(BlueprintAssignable)
 	FOnEnemyStateTypeChanged OnEnemyStateTypeChanged;
 
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
-	
-	float RotationSpeed = 3.0f;
-
 protected:	
-	UPROPERTY()
-	TSubclassOf<class UAnimInstance> AnimInstance;	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
+	float Hp = 1000.0f;
 
-	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
-	class UCCharacterComponent* CharacterComponent;
-	//class ACAIController* PossessedController;	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
+	float MaxHp = 1000.0f;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
+	float Mp = 1000.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
+	float MaxMp = 1000.0f;
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
-	TSubclassOf<class UMatineeCameraShake> CameraShakeClass;
+	float RotationSpeed = 3.0f;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	TArray<FActionData> ActionDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	TArray<FDamageData> DamageDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	TArray<FDamageData> DeadDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	TArray<TSubclassOf<class ACWeapon>> WeaponClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	TArray<TSubclassOf<class ACProjectile>> ProjectileClass;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	TSubclassOf<class UMatineeCameraShake> DamageCameraShakeClass;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	TSubclassOf<class UAnimInstance> AnimBlueprint;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	class UWidgetComponent* HealthBarWidget;
+
+	//TODO: UPROPERTY(BlueprintAssignable)메크로 안 써도 되나?
 	FOnEnemyMontageEnded OnEnemyMontageEnded;
 	
 	bool bDamage = false;
+	bool bMontageIsPlaying = false;
 	bool bActivateRotateToOpponent = true;
 
 private:
-	//// Player 형 변환을 위한 Character
-	//UPROPERTY()
-	//ACharacter* Character;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
+	float HealthBarDisplayTime;
+	
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
+	float HitNumberDestroyTime;
+	
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
+	TMap<UUserWidget*, FVector> HitNumbers;
 	
 	UPROPERTY()
 	TArray<class UCapsuleComponent*> CapsuleCollisions;
 	
 	UPROPERTY()
-	class ACharacter* Opponent;
-
-	UPROPERTY()
 	class UBlackboardComponent* Blackboard;
-
-	//UPROPERTY(EditDefaultsOnly, Category = "Rifle Class")
-	//TSubclassOf<class ACRifle> RifleClass;
-
-	//UPROPERTY()
-	//class ACRifle* Rifle;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
-	float HealthBarDisplayTime;
-
-	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
-	TMap<UUserWidget*, FVector> HitNumbers;
-
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
-	float HitNumberDestroyTime;
-
-	//UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	//class UBehaviorTree* BehaviorTree;
+	
+	UPROPERTY()
+	class ACharacter* Opponent;
 	
 	EEnemyStateType CurrentStateType = EEnemyStateType::Max;
 
@@ -106,6 +119,10 @@ private:
 	void Damage();
 	void Dead();
 
+public:
+	//TODO: 파생 클래스에서 재정의하여, 공격 관련 함수 대체하기
+	virtual void OnAttack();
+
 private:
 	void ShakeCamera(FDamaged damage);
 
@@ -123,22 +140,19 @@ protected:
 	void ShowHealthBar();
 	void ShowHealthBar_Implementation();
 
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintNativeEvent)
 	void HideHealthBar();
+	void HideHealthBar_Implementation();
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void ActivateDissolve();
+	void ActivateDissolve();	
 
 public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowHitNumber(int32 InDamage, FVector InHitLocation);
-	
-	//FORCEINLINE class UBehaviorTree* GetBehaviorTree() { return BehaviorTree; }
-
-	//FORCEINLINE UBlackboardComponent* GetBlackboard() { return Blackboard; }
-	//FORCEINLINE void SetBlackboard(class UBlackboardComponent* InBlackboard) { Blackboard = InBlackboard; }
 
 	static void SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass);
+	
 	void DestroyEnemy();
 
 protected:
@@ -158,9 +172,7 @@ public:
 	void OnStateTypeChange(EEnemyStateType InCurrentStateType);
 	
 	FORCEINLINE bool GetbDamage() { return bDamage; }
-	//FORCEINLINE void SetOpponent(ACharacter* InOpponent) { Opponent = InOpponent; }
 	FORCEINLINE ACharacter* GetOpponent() { return Opponent; }
-	FORCEINLINE UCCharacterComponent* GetCharacterComponent() { return CharacterComponent; }
 	FORCEINLINE void SetCurrentEnemyStateType(EEnemyStateType InType) { CurrentStateType = InType; }
 	FORCEINLINE EEnemyStateType GetCurrentEnemyStateType() { return CurrentStateType; }
 };

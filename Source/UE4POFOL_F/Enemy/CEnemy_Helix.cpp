@@ -8,8 +8,6 @@ ACEnemy_Helix::ACEnemy_Helix()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	//GetCapsuleComponent()->SetRelativeScale3D(FVector(3.0f, 3.0f, 3.0f));
-
 	USkeletalMesh* skeletalMesh;
 	ConstructorHelpers::FObjectFinder<USkeletalMesh> asset(*FString("SkeletalMesh'/Game/ParagonMinions/Characters/Minions/Prime_Helix/Meshes/Prime_Helix.Prime_Helix'"));
 
@@ -20,23 +18,8 @@ ACEnemy_Helix::ACEnemy_Helix()
 		GetMesh()->SetupAttachment(GetCapsuleComponent());
 		GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -90.0f));
 		GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
+		GetMesh()->SetAnimInstanceClass(AnimBlueprint);
 	}
-
-	ConstructorHelpers::FClassFinder<UAnimInstance> animInstance(*FString("AnimBlueprint'/Game/FORUE4POFOL/Enemy/Enemy_Helix/Blueprint/ABP_Enemy_Helix.ABP_Enemy_Helix_C'"));
-
-	if (animInstance.Succeeded())
-	{
-		AnimInstance = animInstance.Class;
-		GetMesh()->SetAnimInstanceClass(AnimInstance);
-	}
-
-	ConstructorHelpers::FClassFinder<ACProjectile> assetClass(*FString("Blueprint'/Game/FORUE4POFOL/Weapon/BP_CProjectile_Helix.BP_CProjectile_Helix_C'"));
-
-	if (assetClass.Succeeded())
-		ProjectileClass = assetClass.Class;
-	
-	//CharacterComponent = CreateDefaultSubobject<UCCharacterComponent>("CharacterComponent");
-	CharacterComponent->SetCurrentStateType(EStateType::Idle);
 }
 
 void ACEnemy_Helix::BeginPlay()
@@ -49,40 +32,35 @@ void ACEnemy_Helix::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void ACEnemy_Helix::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-}
-
 void ACEnemy_Helix::OnAttack()
 {
-	CharacterComponent->SetIsMontagePlaying(true);
-	
 	int select = UKismetMathLibrary::RandomInteger(3);
 	
 	switch (select)
 	{
+		Super::OnAttack();
+		
 		case 0:
 		{
-			CharacterComponent->GetActionDatasOnehand(0).PlayMontage(this);
+			ActionDatas[0].PlayMontage(this);
 
 			break;
 		}
 		case 1:
 		{
-			CharacterComponent->GetActionDatasOnehand(1).PlayMontage(this);
+			ActionDatas[1].PlayMontage(this);
 
 			break;
 		}
 		case 2:
 		{
-			CharacterComponent->GetActionDatasOnehand(2).PlayMontage(this);
+			ActionDatas[2].PlayMontage(this);
 
 			break;
 		}
 		case 3:
 		{
-			CharacterComponent->GetActionDatasOnehand(3).PlayMontage(this);
+			ActionDatas[3].PlayMontage(this);
 
 			break;
 		}
@@ -100,18 +78,18 @@ void ACEnemy_Helix::SpawnHelixProjectile()
 		FVector opponentLocation = GetOpponent()->GetActorLocation();
 		FVector projectileSpawnLocation = FVector(GetOpponent()->GetActorLocation().X, GetOpponent()->GetActorLocation().Y, GetOpponent()->GetActorLocation().Z + 800.0f);
 
-		Projectile = ACProjectile::SpawnProjectile
+		ACProjectile* projectile = ACProjectile::SpawnProjectile
 		(
 			this, 
-			ProjectileClass,
+			ProjectileClass[0],
 			projectileSpawnLocation
 		);
 
-		if (Projectile)
+		if (projectile)
 		{
-			Projectile->SetOwner(this);
-			Projectile->ShootProjectile(UKismetMathLibrary::GetDirectionUnitVector(projectileSpawnLocation, opponentLocation));
-			Projectile->SetActorRotation(UKismetMathLibrary::GetDirectionUnitVector(projectileSpawnLocation, opponentLocation).Rotation());
+			projectile->SetOwner(this);
+			projectile->ShootProjectile(UKismetMathLibrary::GetDirectionUnitVector(projectileSpawnLocation, opponentLocation));
+			projectile->SetActorRotation(UKismetMathLibrary::GetDirectionUnitVector(projectileSpawnLocation, opponentLocation).Rotation());
 		}
 	}
 }

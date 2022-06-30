@@ -6,7 +6,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Interface/IRifle.h"
 #include "Components/BoxComponent.h"
 #include "Component/CParkourComponent.h"
 #include "GenericTeamAgentInterface.h"

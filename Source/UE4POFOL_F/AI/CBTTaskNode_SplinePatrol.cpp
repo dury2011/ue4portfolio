@@ -2,7 +2,7 @@
 #include "Global.h"
 #include "AI/CAIController.h"
 #include "Enemy/CEnemy_Rifle.h"
-#include "StaticObject/CSpline.h"
+#include "Object/CSpline.h"
 
 UCBTTaskNode_SplinePatrol::UCBTTaskNode_SplinePatrol()
 {

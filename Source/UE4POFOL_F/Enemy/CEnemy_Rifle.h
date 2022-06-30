@@ -13,15 +13,7 @@ class UE4POFOL_F_API ACEnemy_Rifle : public ACEnemy
 	
 private:
 	UPROPERTY()
-	TSubclassOf<class ACProjectile> ProjectileClass;
-
-	UPROPERTY()
-	class ACProjectile* Projectile;
-
-	UPROPERTY()
 	class ACTriggerVolume_Spawner* TriggerVolumeSpanwer;
-
-	//int32 Index;
 
 public:
 	ACEnemy_Rifle();
@@ -32,11 +24,9 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	
 	void SpawnAndShootProjectile();
 
-	void OnFire();
+	virtual void OnAttack() override;
 
 	void GetMoveToLocation(FVector& OutLocation);
 

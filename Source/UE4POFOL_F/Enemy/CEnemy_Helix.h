@@ -9,13 +9,6 @@ class UE4POFOL_F_API ACEnemy_Helix : public ACEnemy
 {
 	GENERATED_BODY()
 
-private:
-	UPROPERTY()
-	class ACProjectile* Projectile;
-
-	UPROPERTY()
-	TSubclassOf<class ACProjectile> ProjectileClass;
-
 public:
 	ACEnemy_Helix();
 
@@ -25,9 +18,7 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	void OnAttack();
+	virtual void OnAttack() override;
 
 	void SpawnHelixProjectile();
 };

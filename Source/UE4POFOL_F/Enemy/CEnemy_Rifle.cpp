@@ -4,7 +4,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Component/CCharacterComponent.h"
 #include "Weapon/CProjectile.h"
-#include "StaticObject/CTriggerVolume_Spawner.h"
+#include "Object/CTriggerVolume_Spawner.h"
 
 //#define MaxSplineCount 5
 
@@ -22,25 +22,8 @@ ACEnemy_Rifle::ACEnemy_Rifle()
 		GetMesh()->SetupAttachment(GetCapsuleComponent());
 		GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -90.0f));
 		GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
+		GetMesh()->SetAnimInstanceClass(AnimBlueprint);
 	}
-
-	ConstructorHelpers::FClassFinder<UAnimInstance> animInstance(*FString("AnimBlueprint'/Game/FORUE4POFOL/Enemy/Enemy_Rifle/ABP_CEnemy_Rifle.ABP_CEnemy_Rifle_C'"));
-
-	if (animInstance.Succeeded())
-	{
-		AnimInstance = animInstance.Class;
-		GetMesh()->SetAnimInstanceClass(AnimInstance);
-	}
-
-	ConstructorHelpers::FClassFinder<ACProjectile> assetClass(*FString("Blueprint'/Game/FORUE4POFOL/Weapon/BP_CProjectile_Enemy_Rifle'"));
-	
-	if (assetClass.Succeeded())
-		ProjectileClass = assetClass.Class;
-	
-	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-
-	//CharacterComponent = CreateDefaultSubobject<UCCharacterComponent>("CharacterComponent");
-	CharacterComponent->SetCurrentStateType(EStateType::Idle);
 }
 
 void ACEnemy_Rifle::BeginPlay()
@@ -61,36 +44,27 @@ void ACEnemy_Rifle::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void ACEnemy_Rifle::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-}
-
 void ACEnemy_Rifle::SpawnAndShootProjectile()
 {
-	Projectile = ACProjectile::SpawnProjectile(this, CharacterComponent->GetProjectileClass(), FName("Muzzle_Front"));
+	ACProjectile* projectile = ACProjectile::SpawnProjectile(this, ProjectileClass[0], FName("Muzzle_Front"));
 	
-	if (Projectile)
+	if (projectile)
 	{
-		Projectile->SetOwner(this);
-		Projectile->SetActorRotation(GetActorRotation());
-		Projectile->ShootProjectile(UKismetMathLibrary::GetDirectionUnitVector(GetMesh()->GetSocketLocation(FName("Muzzle_Front")), GetOpponent()->GetActorLocation()));
+		projectile->SetOwner(this);
+		projectile->SetActorRotation(GetActorRotation());
+		projectile->ShootProjectile(UKismetMathLibrary::GetDirectionUnitVector(GetMesh()->GetSocketLocation(FName("Muzzle_Front")), GetOpponent()->GetActorLocation()));
 	}
 }
 
-void ACEnemy_Rifle::OnFire()
+void ACEnemy_Rifle::OnAttack()
 {
 	if (GetOpponent())
 	{
-		CheckTrue(CharacterComponent->GetIsMontagePlaying());
-	
-		//CharacterComponent->SetCurrentWeaponType(EWeaponType::Spell);
-		//CharacterComponent->SetCurrentStateType(EStateType::Attack);
+		Super::OnAttack();
 		
-		CharacterComponent->SetIsMontagePlaying(true);
-		CharacterComponent->GetActionDatasSpell(0).PlayMontage(this);
+		ActionDatas[0].PlayMontage(this);
 
-		GLog->Log("ACEnemy_Rifle::OnFire()");
+		GLog->Log("ACEnemy_Rifle::OnAttack()");
 	}
 }
 
@@ -104,7 +78,7 @@ void ACEnemy_Rifle::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 {
 	Super::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 	
-	CharacterComponent->SetCurrentStateType(EStateType::Damage);
+	//CharacterComponent->SetCurrentStateType(EStateType::Damage);
 }
 
 void ACEnemy_Rifle::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
@@ -116,7 +90,7 @@ void ACEnemy_Rifle::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
 {
 	Super::OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
 	
-	CharacterComponent->SetCurrentStateType(EStateType::Damage);
+	//CharacterComponent->SetCurrentStateType(EStateType::Damage);
 }
 
 

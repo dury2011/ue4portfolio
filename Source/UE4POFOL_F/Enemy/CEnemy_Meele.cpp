@@ -15,19 +15,8 @@ ACEnemy_Meele::ACEnemy_Meele()
 		GetMesh()->SetupAttachment(GetCapsuleComponent());
 		GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -90.0f));
 		GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
+		GetMesh()->SetAnimInstanceClass(AnimBlueprint);
 	}
-
-	ConstructorHelpers::FClassFinder<UAnimInstance> animInstance(*FString("AnimBlueprint'/Game/FORUE4POFOL/Enemy/Enemy_Meele/Blueprint/ABP_Enemy_Melee.ABP_Enemy_Melee_C'"));
-
-	if (animInstance.Succeeded())
-	{
-		AnimInstance = animInstance.Class;
-		GetMesh()->SetAnimInstanceClass(AnimInstance);
-	}
-
-	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-
-	//CharacterComponent = CreateDefaultSubobject<UCCharacterComponent>("Character Component");
 }
 
 void ACEnemy_Meele::BeginPlay()
@@ -40,17 +29,8 @@ void ACEnemy_Meele::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void ACEnemy_Meele::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-}
-
 void ACEnemy_Meele::OnAttack()
 {
-	CheckTrue(bDamage);
-
-	CharacterComponent->SetIsMontagePlaying(true);
-
-	CharacterComponent->GetActionDatasOnehand(0).PlayMontage(this);
+	ActionDatas[0].PlayMontage(this);
 }
 

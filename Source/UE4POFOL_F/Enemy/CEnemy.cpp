@@ -17,6 +17,8 @@
 #include "DrawDebugHelpers.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Component/CCharacterComponent.h"
+#include "Components/WidgetComponent.h"
+#include "Kismet/KismetTextLibrary.h"
 
 //#define DEBUG_CENEMY
 
@@ -24,10 +26,12 @@ ACEnemy::ACEnemy()
 	:HealthBarDisplayTime(2.f)
 {
 	PrimaryActorTick.bCanEverTick = true;
-	
+
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
 	RootComponent = GetCapsuleComponent();
 
-	CharacterComponent = CreateDefaultSubobject<UCCharacterComponent>(FName("CCharacter Component"));
+	CurrentStateType = EEnemyStateType::Idle;
 }
 
 void ACEnemy::BeginPlay()
@@ -52,19 +56,15 @@ void ACEnemy::BeginPlay()
 	for (int i = 0; i < outActorArr.Num(); i++)
 		Opponent = dynamic_cast<ACPlayer*>(outActorArr[i]);
 
+	if (HealthBarWidget)
+		HealthBarWidget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
+
 	CurrentStateType = EEnemyStateType::Idle;
-
-	
-
 }
 
 void ACEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
-	CheckTrue(CharacterComponent->GetIsStateDeadMode());
-	//if(Blackboard)
-		//Opponent = Cast<ACharacter>(Blackboard->GetValueAsObject(FName("Player")));
 	
 	if (Opponent && bActivateRotateToOpponent)
 	{
@@ -153,10 +153,12 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 
 void ACEnemy::Damage()
 {
-	CheckTrue(CharacterComponent->GetIsStateDeadMode());
-
-	CharacterComponent->SetHp(-Damaged.DamageAmount);
+	for (int i = 0; i < DamageDatas.Num(); i++)
+		CheckFalse(DamageDatas[i].Montage);
 	
+	for (int i = 0; i < DeadDatas.Num(); i++)
+		CheckFalse(DeadDatas[i].Montage);
+
 	ShowHealthBar();
 	
 	FVector start = GetActorLocation();
@@ -168,65 +170,37 @@ void ACEnemy::Damage()
 	FTransform transform;
 	transform.SetLocation(GetActorLocation());
 	
-	if (CharacterComponent->GetCurrentHp() <= 0.0f)
+	if (Hp <= 0.0f)
 	{
-		CurrentStateType = EEnemyStateType::Dead;
-		CharacterComponent->SetIsMontagePlaying(true);
-
-		if (CharacterComponent->GetDamageData(1).Montage)
+		if (DamageDatas[1].Montage)
 		{
+			CurrentStateType = EEnemyStateType::Dead;
+
+			DamageDatas[1].PlayMontage(this);
+
 			SetActorRotation(FRotator(direction.Rotation().Pitch, direction.Rotation().Yaw - 90.0f, direction.Rotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
-			//LaunchCharacter(-direction * CharacterComponent->GetDamageData(1).Launch, true, false);
-			CharacterComponent->GetDamageData(1).PlayMontage(this);
+			LaunchCharacter(-direction * DamageDatas[1].Launch, true, false);
 			
 			ActivateDissolve();
-		}
 
-		bDamage = false;
+			bDamage = false;
+		}
 
 		return;
 	}
-
-	if (CharacterComponent->GetDamageData(0).Montage)
+	else
 	{
-		CurrentStateType = EEnemyStateType::Damage;
+		if (DamageDatas[0].Montage)
+		{
+			CurrentStateType = EEnemyStateType::Damage;
 
-		CharacterComponent->GetDamageData(0).PlayMontage(this);
-		//CharacterComponent->GetDamageData(0).PlayHitStop(GetWorld());
-		CharacterComponent->GetDamageData(0).PlayEffect(GetWorld(), this);
-		LaunchCharacter(-direction * CharacterComponent->GetDamageData(0).Launch, true, false);
+			DamageDatas[0].PlayMontage(this);
+			LaunchCharacter(-direction * DamageDatas[0].Launch, true, false);
+
+			bDamage = false;
+		}
 	}
 
-	bDamage = false;
-
-	//if (!!Damaged.DamageEvent)
-	//{
-		//FDamageData* damageData = Damaged.DamageEvent->DamageData;
-		//
-		//if (StateComponent->IsAttackSkillMode())
-		//{
-		//	hitData->PlayMontage(this);
-		//	hitData->PlayEffect(GetWorld(), this);
-		//	hitData->PlaySoundCue(GetWorld(), GetActorLocation());
-		//
-		//	return;
-		//}
-		//
-		//FVector direction = target - start;
-		//direction.Normalize();
-		//
-		//FTransform transform;
-		//transform.SetLocation(GetActorLocation());
-		//
-		//LaunchCharacter(-direction * damageData->Launch, true, false);
-		//
-		//damageData->PlayMontage(this);
-		//damageData->PlayEffect(GetWorld(), this);
-		//damageData->PlayHitStop(GetWorld());
-		//damageData->PlaySoundCue(GetWorld(), GetActorLocation());
-		//
-		//bDamage = false;
-	//}
 }
 
 void ACEnemy::Dead()
@@ -236,12 +210,23 @@ void ACEnemy::Dead()
 	DestroyEnemy();
 }
 
+void ACEnemy::OnAttack()
+{
+	CheckTrue(bMontageIsPlaying);
+	
+	for (int i = 0; i < ActionDatas.Num(); i++)
+		CheckFalse(ActionDatas[i].Montage);
+
+	bMontageIsPlaying = true;
+	CurrentStateType = EEnemyStateType::Attack;
+}
+
 void ACEnemy::ShakeCamera(FDamaged damage)
 {
 	APlayerController* controller = Cast<APlayerController>(damage.EventInstigator);
 	
 	if (controller)
-		controller->PlayerCameraManager->StartCameraShake(CameraShakeClass);
+		controller->PlayerCameraManager->StartCameraShake(DamageCameraShakeClass);
 }
 
 void ACEnemy::StoreHitNumber(UUserWidget* InHitNumber, FVector InLocation)
@@ -275,7 +260,17 @@ void ACEnemy::UpdateHitNumbers()
 void ACEnemy::ShowHealthBar_Implementation()
 {
 	GetWorldTimerManager().ClearTimer(HealthBarTimer);
+	//TODO: ACEnemy::HideHealthBar가 호출되면 _Implementation도 자동 호출이 되나?
 	GetWorldTimerManager().SetTimer(HealthBarTimer, this, &ACEnemy::HideHealthBar, HealthBarDisplayTime);
+
+	if (HealthBarWidget)
+		HealthBarWidget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Visible);
+}
+
+void ACEnemy::HideHealthBar_Implementation()
+{
+	if (HealthBarWidget)
+		HealthBarWidget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void ACEnemy::OnStateTypeChange(EEnemyStateType InCurrentStateType)
@@ -304,7 +299,7 @@ void ACEnemy::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrim
 
 void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool InInterrupted)
 {
-	CharacterComponent->SetIsMontagePlaying(false);
+	bMontageIsPlaying = false;
 }
 
 void ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass)

@@ -8,11 +8,6 @@ UCLASS()
 class UE4POFOL_F_API ACEnemy_Buff_Red : public ACEnemy
 {
 	GENERATED_BODY()
-	
-private:
-
-public:
-
 
 public:
 	ACEnemy_Buff_Red();
@@ -23,6 +18,6 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 
-	void OnAttack();
+	virtual void OnAttack() override;
 
 };

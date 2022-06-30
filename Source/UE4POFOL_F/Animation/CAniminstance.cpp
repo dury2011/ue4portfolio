@@ -3,7 +3,6 @@
 #include "Global.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Interface/IRifle.h"
 #include "Enemy/CEnemy.h"
 #include "Component/CCharacterComponent.h"
 

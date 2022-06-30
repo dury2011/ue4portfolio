@@ -25,10 +25,10 @@
 #include "Component/CWidgetComponent.h"
 #include "Component/CCharacterComponent.h"
 #include "Weapon/CProjectile.h"
-#include "StaticObject/CPortalCrosshair.h"
-#include "StaticObject/CPortalDoor.h"
-#include "StaticObject/CCrosshair.h"
-#include "StaticObject/CCrosshair_SpellThrow.h"
+#include "Object/CPortalCrosshair.h"
+#include "Object/CPortalDoor.h"
+#include "Object/CCrosshair.h"
+#include "Object/CCrosshair_SpellThrow.h"
 
 //#define LOG_PLAYER
 
@@ -605,8 +605,12 @@ void ACPlayer::OnCriticalOne()
 {
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
-	
+		CharacterComponent->SetCurrentStateType(EStateType::Attack);
 
+		if (CharacterComponent->GetCriticalDatasOnehand(0).Montage)
+			CharacterComponent->GetCriticalDatasOnehand(0).PlayMontage(this);
+
+		CharacterComponent->SetIsMontagePlaying(true);
 	}
 	else if (CharacterComponent->GetIsWeaponSpellMode())
 	{	
@@ -631,8 +635,8 @@ void ACPlayer::OffCriticalOne()
 {
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
-
-
+		if (CharacterComponent->GetCriticalDatasOnehand(1).Montage)
+			CharacterComponent->GetCriticalDatasOnehand(1).PlayMontage(this);
 	}
 	else if (CharacterComponent->GetIsWeaponSpellMode())
 	{

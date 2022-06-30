@@ -6,7 +6,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Weapon/CProjectile.h"
 #include "Component/CWidgetComponent.h"
-#include "StaticObject/CTriggerVolume_Cannon.h"
+#include "Object/CTriggerVolume_Cannon.h"
 #include "Player/CPlayer.h"
 
 ACCannon::ACCannon()
