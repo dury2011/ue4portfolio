@@ -3,5 +3,5 @@
 
 AUE4POFOL_FGameModeBase::AUE4POFOL_FGameModeBase()
 {
-	CHelpers::GetClass<APawn>(&DefaultPawnClass, "Blueprint'/Game/FORUE4POFOL/Player/BP_CPlayer.BP_CPlayer_C'");
+	CHelpers::GetClass<APawn>(&DefaultPawnClass, "Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CPlayer.BP_CPlayer_C'");
 }

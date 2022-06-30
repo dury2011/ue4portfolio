@@ -58,6 +58,11 @@ ACWeapon* ACWeapon::SpawnWeapon(ACharacter* InSpawner, TSubclassOf<ACWeapon> InW
 		);
 }
 
+void ACWeapon::DestroyWeapon_Implementation()
+{
+	Destroy();
+}
+
 void ACWeapon::AttachTo(FName InSocketName)
 {
 	AttachToComponent(OwnerCharacter->GetMesh(), FAttachmentTransformRules(EAttachmentRule::KeepRelative, true), InSocketName);
@@ -134,7 +139,7 @@ void ACWeapon::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	else
 		applyDamage = pureDamage + randomDeviation;
 	
-	/* TODO: 2번 째 인수 float BaseDamage는 0.f 이하이면 함수 몸체에서 도입에서 if 문으로 걸러져서 몸체 전체가 작동하지 않음 */
+	/* TODO: 2번 째 인수 float BaseDamage는 0.0f 이하이면 함수 몸체에서 도입에서 if 문으로 걸러져서 몸체 전체가 작동하지 않음 */
 	UGameplayStatics::ApplyDamage(OtherActor, applyDamage, OwnerCharacter->GetController(), this, NULL);
 
 	GLog->Log("ACWeapon::WeaponBeginOverlap()");

@@ -62,22 +62,26 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
 	TSubclassOf<class UAnimInstance> AnimBlueprint;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	class UWidgetComponent* HealthBarWidget;
+	//UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	//TSubclassOf<class UUserWidget> HealthBarWidget;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
+	class UWidgetComponent* HealthBarWidgetComponent;
 
 	//TODO: UPROPERTY(BlueprintAssignable)메크로 안 써도 되나?
 	FOnEnemyMontageEnded OnEnemyMontageEnded;
 	
 	bool bDamage = false;
+	bool bDead = false;
 	bool bMontageIsPlaying = false;
 	bool bActivateRotateToOpponent = true;
 
 private:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
-	float HealthBarDisplayTime;
+	float HealthBarDisplayTime = 1.5f;
 	
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
-	float HitNumberDestroyTime;
+	float HitNumberDestroyTime = 1.0f;
 	
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
 	TMap<UUserWidget*, FVector> HitNumbers;
@@ -90,6 +94,9 @@ private:
 	
 	UPROPERTY()
 	class ACharacter* Opponent;
+
+	UPROPERTY()
+	TArray<class ACWeapon*> Weapons;	
 	
 	EEnemyStateType CurrentStateType = EEnemyStateType::Max;
 
@@ -136,13 +143,13 @@ protected:
 	UFUNCTION()
 	void UpdateHitNumbers();
 
-	UFUNCTION(BlueprintNativeEvent)
+	//UFUNCTION(BlueprintNativeEvent)
 	void ShowHealthBar();
-	void ShowHealthBar_Implementation();
+	//void ShowHealthBar_Implementation();
 
-	UFUNCTION(BlueprintNativeEvent)
+	//UFUNCTION(BlueprintNativeEvent)
 	void HideHealthBar();
-	void HideHealthBar_Implementation();
+	//void HideHealthBar_Implementation();
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ActivateDissolve();	
@@ -172,6 +179,7 @@ public:
 	void OnStateTypeChange(EEnemyStateType InCurrentStateType);
 	
 	FORCEINLINE bool GetbDamage() { return bDamage; }
+	FORCEINLINE bool GetbMontageIsPlaying() { return bMontageIsPlaying; }
 	FORCEINLINE ACharacter* GetOpponent() { return Opponent; }
 	FORCEINLINE void SetCurrentEnemyStateType(EEnemyStateType InType) { CurrentStateType = InType; }
 	FORCEINLINE EEnemyStateType GetCurrentEnemyStateType() { return CurrentStateType; }

@@ -163,6 +163,10 @@ private:
 	UPROPERTY()
 	TArray<AActor*> OutTargettingActorArr;
 
+	//TODO: 컴포넌트에 넣으면 핫 리로드 이슈 생길 수도 있어서 일단 임시로 Player 클래스에 직접 선언함
+	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
+	TSubclassOf<class UMatineeCameraShake> DamageCameraShakeClass;
+
 	FTimerHandle ComboCountTimer;
 	float Zooming;
 	float ZoomInterpSpeed = 2.0f;
@@ -307,6 +311,7 @@ public:
 
 private:
 	FVector CalculateMeshSocketToVectorLocation(FName InSocketName, FVector InDirectionTo);
+	void ShakeCamera();
 
 public:
 	FORCEINLINE bool GetbAiming() { return bAiming; }

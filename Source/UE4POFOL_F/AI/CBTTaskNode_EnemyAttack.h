@@ -11,7 +11,7 @@ class UE4POFOL_F_API UCBTTaskNode_EnemyAttack : public UBTTaskNode
 
 private:
 	UPROPERTY()
-	class ACEnemy_Buff_Red* EnemyBuff;
+	class ACEnemy* Enemy;
 	
 private:
 	UCBTTaskNode_EnemyAttack();

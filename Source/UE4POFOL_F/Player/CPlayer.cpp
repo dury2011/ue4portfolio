@@ -126,32 +126,32 @@ ACPlayer::ACPlayer()
 	//	}
 	//}
 
-	ConstructorHelpers::FClassFinder<ACPortalCrosshair> assetCrosshair(TEXT("Blueprint'/Game/FORUE4POFOL/Player/BP_CPortalCrosshair'"));
+	ConstructorHelpers::FClassFinder<ACPortalCrosshair> assetCrosshair_Portal(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CPortalCrosshair'"));
 
-	if (assetCrosshair.Succeeded())
-		PortalCrosshairClass = assetCrosshair.Class;
+	if (assetCrosshair_Portal.Succeeded())
+		PortalCrosshairClass = assetCrosshair_Portal.Class;
 
-	ConstructorHelpers::FClassFinder<ACCrosshair> assetCrosshair_SpellMeteor(TEXT("Blueprint'/Game/FORUE4POFOL/Player/BP_CCrosshair_SpellMeteor'"));
+	ConstructorHelpers::FClassFinder<ACCrosshair> assetCrosshair_SpellMeteor(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CWeapon_SpellMeteor'"));
 
 	if (assetCrosshair_SpellMeteor.Succeeded())
 		Crosshair_SpellMeteorClass = assetCrosshair_SpellMeteor.Class;
 
-	ConstructorHelpers::FClassFinder<ACProjectile> assetPortalProjectile(TEXT("Blueprint'/Game/FORUE4POFOL/Player/BP_CProjectile_Portal'"));
+	ConstructorHelpers::FClassFinder<ACProjectile> assetPortalProjectile(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CProjectile_Portal'"));
 
 	if (assetPortalProjectile.Succeeded())
 		PortalProjectileClass = assetPortalProjectile.Class;
 
-	ConstructorHelpers::FClassFinder<ACPortalDoor> assetPortalDoorEntrance(TEXT("Blueprint'/Game/FORUE4POFOL/Player/BP_CPortalDoor_Enterance'"));
+	ConstructorHelpers::FClassFinder<ACPortalDoor> assetPortalDoorEntrance(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CPortalDoor_Enterance'"));
 
 	if (assetPortalDoorEntrance.Succeeded())
 		PortalDoorEntranceClass = assetPortalDoorEntrance.Class;
 
-	ConstructorHelpers::FClassFinder<ACPortalDoor> assetPortalDoorExit(TEXT("Blueprint'/Game/FORUE4POFOL/Player/BP_CPortalDoor_Exit'"));
+	ConstructorHelpers::FClassFinder<ACPortalDoor> assetPortalDoorExit(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CPortalDoor_Exit'"));
 
 	if (assetPortalDoorExit.Succeeded())
 		PortalDoorExitClass = assetPortalDoorExit.Class;
 
-	ConstructorHelpers::FClassFinder<ACWeapon> assetMeteorWeapon(TEXT("Blueprint'/Game/FORUE4POFOL/Weapon/BP_CWeapon_SpellMeteor'"));
+	ConstructorHelpers::FClassFinder<ACWeapon> assetMeteorWeapon(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CWeapon_SpellMeteor'"));
 
 	if (assetMeteorWeapon.Succeeded())
 		SpellMeteorClass = assetMeteorWeapon.Class;
@@ -899,6 +899,8 @@ float ACPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& Damage
 	//CharacterComponent->SetIsMontagePlaying(true);
 
 	SpawnCameraEffect();
+	ShakeCamera();
+	
 	
 	if (CharacterComponent->GetCurrentHp() <= 0.0f)
 	{
@@ -1110,4 +1112,10 @@ void ACPlayer::PlayerLog_Debug()
 FVector ACPlayer::CalculateMeshSocketToVectorLocation(FName InSocketName, FVector InDirectionTo)
 {
 	return UKismetMathLibrary::GetDirectionUnitVector(GetMesh()->GetSocketLocation(InSocketName), InDirectionTo);
+}
+
+void ACPlayer::ShakeCamera()
+{
+	if (GetWorld()->GetFirstPlayerController() && DamageCameraShakeClass)
+		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(DamageCameraShakeClass);
 }

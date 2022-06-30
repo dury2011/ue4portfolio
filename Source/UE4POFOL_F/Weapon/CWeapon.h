@@ -97,8 +97,9 @@ public:
 
 	static ACWeapon* SpawnWeapon(ACharacter* InSpawner, TSubclassOf<ACWeapon> InWeaponClass, FVector InSpawnLocation);
 
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintNativeEvent)
 	void DestroyWeapon();
+	void DestroyWeapon_Implementation();
 
 	UFUNCTION(BlueprintCallable)
 	void AttachTo(FName InSocketName); 

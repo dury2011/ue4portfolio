@@ -19,19 +19,29 @@
 #include "Component/CCharacterComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Kismet/KismetTextLibrary.h"
+#include "Weapon/CWeapon.h"
 
 //#define DEBUG_CENEMY
 
 ACEnemy::ACEnemy()
 	:HealthBarDisplayTime(2.f)
 {
+	RootComponent = GetCapsuleComponent();
+	
 	PrimaryActorTick.bCanEverTick = true;
 
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-
-	RootComponent = GetCapsuleComponent();
-
 	CurrentStateType = EEnemyStateType::Idle;
+	HealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>("Health Bar Widget");
+	HealthBarWidgetComponent->SetupAttachment(GetMesh());
+	//HealthBarWidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 150.0f));
+	HealthBarWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	HealthBarWidgetComponent->SetDrawSize(FVector2D(125.0f, 15.0f));
+
+	
+	//TODO: 적용 안됨, 블루프린트에서 직접 해줘야됨
+	//if (HealthBarWidget)
+	//	HealthBarWidgetComponent->SetWidgetClass(HealthBarWidget);
 }
 
 void ACEnemy::BeginPlay()
@@ -50,14 +60,23 @@ void ACEnemy::BeginPlay()
 	if (GetMesh()->GetAnimInstance())
 		GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACEnemy::OnMontageEnded);
 
+	FActorSpawnParameters params;
+	params.Owner = this;
+
+	for (int i = 0; i < WeaponClass.Num(); i++)
+	{
+		if (WeaponClass[i])
+			Weapons.Add(GetWorld()->SpawnActor<ACWeapon>(WeaponClass[i], params));
+	}
+
 	TArray<AActor*> outActorArr;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), outActorArr);
 
 	for (int i = 0; i < outActorArr.Num(); i++)
 		Opponent = dynamic_cast<ACPlayer*>(outActorArr[i]);
 
-	if (HealthBarWidget)
-		HealthBarWidget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
+	if (HealthBarWidgetComponent)
+		HealthBarWidgetComponent->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
 
 	CurrentStateType = EEnemyStateType::Idle;
 }
@@ -68,6 +87,8 @@ void ACEnemy::Tick(float DeltaTime)
 	
 	if (Opponent && bActivateRotateToOpponent)
 	{
+		CheckTrue(bDead);
+		
 		FVector directionToOpponent = Opponent->GetActorLocation() - GetActorLocation();
 		directionToOpponent.Z = 0.0f;
 		FRotator targetRotation = FRotationMatrix::MakeFromX(directionToOpponent).Rotator();
@@ -152,15 +173,18 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 }
 
 void ACEnemy::Damage()
-{
+{	
 	for (int i = 0; i < DamageDatas.Num(); i++)
 		CheckFalse(DamageDatas[i].Montage);
 	
 	for (int i = 0; i < DeadDatas.Num(); i++)
 		CheckFalse(DeadDatas[i].Montage);
+	
+	Hp -= Damaged.DamageAmount;
 
 	ShowHealthBar();
-	
+	//ShowHealthBar_Implementation();
+
 	FVector start = GetActorLocation();
 	FVector target = Damaged.EventInstigator->GetPawn()->GetActorLocation();
 	
@@ -172,14 +196,25 @@ void ACEnemy::Damage()
 	
 	if (Hp <= 0.0f)
 	{
-		if (DamageDatas[1].Montage)
+		if (DeadDatas[0].Montage)
 		{
+			CheckTrue(bDead);
+
+			for (int i = 0; i < Weapons.Num(); i++)
+			{
+				if (Weapons[i])
+					Weapons[i]->DestroyWeapon();
+			}
+		
+			bMontageIsPlaying = true;
 			CurrentStateType = EEnemyStateType::Dead;
 
-			DamageDatas[1].PlayMontage(this);
+			DeadDatas[0].PlayMontage(this);
+			
+			bDead = true;
 
 			SetActorRotation(FRotator(direction.Rotation().Pitch, direction.Rotation().Yaw - 90.0f, direction.Rotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
-			LaunchCharacter(-direction * DamageDatas[1].Launch, true, false);
+			LaunchCharacter(-direction * DeadDatas[0].Launch, true, false);
 			
 			ActivateDissolve();
 
@@ -192,6 +227,7 @@ void ACEnemy::Damage()
 	{
 		if (DamageDatas[0].Montage)
 		{
+			bMontageIsPlaying = true;
 			CurrentStateType = EEnemyStateType::Damage;
 
 			DamageDatas[0].PlayMontage(this);
@@ -201,6 +237,7 @@ void ACEnemy::Damage()
 		}
 	}
 
+	CurrentStateType = EEnemyStateType::Idle;
 }
 
 void ACEnemy::Dead()
@@ -225,7 +262,7 @@ void ACEnemy::ShakeCamera(FDamaged damage)
 {
 	APlayerController* controller = Cast<APlayerController>(damage.EventInstigator);
 	
-	if (controller)
+	if (controller && DamageCameraShakeClass)
 		controller->PlayerCameraManager->StartCameraShake(DamageCameraShakeClass);
 }
 
@@ -257,20 +294,19 @@ void ACEnemy::UpdateHitNumbers()
 	}
 }
 
-void ACEnemy::ShowHealthBar_Implementation()
+void ACEnemy::ShowHealthBar()
 {
 	GetWorldTimerManager().ClearTimer(HealthBarTimer);
-	//TODO: ACEnemy::HideHealthBar가 호출되면 _Implementation도 자동 호출이 되나?
 	GetWorldTimerManager().SetTimer(HealthBarTimer, this, &ACEnemy::HideHealthBar, HealthBarDisplayTime);
 
-	if (HealthBarWidget)
-		HealthBarWidget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Visible);
+	if (HealthBarWidgetComponent)
+		HealthBarWidgetComponent->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Visible);
 }
 
-void ACEnemy::HideHealthBar_Implementation()
+void ACEnemy::HideHealthBar()
 {
-	if (HealthBarWidget)
-		HealthBarWidget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Collapsed);
+	if (HealthBarWidgetComponent)
+		HealthBarWidgetComponent->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void ACEnemy::OnStateTypeChange(EEnemyStateType InCurrentStateType)
