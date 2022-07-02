@@ -10,6 +10,8 @@
 
 #include "DrawDebugHelpers.h"
 #include "Component/CCharacterComponent.h"
+//#include "BehaviorTree/BehaviorTreeComponent.h"
+#include "BehaviorTree/BlackboardComponent.h"
 
 //#define LOG_CBTSERVICE_ENEMY
 
@@ -25,30 +27,24 @@ void UCBTService_Enemy::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 {
 	Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);
 
-	ACAIController* controller = Cast<ACAIController>(OwnerComp.GetOwner());
-	ACEnemy* enemy = Cast<ACEnemy>(controller->GetPawn());
-	ACharacter* opponent = enemy->GetOpponent();
-	float distance = enemy->GetDistanceTo(opponent);
-	//UCStateComponent* stateComponent = CHelpers::GetComponent<UCStateComponent>(enemy);
-	//UCAIStateComponent* aIStateComponent = CHelpers::GetComponent<UCAIStateComponent>(enemy);
-	//UCWeaponComponent* weaponComponent = CHelpers::GetComponent<UCWeaponComponent>(enemy);
-	//ACPlayer* player = aIStateComponent->GetTargetPlayer();
-	//float distance = enemy->GetDistanceTo(player);
-
-
-	
-
-	if (opponent)
-	{
-		//if (distance <= 450.0f)
-		//	enemy->OnStateTypeChange(EEnemyStateType::Attack);
-		//if (distance > 450.0f)
-		//	enemy->OnStateTypeChange(EEnemyStateType::Walk);
-
-		
-			
-	}
-
+	//ACAIController* controller = Cast<ACAIController>(OwnerComp.GetOwner());
+	//ACEnemy* enemy = Cast<ACEnemy>(controller->GetPawn());
+	//ACharacter* opponent = enemy->GetOpponent();
+	//float distance = enemy->GetDistanceTo(opponent);
+	////UCStateComponent* stateComponent = CHelpers::GetComponent<UCStateComponent>(enemy);
+	////UCAIStateComponent* aIStateComponent = CHelpers::GetComponent<UCAIStateComponent>(enemy);
+	////UCWeaponComponent* weaponComponent = CHelpers::GetComponent<UCWeaponComponent>(enemy);
+	////ACPlayer* player = aIStateComponent->GetTargetPlayer();
+	//float distance = enemy->GetDistanceTo(opponent);
+	//
+	//if (opponent)
+	//{
+	//	if (distance <= 450.0f)
+	//		enemy->OnStateTypeChange(EEnemyStateType::Attack);
+	//	if (distance > 450.0f)
+	//		enemy->OnStateTypeChange(EEnemyStateType::Walk);
+	//}
+	//
 	//if (player)
 	//{
 	//
@@ -82,6 +78,43 @@ void UCBTService_Enemy::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 			//}
 		//}	
 	//}
+
+	APawn* controllingPawn = OwnerComp.GetAIOwner()->GetPawn();
+
+	if (controllingPawn == nullptr)
+		return;
+
+	UWorld* world = controllingPawn->GetWorld();
+	FVector center = controllingPawn->GetActorLocation();
+
+	if (world == nullptr)
+		return;
+
+	TArray<FOverlapResult> overlapResults;
+	FCollisionQueryParams collisionQueryParam(NAME_None, false, controllingPawn);
+	bool bResult = world->OverlapMultiByChannel(
+		overlapResults, 
+		center, 
+		FQuat::Identity, 
+		ECollisionChannel::ECC_GameTraceChannel2, 
+		FCollisionShape::MakeSphere(OpponentDetectRadius),
+		collisionQueryParam
+	);
+
+	if (bResult)
+	{
+		for (auto const& overlapResult : overlapResults)
+		{
+			ACharacter* character = Cast<ACharacter>(overlapResult.GetActor());
+
+			if (character && character->GetController()->IsPlayerController())
+			{
+				OwnerComp.GetBlackboardComponent()->SetValueAsObject("Player", character);
+
+				return;
+			}
+		}
+	}
 	
 #ifdef LOG_CBTSERVICE_ENEMY
 	// patrol & attack rifle radius

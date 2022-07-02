@@ -11,11 +11,8 @@ class UE4POFOL_F_API UCBTService_Enemy : public UBTService
 	GENERATED_BODY()
 	
 private:
-	UPROPERTY(EditAnywhere, Category = "Action")
-	float AttackRangeOnehand = 200.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Action Rifle Idle")
-	float AttackRangeRifle = 3000.0f;
+	UPROPERTY(EditAnywhere, Category = "Setting")
+	float OpponentDetectRadius = 3000.0f;
 
 public:
 	UCBTService_Enemy();

@@ -2,13 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotify.h"
-#include "CAnimNotify_End_DoAction.generated.h"
+#include "CAnimNotify_EnemyEffectWeapon.generated.h"
 
 UCLASS()
-class UE4POFOL_F_API UCAnimNotify_End_DoAction : public UAnimNotify
+class UE4POFOL_F_API UCAnimNotify_EnemyEffectWeapon : public UAnimNotify
 {
 	GENERATED_BODY()
-
+	
 private:
 	FString GetNotifyName_Implementation() const override;
 

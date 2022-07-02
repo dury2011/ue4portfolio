@@ -15,6 +15,8 @@ enum class EEnemyStateType : uint8
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEnemyStateTypeChanged, EEnemyStateType, InPreviousType, EEnemyStateType, InCurrentType);
 DECLARE_MULTICAST_DELEGATE(FOnEnemyMontageEnded);
+DECLARE_MULTICAST_DELEGATE(FOnEnemyAttackEnded);
+DECLARE_MULTICAST_DELEGATE(FOnEnemyMontageInterrupted);
 
 UCLASS()
 class UE4POFOL_F_API ACEnemy : public ACharacter, public IGenericTeamAgentInterface
@@ -24,6 +26,12 @@ class UE4POFOL_F_API ACEnemy : public ACharacter, public IGenericTeamAgentInterf
 public:
 	//UPROPERTY(BlueprintAssignable)
 	FOnEnemyStateTypeChanged OnEnemyStateTypeChanged;
+
+	FOnEnemyAttackEnded OnEnemyAttackEnded;
+
+	FOnEnemyMontageEnded OnEnemyMontageEnded;
+
+	FOnEnemyMontageInterrupted OnEnemyMontageInterrupted;
 
 protected:	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
@@ -54,6 +62,9 @@ protected:
 	TArray<TSubclassOf<class ACWeapon>> WeaponClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	TArray<TSubclassOf<class ACWeapon>> EffectWeaponClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
 	TArray<TSubclassOf<class ACProjectile>> ProjectileClass;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
@@ -69,12 +80,16 @@ protected:
 	class UWidgetComponent* HealthBarWidgetComponent;
 
 	//TODO: UPROPERTY(BlueprintAssignable)메크로 안 써도 되나?
-	FOnEnemyMontageEnded OnEnemyMontageEnded;
+
 	
-	bool bDamage = false;
-	bool bDead = false;
 	bool bMontageIsPlaying = false;
 	bool bActivateRotateToOpponent = true;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
+	FName EffectWeaponSpawnSocketName;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
+	int32 EffectWeaponIndex;
 
 private:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
@@ -99,7 +114,7 @@ private:
 	TArray<class ACWeapon*> Weapons;	
 	
 	EEnemyStateType CurrentStateType = EEnemyStateType::Max;
-
+	EEnemyStateType PreviousStateType = EEnemyStateType::Max;
 	FTimerHandle HealthBarTimer;
 
 	struct FDamaged
@@ -124,7 +139,6 @@ public:
 
 private:
 	void Damage();
-	void Dead();
 
 public:
 	//TODO: 파생 클래스에서 재정의하여, 공격 관련 함수 대체하기
@@ -152,7 +166,13 @@ protected:
 	//void HideHealthBar_Implementation();
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void ActivateDissolve();	
+	void ActivateDeadEffect();	
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ActivateDamageEffect();
+
+	UFUNCTION()
+	void SetCurrentEnemyStateType(EEnemyStateType InType);
 
 public:
 	UFUNCTION(BlueprintImplementableEvent)
@@ -161,6 +181,8 @@ public:
 	static void SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass);
 	
 	void DestroyEnemy();
+
+	void SpawnEnemyEffectWeapon();
 
 protected:
 	UFUNCTION()
@@ -178,9 +200,11 @@ protected:
 public:
 	void OnStateTypeChange(EEnemyStateType InCurrentStateType);
 	
-	FORCEINLINE bool GetbDamage() { return bDamage; }
-	FORCEINLINE bool GetbMontageIsPlaying() { return bMontageIsPlaying; }
+	//FORCEINLINE bool GetbDamage() { return bDamage; }
+	//FORCEINLINE void SetbMontageIsPlaying(bool InBool) { bMontageIsPlaying = InBool; }
+	//FORCEINLINE bool GetbMontageIsPlaying() { return bMontageIsPlaying; }
 	FORCEINLINE ACharacter* GetOpponent() { return Opponent; }
-	FORCEINLINE void SetCurrentEnemyStateType(EEnemyStateType InType) { CurrentStateType = InType; }
+	//FORCEINLINE void SetCurrentEnemyStateType(EEnemyStateType InType) { CurrentStateType = InType; }
 	FORCEINLINE EEnemyStateType GetCurrentEnemyStateType() { return CurrentStateType; }
+	//FORCEINLINE bool GetIsAttacking() { return IsAttacking; }
 };

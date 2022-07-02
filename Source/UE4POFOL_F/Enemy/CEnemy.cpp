@@ -67,6 +67,9 @@ void ACEnemy::BeginPlay()
 	{
 		if (WeaponClass[i])
 			Weapons.Add(GetWorld()->SpawnActor<ACWeapon>(WeaponClass[i], params));
+
+		if (Weapons[i])
+			Weapons[i]->SetOwner(this);
 	}
 
 	TArray<AActor*> outActorArr;
@@ -78,7 +81,7 @@ void ACEnemy::BeginPlay()
 	if (HealthBarWidgetComponent)
 		HealthBarWidgetComponent->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
 
-	CurrentStateType = EEnemyStateType::Idle;
+	SetCurrentEnemyStateType(EEnemyStateType::Idle);
 }
 
 void ACEnemy::Tick(float DeltaTime)
@@ -87,7 +90,7 @@ void ACEnemy::Tick(float DeltaTime)
 	
 	if (Opponent && bActivateRotateToOpponent)
 	{
-		CheckTrue(bDead);
+		CheckTrue(CurrentStateType == EEnemyStateType::Dead);
 		
 		FVector directionToOpponent = Opponent->GetActorLocation() - GetActorLocation();
 		directionToOpponent.Z = 0.0f;
@@ -151,8 +154,7 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 {
 	if (CurrentStateType == EEnemyStateType::Dead)
 		return 0.0f;
-	
-	bDamage = true;
+
 	//TODO: 임시 나중에 Tag로 바꿀 예정 
 	if (EventInstigator != GetWorld()->GetFirstPlayerController())
 		return DamageAmount;
@@ -162,100 +164,69 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 	Damaged.EventInstigator = EventInstigator;
 	Damaged.DamageCauser = DamageCauser;
 
-	//TODO: 이렇게 해도 될 지 모르겠다. 결과: 된다.
+	Hp -= Damaged.DamageAmount;
 
-	ShakeCamera(Damaged);
+	if (Hp > 0.0f)
+	{
+		ActivateDamageEffect();
+	}
 	ShowHitNumber(DamageAmount, this->GetActorLocation());
-
+	ShakeCamera(Damaged);
+	ShowHealthBar();
 	Damage();
-	// BUG: 컴포넌트 생성 후 리턴 값 수정해야된다.
+
 	return Damaged.DamageAmount;
 }
 
 void ACEnemy::Damage()
-{	
-	for (int i = 0; i < DamageDatas.Num(); i++)
-		CheckFalse(DamageDatas[i].Montage);
-	
-	for (int i = 0; i < DeadDatas.Num(); i++)
-		CheckFalse(DeadDatas[i].Montage);
-	
-	Hp -= Damaged.DamageAmount;
-
-	ShowHealthBar();
-	//ShowHealthBar_Implementation();
+{
+	bMontageIsPlaying = true;
 
 	FVector start = GetActorLocation();
 	FVector target = Damaged.EventInstigator->GetPawn()->GetActorLocation();
-	
+
 	FVector direction = target - start;
 	direction.Normalize();
-	
+
 	FTransform transform;
 	transform.SetLocation(GetActorLocation());
-	
+
 	if (Hp <= 0.0f)
 	{
+		for (int i = 0; i < DeadDatas.Num(); i++)
+			CheckFalse(DeadDatas[i].Montage);
+
 		if (DeadDatas[0].Montage)
 		{
-			CheckTrue(bDead);
+			CheckTrue(CurrentStateType == EEnemyStateType::Dead);
 
 			for (int i = 0; i < Weapons.Num(); i++)
 			{
 				if (Weapons[i])
 					Weapons[i]->DestroyWeapon();
 			}
-		
-			bMontageIsPlaying = true;
-			CurrentStateType = EEnemyStateType::Dead;
+
+			SetCurrentEnemyStateType(EEnemyStateType::Dead);
 
 			DeadDatas[0].PlayMontage(this);
-			
-			bDead = true;
 
 			SetActorRotation(FRotator(direction.Rotation().Pitch, direction.Rotation().Yaw - 90.0f, direction.Rotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
 			LaunchCharacter(-direction * DeadDatas[0].Launch, true, false);
-			
-			ActivateDissolve();
 
-			bDamage = false;
-		}
-
-		return;
+			ActivateDeadEffect();
+		}		
 	}
-	else
-	{
-		if (DamageDatas[0].Montage)
-		{
-			bMontageIsPlaying = true;
-			CurrentStateType = EEnemyStateType::Damage;
-
-			DamageDatas[0].PlayMontage(this);
-			LaunchCharacter(-direction * DamageDatas[0].Launch, true, false);
-
-			bDamage = false;
-		}
-	}
-
-	CurrentStateType = EEnemyStateType::Idle;
-}
-
-void ACEnemy::Dead()
-{
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	DestroyEnemy();
 }
 
 void ACEnemy::OnAttack()
 {
 	CheckTrue(bMontageIsPlaying);
-	
+		
 	for (int i = 0; i < ActionDatas.Num(); i++)
 		CheckFalse(ActionDatas[i].Montage);
 
 	bMontageIsPlaying = true;
-	CurrentStateType = EEnemyStateType::Attack;
+	SetCurrentEnemyStateType(EEnemyStateType::Attack);
 }
 
 void ACEnemy::ShakeCamera(FDamaged damage)
@@ -309,9 +280,18 @@ void ACEnemy::HideHealthBar()
 		HealthBarWidgetComponent->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
 }
 
+void ACEnemy::SetCurrentEnemyStateType(EEnemyStateType InType)
+{
+	PreviousStateType = CurrentStateType;
+	CurrentStateType = InType;
+
+	if (OnEnemyStateTypeChanged.IsBound())
+		OnEnemyStateTypeChanged.Broadcast(PreviousStateType, CurrentStateType);
+}
+
 void ACEnemy::OnStateTypeChange(EEnemyStateType InCurrentStateType)
 {
-	EEnemyStateType PreviousStateType = CurrentStateType;
+	PreviousStateType = CurrentStateType;
 	CurrentStateType = InCurrentStateType;
 
 	if (OnEnemyStateTypeChanged.IsBound())
@@ -335,7 +315,25 @@ void ACEnemy::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrim
 
 void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool InInterrupted)
 {
-	bMontageIsPlaying = false;
+	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
+		
+	if (CurrentStateType == EEnemyStateType::Attack)
+	{
+		bMontageIsPlaying = false;
+
+		if (OnEnemyAttackEnded.IsBound())
+			OnEnemyAttackEnded.Broadcast();
+		
+		SetCurrentEnemyStateType(EEnemyStateType::Idle);
+
+		return;
+	}
+	else if (CurrentStateType == EEnemyStateType::Dead)
+	{
+		bMontageIsPlaying = false;
+
+		return;
+	}
 }
 
 void ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass)
@@ -357,4 +355,18 @@ void ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyCla
 void ACEnemy::DestroyEnemy()
 {
 	Destroy();
+}
+
+void ACEnemy::SpawnEnemyEffectWeapon()
+{
+	for (int i = 0; i < EffectWeaponClass.Num(); i++)
+		CheckFalse(EffectWeaponClass[i]);
+
+	ACWeapon* effectWeapon = ACWeapon::SpawnWeapon(this, EffectWeaponClass[EffectWeaponIndex], GetMesh()->GetSocketLocation(EffectWeaponSpawnSocketName));
+	
+	if (effectWeapon)
+	{
+		effectWeapon->SetOwner(this);
+		effectWeapon->SetActorRotation(GetActorRotation());
+	}
 }

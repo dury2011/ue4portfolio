@@ -35,12 +35,12 @@ void ACEnemy_Buff_Red::OnAttack()
 {
 	bActivateRotateToOpponent = true;
 	
-	int select = UKismetMathLibrary::RandomInteger(2);
+	int select = UKismetMathLibrary::RandomInteger(3);
 
-	switch (select)
-	{
-		Super::OnAttack();
+	Super::OnAttack();
 	
+	switch (2)
+	{
 		case 0:
 		{
 			ActionDatas[0].PlayMontage(this);

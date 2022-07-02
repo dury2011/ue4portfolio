@@ -10,9 +10,9 @@ class UE4POFOL_F_API UCBTTaskNode_EnemyAttack : public UBTTaskNode
 	GENERATED_BODY()
 
 private:
-	UPROPERTY()
-	class ACEnemy* Enemy;
-	
+	bool IsAttacking = false;
+	//bool IsInterrupted = false;
+
 private:
 	UCBTTaskNode_EnemyAttack();
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)override;

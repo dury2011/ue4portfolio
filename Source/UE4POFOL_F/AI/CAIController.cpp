@@ -49,8 +49,8 @@ void ACAIController::Tick(float DeltaTime)
 	
 	if (Enemy)
 	{
-		if (Enemy->GetOpponent())
-			Blackboard->SetValueAsObject("Player", Enemy->GetOpponent());
+		//if (Enemy->GetOpponent())
+		//	Blackboard->SetValueAsObject("Player", Enemy->GetOpponent());
 	
 		Blackboard->SetValueAsEnum("State", (uint8)Enemy->GetCurrentEnemyStateType());		
 	}
@@ -71,8 +71,8 @@ void ACAIController::OnPossess(APawn* InPawn)
 
 		Blackboard->SetValueAsVector("SpawnLocation", InPawn->GetActorLocation());
 
-		if (Enemy->GetOpponent())
-			Blackboard->SetValueAsObject("Player", Enemy->GetOpponent());
+		//if (Enemy->GetOpponent())
+		//	Blackboard->SetValueAsObject("Player", Enemy->GetOpponent());
 	}
 	
 	//TODO: 아래 코드 주석 건너뛰는 부분 전까지, Spawn되는 Actor에서는 동작을 하는데 Play전에 Viewport에 Placed된 Actor에서는 동작을 안 함

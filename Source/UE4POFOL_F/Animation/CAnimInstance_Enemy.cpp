@@ -21,7 +21,6 @@ void UCAnimInstance_Enemy::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 	
-
 	CheckNull(Enemy);
 	
 	Speed = Enemy->GetVelocity().Size2D();
@@ -29,7 +28,7 @@ void UCAnimInstance_Enemy::NativeUpdateAnimation(float DeltaSeconds)
 	Pitch = (Enemy->GetOpponent()->GetActorLocation() - Enemy->GetActorLocation()).Rotation().Pitch;
 	Yaw = (Enemy->GetOpponent()->GetActorLocation() - Enemy->GetActorLocation()).Rotation().Yaw;
 	bFalling = Enemy->GetCharacterMovement()->IsFalling();
-	bDamage = Enemy->GetbDamage();
+	bDamage = (CurrentEnemyStateType == EEnemyStateType::Damage);
 	
 	if (Yaw >= -61.0f && Yaw <= 61.0f)
 		bCanRotate = false;

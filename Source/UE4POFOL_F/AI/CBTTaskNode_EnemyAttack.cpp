@@ -12,25 +12,25 @@ UCBTTaskNode_EnemyAttack::UCBTTaskNode_EnemyAttack()
 
 EBTNodeResult::Type UCBTTaskNode_EnemyAttack::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	Super::ExecuteTask(OwnerComp, NodeMemory);
+	EBTNodeResult::Type result = Super::ExecuteTask(OwnerComp, NodeMemory);
 
-	ACAIController* controller = Cast<ACAIController>(OwnerComp.GetOwner());
-	Enemy = Cast<ACEnemy>(controller->GetPawn());
+	auto character = Cast<ACEnemy>(OwnerComp.GetAIOwner()->GetPawn());
 	
-	if (Enemy)
-	{
-		Enemy->OnAttack();
-	
-		return EBTNodeResult::InProgress;
-	}
-	else
+	if (character == nullptr)
 		return EBTNodeResult::Failed;
+
+	character->OnAttack();
+
+	IsAttacking = true;
+	character->OnEnemyAttackEnded.AddLambda([this]() -> void { IsAttacking = false; });
+	
+	return EBTNodeResult::InProgress;
 }
 
 void UCBTTaskNode_EnemyAttack::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
 	Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
 
-	if (!Enemy->GetbMontageIsPlaying())
+	if (!IsAttacking)
 		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 }

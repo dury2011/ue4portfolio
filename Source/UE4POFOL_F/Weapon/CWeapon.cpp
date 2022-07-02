@@ -13,14 +13,14 @@
 ACWeapon::ACWeapon()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
 	CHelpers::CreateComponent<USceneComponent>(this, &Root, "Root");
-	TSubclassOf<AActor> bullet;
+
+	SetRootComponent(Root);
 }
 
 void ACWeapon::BeginPlay()
 {
-	OffCollision(); // 처음 시작시에는 Weapon의 Collision은 Off 되어야함. 
-	
 	if (GetOwner())
 	{
 		OwnerCharacter = Cast<ACharacter>(GetOwner());
@@ -28,12 +28,16 @@ void ACWeapon::BeginPlay()
 	}
 
 	GetComponents<UShapeComponent>(Collisions);
+	
+	OffCollision(); // 처음 시작시에는 Weapon의 Collision은 Off 되어야함. 
 
 	for (UShapeComponent* collision : Collisions)
 	{
 		collision->OnComponentBeginOverlap.AddDynamic(this, &ACWeapon::OnBeginOverlap);
 		collision->OnComponentEndOverlap.AddDynamic(this, &ACWeapon::OnEndOverlap);
-		collision->OnComponentHit.AddDynamic(this, &ACWeapon::OnHit);	
+		
+		if (!bIgnoreOnHit)
+			collision->OnComponentHit.AddDynamic(this, &ACWeapon::OnHit);	
 	}
 	
 	Super::BeginPlay();
@@ -116,7 +120,7 @@ void ACWeapon::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	CheckTrue(OwnerCharacter == OtherActor);
 	CheckTrue(OwnerCharacter->GetCapsuleComponent() == OverlappedComponent);
 	CheckTrue(OwnerCharacter->GetClass() == OtherActor->GetClass());
-	
+	CheckTrue(IsOverlapped);
 	//UCCharacterComponent* OverlappedActorCharacterComponent = Cast<UCCharacterComponent>(OtherActor->GetComponentByClass(UCCharacterComponent::StaticClass()));
 	//
 	//if (OverlappedActorCharacterComponent)
@@ -124,7 +128,8 @@ void ACWeapon::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 		//OverlappedActorCharacterComponent->GetDamageData(0).PlayMontage(Cast<ACharacter>(OtherActor));
 		// BUG: Apply Damage 여기 확인하기 
 	//}
-	
+	IsOverlapped = true;
+
 	float percentage = UKismetMathLibrary::RandomFloatInRange(0.0f, 100.0f);
 	float randomDeviation = UKismetMathLibrary::RandomIntegerInRange(0,RandomDeviation);
 	int32 pureDamage = PureDamage;
@@ -193,10 +198,12 @@ void ACWeapon::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 	CheckTrue(OwnerCharacter == OtherActor);
 	CheckTrue(OwnerCharacter->GetCapsuleComponent() == OverlappedComponent);
 	CheckTrue(OwnerCharacter->GetClass() == OtherActor->GetClass());
-
+	CheckFalse(IsOverlapped);
 	if (OtherActor->ActorHasTag(FName("Enemy_BossFriend")))
 		return;
-	 
+	
+	IsOverlapped = false;
+
 	GLog->Log("ACWeapon::OnEndOverlap()");
 
 	//// MEMO: 보스는 StateComponent가 없다.
@@ -233,6 +240,7 @@ void ACWeapon::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPri
 	CheckNull(HitComponent);
 	CheckNull(OtherActor);
 	CheckNull(OtherComp);
+	
 	
 	//DestroyWeapon();
 
