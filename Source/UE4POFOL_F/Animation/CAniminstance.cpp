@@ -50,7 +50,8 @@ void UCAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	RotationLastTick = OwnerCharacter->GetActorRotation();
 	YawDelta = UKismetMathLibrary::FInterpTo(YawDelta, UKismetMathLibrary::NormalizedDeltaRotator(RotationLastTick, OwnerCharacter->GetActorRotation()).Yaw / DeltaSeconds / 10.0f, DeltaSeconds, 0.0f);
 	Direction = CalculateDirection(OwnerCharacter->GetVelocity(), OwnerCharacter->GetControlRotation());
-	
+	IsRunning = (Speed >= 550.0f);
+
 	if (OwnerCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size2D() > 0.0f)
 		bAccelerating = true;
 	else

@@ -251,8 +251,8 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	//PlayerInputComponent->BindAction("Dash", EInputEvent::IE_DoubleClick, this, &ACPlayer::OnDash);
 	//PlayerInputComponent->BindAction("ControllerRotationYaw", EInputEvent::IE_Pressed, this, &ACPlayer::OnControllerRotationYaw_Debug);
 	
-	PlayerInputComponent->BindAction("Targetting_Select_Left", EInputEvent::IE_Pressed, this, &ACPlayer::TargettingSelectLeft);
-	PlayerInputComponent->BindAction("Targetting_Select_Right", EInputEvent::IE_Pressed, this, &ACPlayer::TargettingSelectRight);
+	//PlayerInputComponent->BindAction("Targetting_Select_Left", EInputEvent::IE_Pressed, this, &ACPlayer::TargettingSelectLeft);
+	//PlayerInputComponent->BindAction("Targetting_Select_Right", EInputEvent::IE_Pressed, this, &ACPlayer::TargettingSelectRight);
 }
  
 void ACPlayer::OnMoveForward(float AxisValue)
@@ -290,7 +290,7 @@ void ACPlayer::OnMoveRight(float AxisValue)
 	CheckTrue(bAttacking);
 
 	CharacterComponent->SetCurrentStateType(EStateType::Move);
-
+	
 	FRotator rotation = FRotator(0, GetControlRotation().Yaw, 0);
 	FVector direction = FQuat(rotation).GetRightVector().GetSafeNormal2D();
 
@@ -431,66 +431,16 @@ void ACPlayer::OffAim()
 	bAiming = false;
 }
 
-void ACPlayer::TargettingSelectLeft()
-{
-	CheckFalse(bAiming);
-	CheckFalse(CharacterComponent->GetIsWeaponOnehandMode());
-
-	if (OutTargettingActorArr.Num() > 0)
-	{
-		if (OutTargettingActorArr.Num() - 1 <= IndexTargetting)
-		{
-			IndexTargetting = 0;
-
-			TargetRotator = UKismetMathLibrary::FindLookAtRotation(CameraComponent->GetComponentLocation(), OutTargettingActorArr[IndexTargetting]->GetActorLocation());
-			
-			return;
-		}
-		else
-		{
-			IndexTargetting++;
-
-			TargetRotator = UKismetMathLibrary::FindLookAtRotation(CameraComponent->GetComponentLocation(), OutTargettingActorArr[IndexTargetting]->GetActorLocation());
-
-			return;
-		}
-	}
-}
-
-void ACPlayer::TargettingSelectRight()
-{
-	CheckFalse(bAiming);
-	CheckFalse(CharacterComponent->GetIsWeaponOnehandMode());
-
-	if (OutTargettingActorArr.Num() > 0)
-	{	
-		if (IndexTargetting <= 0)
-		{
-			IndexTargetting = 0;
-			
-			TargetRotator = UKismetMathLibrary::FindLookAtRotation(CameraComponent->GetComponentLocation(), OutTargettingActorArr[IndexTargetting]->GetActorLocation());
-
-			return;
-		}
-		else
-		{
-			IndexTargetting--;
-
-			TargetRotator = UKismetMathLibrary::FindLookAtRotation(CameraComponent->GetComponentLocation(), OutTargettingActorArr[IndexTargetting]->GetActorLocation());			return;
-
-			return;
-		}
-	}
-}
-
 void ACPlayer::OnRun()
 {
 	GetCharacterMovement()->MaxWalkSpeed = 600.0;
+	IsRunning = true;
 }
 
 void ACPlayer::OffRun()
 {
-	GetCharacterMovement()->MaxWalkSpeed = 400.0f;
+	GetCharacterMovement()->MaxWalkSpeed = 350.0;
+	IsRunning = false;
 }
 
 void ACPlayer::OnDash()
@@ -900,7 +850,6 @@ float ACPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& Damage
 
 	SpawnCameraEffect();
 	ShakeCamera();
-	
 	
 	if (CharacterComponent->GetCurrentHp() <= 0.0f)
 	{

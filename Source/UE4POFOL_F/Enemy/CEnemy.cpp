@@ -166,6 +166,11 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 
 	Hp -= Damaged.DamageAmount;
 
+	if (DamageDatas[0].Effect)
+	{
+		DamageDatas[0].PlayEffect(GetWorld(), this);
+	}
+
 	if (Hp > 0.0f)
 	{
 		ActivateDamageEffect();
@@ -217,6 +222,7 @@ void ACEnemy::Damage()
 		}		
 	}
 }
+
 
 void ACEnemy::OnAttack()
 {

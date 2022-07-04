@@ -27,7 +27,7 @@ public:
 
 	//UPROPERTY(EditAnywhere)
 	//class UFXSystemAsset* Effect;
-	//
+	
 	//UPROPERTY(EditAnywhere)
 	//FTransform EffectTransform;
 	//

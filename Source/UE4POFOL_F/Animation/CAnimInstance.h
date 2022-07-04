@@ -52,6 +52,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Animation")
 	bool bRifleEquippedAndHide;
 
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Animation")
+	bool IsRunning;
+
 	//UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Weapon Type")
 	//EWeaponType ActiveWeaponType = EWeaponType::Max;
 

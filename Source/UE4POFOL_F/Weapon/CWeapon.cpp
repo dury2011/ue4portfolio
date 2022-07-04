@@ -35,9 +35,7 @@ void ACWeapon::BeginPlay()
 	{
 		collision->OnComponentBeginOverlap.AddDynamic(this, &ACWeapon::OnBeginOverlap);
 		collision->OnComponentEndOverlap.AddDynamic(this, &ACWeapon::OnEndOverlap);
-		
-		if (!bIgnoreOnHit)
-			collision->OnComponentHit.AddDynamic(this, &ACWeapon::OnHit);	
+		collision->OnComponentHit.AddDynamic(this, &ACWeapon::OnHit);	
 	}
 	
 	Super::BeginPlay();
@@ -144,6 +142,13 @@ void ACWeapon::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	else
 		applyDamage = pureDamage + randomDeviation;
 	
+	//if (OwnerCharacter)
+	//{
+		//OwnerCharacter->CustomTimeDilation = 10e-8f;
+
+		//GetWorldTimerManager().SetTimer(StopTimer, this, &ACWeapon::RecoverDilation, StopTime, true);
+	//}
+
 	/* TODO: 2번 째 인수 float BaseDamage는 0.0f 이하이면 함수 몸체에서 도입에서 if 문으로 걸러져서 몸체 전체가 작동하지 않음 */
 	UGameplayStatics::ApplyDamage(OtherActor, applyDamage, OwnerCharacter->GetController(), this, NULL);
 
@@ -248,3 +253,12 @@ void ACWeapon::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPri
 	//	OnWeaponHit.Broadcast(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
 }
 
+void ACWeapon::RecoverDilation()
+{
+	//if (OwnerCharacter)
+	//{
+	//	OwnerCharacter->CustomTimeDilation = 1.0f;
+
+	//	GetWorldTimerManager().ClearTimer(StopTimer);
+	//}
+}

@@ -185,6 +185,9 @@ private:
 	bool bCanNextAction;
 	bool bAttacking = false;
 	bool bCanCombo = false;
+
+	bool IsRunning = false;
+	bool IsOrientRotationToMovement = false;
  
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class ACProjectile> SpellThrowProjectileClass;
@@ -213,8 +216,6 @@ private:
 	void OffJump();
 	void OnAim();
 	void OffAim();
-	void TargettingSelectLeft();
-	void TargettingSelectRight();
 	void OnRun();
 	void OffRun();
 	void OnDash();

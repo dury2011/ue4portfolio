@@ -80,7 +80,6 @@ protected:
 	class UWidgetComponent* HealthBarWidgetComponent;
 
 	//TODO: UPROPERTY(BlueprintAssignable)메크로 안 써도 되나?
-
 	
 	bool bMontageIsPlaying = false;
 	bool bActivateRotateToOpponent = true;
@@ -116,6 +115,7 @@ private:
 	EEnemyStateType CurrentStateType = EEnemyStateType::Max;
 	EEnemyStateType PreviousStateType = EEnemyStateType::Max;
 	FTimerHandle HealthBarTimer;
+	FTimerHandle RecoverInstigatorTimer;
 
 	struct FDamaged
 	{

@@ -75,6 +75,7 @@ private:
 	int32 ApplyDamage = 0.0;
 
 	FTimerHandle ComboCountTimer;
+	FTimerHandle StopTimer;
 	bool IsOverlapped = false;
 
 protected:
@@ -87,9 +88,8 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	class UCapsuleComponent* capsuleCollision;
 
-	/*if set this variable to true, Ignore to bind OnHit Function, this going to be prevent calling TakeDamage() function twice. */
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Setting")
-	bool bIgnoreOnHit = true;
+	float StopTime = 0.2f;
 
 public:	
 	ACWeapon();
@@ -128,6 +128,8 @@ private:
 
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	void RecoverDilation();
 
 public:
 	UFUNCTION(BlueprintImplementableEvent)
