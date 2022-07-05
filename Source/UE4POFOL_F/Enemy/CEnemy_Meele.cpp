@@ -31,6 +31,8 @@ void ACEnemy_Meele::Tick(float DeltaTime)
 
 void ACEnemy_Meele::OnAttack()
 {
+	Super::OnAttack();
+	
 	ActionDatas[0].PlayMontage(this);
 }
 

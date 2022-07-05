@@ -81,6 +81,8 @@ void ACEnemy::BeginPlay()
 	if (HealthBarWidgetComponent)
 		HealthBarWidgetComponent->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
 
+	GetWorldTimerManager().SetTimer(StrafeTimer, this, &ACEnemy::ChangeStrafing, ChangeStrafingTypeInterval, true);
+
 	SetCurrentEnemyStateType(EEnemyStateType::Idle);
 }
 
@@ -97,6 +99,11 @@ void ACEnemy::Tick(float DeltaTime)
 		FRotator targetRotation = FRotationMatrix::MakeFromX(directionToOpponent).Rotator();
 
 		SetActorRotation(FMath::RInterpTo(GetActorRotation(), targetRotation, DeltaTime, RotationSpeed));
+	}
+
+	if (CanStrafing)
+	{
+		AddMovementInput(StrafeDirection);
 	}
 
 	UpdateHitNumbers();
@@ -152,32 +159,50 @@ void ACEnemy::Tick(float DeltaTime)
 
 float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
-	if (CurrentStateType == EEnemyStateType::Dead)
-		return 0.0f;
-
-	//TODO: 임시 나중에 Tag로 바꿀 예정 
-	if (EventInstigator != GetWorld()->GetFirstPlayerController())
-		return DamageAmount;
-
-	Damaged.DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	//Damaged.DamageEvent = /* (FActionDamageEvent*)&DamageEvent; */ // EXPLAIN: 여기서 TakeDamage할 Character의 HitData가 할당됨
-	Damaged.EventInstigator = EventInstigator;
-	Damaged.DamageCauser = DamageCauser;
-
-	Hp -= Damaged.DamageAmount;
-
-	if (DamageDatas[0].Effect)
+	
+	// Check Execute function body
 	{
-		DamageDatas[0].PlayEffect(GetWorld(), this);
+		if (CurrentStateType == EEnemyStateType::Dead)
+			return 0.0f;
+
+		//TODO: 임시 나중에 Tag로 바꿀 예정 
+		if (EventInstigator != GetWorld()->GetFirstPlayerController())
+			return DamageAmount;
 	}
 
-	if (Hp > 0.0f)
+	// 구조체 값 할당 및 체력 빼기 
 	{
-		ActivateDamageEffect();
+		Damaged.DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+		Damaged.EventInstigator = EventInstigator;
+		Damaged.DamageCauser = DamageCauser;
+		//Damaged.DamageEvent = /* (FActionDamageEvent*)&DamageEvent; */ // EXPLAIN: 여기서 TakeDamage할 Character의 HitData가 할당됨
+		Hp -= Damaged.DamageAmount;
 	}
-	ShowHitNumber(DamageAmount, this->GetActorLocation());
-	ShakeCamera(Damaged);
-	ShowHealthBar();
+
+	//TODO: HitStop 인터페이스로 구현 가능?
+	// HitStop
+	{
+		CustomTimeDilation = 10e-5f;
+
+		GetWorldTimerManager().SetTimer(StopTimer, this, &ACEnemy::RecoverDilation, StopTime, true);
+	}
+	
+	// Effect
+	{
+		if (DamageDatas[0].Effect)
+		{
+			DamageDatas[0].PlayEffect(GetWorld(), this);
+		}
+
+		if (Hp > 0.0f)
+		{
+			ActivateDamageEffect();
+		}
+		ShowHitNumber(DamageAmount, this->GetActorLocation());
+		ShakeCamera(Damaged);
+		ShowHealthBar();
+	}
+
 	Damage();
 
 	return Damaged.DamageAmount;
@@ -223,7 +248,6 @@ void ACEnemy::Damage()
 	}
 }
 
-
 void ACEnemy::OnAttack()
 {
 	CheckTrue(bMontageIsPlaying);
@@ -233,6 +257,75 @@ void ACEnemy::OnAttack()
 
 	bMontageIsPlaying = true;
 	SetCurrentEnemyStateType(EEnemyStateType::Attack);
+}
+
+void ACEnemy::ChangeStrafing()
+{	
+	CheckTrue(CurrentStateType == EEnemyStateType::Attack);
+	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
+	
+	typedef EEnemyStrafingType s;
+
+	int32 select = UKismetMathLibrary::RandomIntegerInRange(0, 3);
+
+	switch ((EEnemyStrafingType)select)
+	{
+		case s::Front :
+		{
+			CurrentStrafingType = s::Front;
+			
+			StrafeDirection = GetActorForwardVector();
+
+			break;
+		}
+		case s::Back:
+		{
+			CurrentStrafingType = s::Back;
+			
+			StrafeDirection = GetActorForwardVector() * -1.0f;
+
+			break;
+		}
+		case s::Left:
+		{
+			CurrentStrafingType = s::Left;
+			
+			StrafeDirection = GetActorRightVector() * -1.0f;
+
+			break;
+		}
+		case s::Right:
+		{
+			CurrentStrafingType = s::Right;
+
+			StrafeDirection = GetActorRightVector();
+			
+			break;
+		}
+		default:
+		{
+			StrafeDirection = FVector::ZeroVector;
+
+			break;
+		}
+	}
+}
+
+void ACEnemy::BeginStrafing()
+{
+	CanStrafing = true;
+}
+
+void ACEnemy::EndStrafing()
+{
+	CanStrafing = false;
+}
+
+void ACEnemy::RecoverDilation()
+{
+	CustomTimeDilation = 1.0f;
+
+	GetWorldTimerManager().ClearTimer(StopTimer);
 }
 
 void ACEnemy::ShakeCamera(FDamaged damage)
@@ -322,23 +415,26 @@ void ACEnemy::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrim
 void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool InInterrupted)
 {
 	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
-		
-	if (CurrentStateType == EEnemyStateType::Attack)
+	
+	if (!InInterrupted)
 	{
-		bMontageIsPlaying = false;
+		if (CurrentStateType == EEnemyStateType::Attack)
+		{
+			bMontageIsPlaying = false;
 
-		if (OnEnemyAttackEnded.IsBound())
-			OnEnemyAttackEnded.Broadcast();
-		
-		SetCurrentEnemyStateType(EEnemyStateType::Idle);
+			if (OnEnemyAttackEnded.IsBound())
+				OnEnemyAttackEnded.Broadcast();
+			
+			SetCurrentEnemyStateType(EEnemyStateType::Idle);
 
-		return;
-	}
-	else if (CurrentStateType == EEnemyStateType::Dead)
-	{
-		bMontageIsPlaying = false;
+			return;
+		}
+		else if (CurrentStateType == EEnemyStateType::Dead)
+		{
+			bMontageIsPlaying = false;
 
-		return;
+			return;
+		}
 	}
 }
 

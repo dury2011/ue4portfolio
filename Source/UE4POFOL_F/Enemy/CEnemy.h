@@ -13,6 +13,12 @@ enum class EEnemyStateType : uint8
 	Idle, Walk, Run, Parkour, Attack, Damage, Dead, Max
 };
 
+UENUM(BlueprintType)
+enum class EEnemyStrafingType : uint8
+{
+	Front = 0, Back, Left, Right, Max
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEnemyStateTypeChanged, EEnemyStateType, InPreviousType, EEnemyStateType, InCurrentType);
 DECLARE_MULTICAST_DELEGATE(FOnEnemyMontageEnded);
 DECLARE_MULTICAST_DELEGATE(FOnEnemyAttackEnded);
@@ -24,7 +30,6 @@ class UE4POFOL_F_API ACEnemy : public ACharacter, public IGenericTeamAgentInterf
 	GENERATED_BODY()
 	
 public:
-	//UPROPERTY(BlueprintAssignable)
 	FOnEnemyStateTypeChanged OnEnemyStateTypeChanged;
 
 	FOnEnemyAttackEnded OnEnemyAttackEnded;
@@ -79,10 +84,15 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
 	class UWidgetComponent* HealthBarWidgetComponent;
 
-	//TODO: UPROPERTY(BlueprintAssignable)메크로 안 써도 되나?
-	
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	float StopTime = 0.2f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	float ChangeStrafingTypeInterval = 2.0f;
+
 	bool bMontageIsPlaying = false;
 	bool bActivateRotateToOpponent = true;
+	bool CanStrafing = false;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
 	FName EffectWeaponSpawnSocketName;
@@ -112,10 +122,15 @@ private:
 	UPROPERTY()
 	TArray<class ACWeapon*> Weapons;	
 	
+	FVector StrafeDirection = FVector::ZeroVector;
 	EEnemyStateType CurrentStateType = EEnemyStateType::Max;
 	EEnemyStateType PreviousStateType = EEnemyStateType::Max;
 	FTimerHandle HealthBarTimer;
-	FTimerHandle RecoverInstigatorTimer;
+	FTimerHandle StopTimer;
+	FTimerHandle StrafeTimer;
+
+	EEnemyStrafingType CurrentStrafingType = EEnemyStrafingType::Max;
+	EEnemyStrafingType PreviousEnemyStrafingType = EEnemyStrafingType::Max;
 
 	struct FDamaged
 	{
@@ -145,6 +160,14 @@ public:
 	virtual void OnAttack();
 
 private:
+	void ChangeStrafing();
+
+public:
+	void BeginStrafing();
+	void EndStrafing();
+
+private:
+	void RecoverDilation();
 	void ShakeCamera(FDamaged damage);
 
 protected:
@@ -206,5 +229,6 @@ public:
 	FORCEINLINE ACharacter* GetOpponent() { return Opponent; }
 	//FORCEINLINE void SetCurrentEnemyStateType(EEnemyStateType InType) { CurrentStateType = InType; }
 	FORCEINLINE EEnemyStateType GetCurrentEnemyStateType() { return CurrentStateType; }
+	FORCEINLINE ACWeapon* GetWeapon(int32 InIndex) { if (Weapons[InIndex]) return Weapons[InIndex]; else return nullptr; }
 	//FORCEINLINE bool GetIsAttacking() { return IsAttacking; }
 };

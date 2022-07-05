@@ -930,6 +930,9 @@ void ACPlayer::MontageEnded(UAnimMontage* InMontage, bool Ininterrupted)
 		}
 	}
 
+	if (CharacterComponent->GetCurrentStateType() == EStateType::Attack)
+		CharacterComponent->SetCurrentStateType(EStateType::Idle);
+
 	if (bPortalTeleporting)
 		bPortalTeleporting = false;
 

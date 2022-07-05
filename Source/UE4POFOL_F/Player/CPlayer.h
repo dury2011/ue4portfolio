@@ -316,6 +316,7 @@ private:
 
 public:
 	FORCEINLINE bool GetbAiming() { return bAiming; }
+	FORCEINLINE bool GetbAttacking() { return bAttacking; }
 	FORCEINLINE void SetbCanCombo(bool Inbool) { bCanCombo = Inbool; }
 	FORCEINLINE bool GetbCanCombo() { return bCanCombo; }
 	FORCEINLINE void SetIncreaseIndex() { Index++; }
