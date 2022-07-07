@@ -506,6 +506,8 @@ void ACPlayer::OnAction()
 	CheckTrue(CharacterComponent->GetIsWeaponUnarmedMode());
 	CheckTrue(bAiming);
 
+	CharacterComponent->SetCurrentStateType(EStateType::Attack);
+
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
 		if (GetMovementComponent()->IsFalling())
@@ -560,6 +562,8 @@ void ACPlayer::OnCriticalOne()
 		if (CharacterComponent->GetCriticalDatasOnehand(0).Montage)
 			CharacterComponent->GetCriticalDatasOnehand(0).PlayMontage(this);
 
+		GetWorldTimerManager().SetTimer(WarriorSkillTimer, this, &ACPlayer::SpawnWarriorSkillOneProjectile, 0.3f, true);
+		
 		CharacterComponent->SetIsMontagePlaying(true);
 	}
 	else if (CharacterComponent->GetIsWeaponSpellMode())
@@ -587,6 +591,8 @@ void ACPlayer::OffCriticalOne()
 	{
 		if (CharacterComponent->GetCriticalDatasOnehand(1).Montage)
 			CharacterComponent->GetCriticalDatasOnehand(1).PlayMontage(this);
+
+		GetWorldTimerManager().ClearTimer(WarriorSkillTimer);
 	}
 	else if (CharacterComponent->GetIsWeaponSpellMode())
 	{
@@ -673,6 +679,21 @@ void ACPlayer::SpawnPortalProjectile()
 	PortalProjectile->SetActorRotation(CameraComponent->GetComponentRotation());
 	
 	ShootSpawnedProjectile(PortalProjectile, "Spawn_Spell_Projectile_R");
+}
+
+void ACPlayer::SpawnWarriorSkillOneProjectile()
+{
+	if (WarriorSkill1ProjectileClass)
+	{
+		SpawnWarriorSkillOneEffect();
+
+		WarriorSkill1Projectile = ACProjectile::SpawnProjectile(this, WarriorSkill1ProjectileClass, FName("Spawn_Player_Warrior_Skill1_Projectile"));
+		WarriorSkill1Projectile->SetOwner(this);
+
+		WarriorSkill1Projectile->SetActorRotation(CameraComponent->GetComponentRotation());
+
+		ShootSpawnedProjectile(WarriorSkill1Projectile, "Spawn_Player_Warrior_Skill1_Projectile");
+	}
 }
 
 void ACPlayer::SpawnSpellThrowProjectile()

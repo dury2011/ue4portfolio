@@ -139,6 +139,9 @@ private:
 	UPROPERTY()
 	TSubclassOf<class ACPortalDoor> PortalDoorExitClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
+	TSubclassOf<class ACProjectile> WarriorSkill1ProjectileClass;
+
 	UPROPERTY()
 	TSubclassOf<class ACWeapon> SpellMeteorClass;
 
@@ -161,6 +164,9 @@ private:
 	class ACProjectile* SpellProjectileR;
 
 	UPROPERTY()
+	class ACProjectile* WarriorSkill1Projectile;
+
+	UPROPERTY()
 	TArray<AActor*> OutTargettingActorArr;
 
 	//TODO: 컴포넌트에 넣으면 핫 리로드 이슈 생길 수도 있어서 일단 임시로 Player 클래스에 직접 선언함
@@ -168,6 +174,7 @@ private:
 	TSubclassOf<class UMatineeCameraShake> DamageCameraShakeClass;
 
 	FTimerHandle ComboCountTimer;
+	FTimerHandle WarriorSkillTimer;
 	float Zooming;
 	float ZoomInterpSpeed = 2.0f;
 	int32 Index = 0;
@@ -234,6 +241,7 @@ public:
 	void SpawnSpellProjectileL();
 	void SpawnSpellProjectileR();
 	void SpawnPortalProjectile();
+	void SpawnWarriorSkillOneProjectile();
 	void SpawnSpellThrowProjectile();
 	void SpawnSpellMeteorWeapon();
 
@@ -244,6 +252,9 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void SpawnCameraEffect();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void SpawnWarriorSkillOneEffect();
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void PlaySpellPortalOnAimSound();

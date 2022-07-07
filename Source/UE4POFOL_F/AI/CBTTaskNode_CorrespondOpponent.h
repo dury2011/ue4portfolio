@@ -13,13 +13,13 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Setting")
 	float StrafingTime = 1.0f; 
 
-	FTimerHandle StrafeTimer;
+	//FTimerHandle StrafeTimer;
 
 	bool IsAttacking = false;
-	bool IsStrafing = false;
+	bool IsDodging = false;
 	bool IsDefencing = false;
 	bool IsSwitchToAttack = false;
-	bool IsSwitchToStrafe = false;
+	bool IsSwitchToDodge = false;
 	bool IsSwitchToDefence = false;
 
 private:

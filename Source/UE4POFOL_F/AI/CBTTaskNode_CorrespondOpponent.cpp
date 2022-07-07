@@ -25,20 +25,20 @@ EBTNodeResult::Type UCBTTaskNode_CorrespondOpponent::ExecuteTask(UBehaviorTreeCo
 	{
 		case 0:
 		{
-			IsSwitchToAttack = true;
-			character->OnAttack();
-			IsAttacking = true;
-			character->OnEnemyAttackEnded.AddLambda([this]() -> void { IsAttacking = false; });
-
+			//IsSwitchToAttack = true;
+			//character->OnAttack();
+			//IsAttacking = true;
+			//character->OnEnemyAttackEnded.AddLambda([this]() -> void { IsAttacking = false; });
+			
 			break;
 		}
 		case 1:
 		{
-			IsSwitchToStrafe = true;
-			IsStrafing = true;
-			character->BeginStrafing();
-
-			character->GetWorldTimerManager().SetTimer(StrafeTimer, this, &UCBTTaskNode_CorrespondOpponent::EndStrafing, StrafingTime, true);
+			//TODO: 다른것 구현
+			IsSwitchToDodge = true;
+			character->BeginDodge();
+			IsDodging = true;
+			character->OnEnemyParkourEnded.AddLambda([this]() -> void {IsDodging = false; });
 
 			break;
 		}
@@ -49,8 +49,7 @@ EBTNodeResult::Type UCBTTaskNode_CorrespondOpponent::ExecuteTask(UBehaviorTreeCo
 			//GLog->Log("UCBTTaskNode_CorrespondOpponent::Enemy Shield Activated!");
 		//}
 		default:
-			break;
-		
+			break;	
 	}
 
 	return EBTNodeResult::InProgress;
@@ -60,18 +59,10 @@ void UCBTTaskNode_CorrespondOpponent::TickTask(UBehaviorTreeComponent& OwnerComp
 {
 	Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
 
-	if (IsSwitchToStrafe && !IsStrafing)
+	if (IsSwitchToDodge && !IsDodging)
 	{
-		auto character = Cast<ACEnemy>(OwnerComp.GetAIOwner()->GetPawn());
-
-		if (character == nullptr)
-			return;
+		IsSwitchToDodge = false;
 		
-		character->GetWorldTimerManager().ClearTimer(StrafeTimer);
-		IsSwitchToStrafe = false;
-		
-		character->EndStrafing();
-
 		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 
 		return;
@@ -84,9 +75,4 @@ void UCBTTaskNode_CorrespondOpponent::TickTask(UBehaviorTreeComponent& OwnerComp
 
 		return;
 	}
-}
-
-void UCBTTaskNode_CorrespondOpponent::EndStrafing()
-{
-	IsStrafing = false;
 }

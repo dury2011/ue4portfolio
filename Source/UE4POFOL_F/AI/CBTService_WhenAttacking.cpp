@@ -30,7 +30,7 @@ void UCBTService_WhenAttacking::TickNode(UBehaviorTreeComponent& OwnerComp, uint
 	UWorld* world = controllingPawn->GetWorld();
 	FVector center = controllingPawn->GetActorLocation();
 
-	if (world == nullptr)
+	if (world == nullptr) 
 		return;
 
 	TArray<FOverlapResult> overlapResults;

@@ -10,7 +10,7 @@
 UENUM(BlueprintType)
 enum class EEnemyStateType : uint8
 {
-	Idle, Walk, Run, Parkour, Attack, Damage, Dead, Max
+	IdleOrJustMoving, Parkour, Attack, Damage, Dead, Max
 };
 
 UENUM(BlueprintType)
@@ -22,6 +22,7 @@ enum class EEnemyStrafingType : uint8
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEnemyStateTypeChanged, EEnemyStateType, InPreviousType, EEnemyStateType, InCurrentType);
 DECLARE_MULTICAST_DELEGATE(FOnEnemyMontageEnded);
 DECLARE_MULTICAST_DELEGATE(FOnEnemyAttackEnded);
+DECLARE_MULTICAST_DELEGATE(FOnEnemyParkourEnded);
 DECLARE_MULTICAST_DELEGATE(FOnEnemyMontageInterrupted);
 
 UCLASS()
@@ -37,6 +38,8 @@ public:
 	FOnEnemyMontageEnded OnEnemyMontageEnded;
 
 	FOnEnemyMontageInterrupted OnEnemyMontageInterrupted;
+
+	FOnEnemyParkourEnded OnEnemyParkourEnded;
 
 protected:	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
@@ -64,6 +67,9 @@ protected:
 	TArray<FDamageData> DeadDatas;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	TArray<FActionData> DodgeDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
 	TArray<TSubclassOf<class ACWeapon>> WeaponClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
@@ -77,9 +83,6 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
 	TSubclassOf<class UAnimInstance> AnimBlueprint;
-
-	//UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	//TSubclassOf<class UUserWidget> HealthBarWidget;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
 	class UWidgetComponent* HealthBarWidgetComponent;
@@ -131,6 +134,7 @@ private:
 
 	EEnemyStrafingType CurrentStrafingType = EEnemyStrafingType::Max;
 	EEnemyStrafingType PreviousEnemyStrafingType = EEnemyStrafingType::Max;
+	float DistanceToOpponent;
 
 	struct FDamaged
 	{
@@ -152,19 +156,18 @@ public:
 public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
-private:
-	void Damage();
-
 public:
-	//TODO: 파생 클래스에서 재정의하여, 공격 관련 함수 대체하기
 	virtual void OnAttack();
 
 private:
-	void ChangeStrafing();
+	void Damage();
+	void Dead();
 
 public:
 	void BeginStrafing();
 	void EndStrafing();
+	void BeginDodge();
+	void ChangeStrafing();
 
 private:
 	void RecoverDilation();
@@ -221,6 +224,7 @@ protected:
 	void OnMontageEnded(UAnimMontage* InMontage, bool InInterrupted);
 
 public:
+	void MontageEnded();
 	void OnStateTypeChange(EEnemyStateType InCurrentStateType);
 	
 	//FORCEINLINE bool GetbDamage() { return bDamage; }
@@ -230,5 +234,6 @@ public:
 	//FORCEINLINE void SetCurrentEnemyStateType(EEnemyStateType InType) { CurrentStateType = InType; }
 	FORCEINLINE EEnemyStateType GetCurrentEnemyStateType() { return CurrentStateType; }
 	FORCEINLINE ACWeapon* GetWeapon(int32 InIndex) { if (Weapons[InIndex]) return Weapons[InIndex]; else return nullptr; }
+	FORCEINLINE bool GetCanStrafing() { return CanStrafing; }
 	//FORCEINLINE bool GetIsAttacking() { return IsAttacking; }
 };

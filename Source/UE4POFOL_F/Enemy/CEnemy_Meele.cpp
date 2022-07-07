@@ -33,6 +33,8 @@ void ACEnemy_Meele::OnAttack()
 {
 	Super::OnAttack();
 	
-	ActionDatas[0].PlayMontage(this);
+	int select = UKismetMathLibrary::RandomIntegerInRange(0, 2);
+
+	ActionDatas[select].PlayMontage(this);
 }
 

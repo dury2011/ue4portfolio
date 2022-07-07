@@ -20,4 +20,5 @@ public:
 
 	virtual void OnAttack() override;
 
+	void GoToOpponent();
 };

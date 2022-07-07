@@ -80,9 +80,22 @@ void UCBTService_Enemy::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 	//}
 
 	APawn* controllingPawn = OwnerComp.GetAIOwner()->GetPawn();
-
+	
 	if (controllingPawn == nullptr)
 		return;
+
+	ACEnemy* enemy = Cast<ACEnemy>(controllingPawn);
+	
+	if (enemy == nullptr)
+		return;
+	
+	ACPlayer* player = Cast<ACPlayer>(enemy->GetOpponent());
+
+	if (player == nullptr)
+		return;
+
+	EStateType playerCurrentState = player->CharacterComponent->GetCurrentStateType();
+	OwnerComp.GetBlackboardComponent()->SetValueAsEnum("Player State", (uint8)playerCurrentState);
 
 	UWorld* world = controllingPawn->GetWorld();
 	FVector center = controllingPawn->GetActorLocation();

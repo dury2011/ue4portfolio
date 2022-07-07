@@ -31,13 +31,12 @@ ACEnemy::ACEnemy()
 	PrimaryActorTick.bCanEverTick = true;
 
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-	CurrentStateType = EEnemyStateType::Idle;
+	CurrentStateType = EEnemyStateType::IdleOrJustMoving;
 	HealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>("Health Bar Widget");
 	HealthBarWidgetComponent->SetupAttachment(GetMesh());
 	//HealthBarWidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 150.0f));
 	HealthBarWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	HealthBarWidgetComponent->SetDrawSize(FVector2D(125.0f, 15.0f));
-
 	
 	//TODO: 적용 안됨, 블루프린트에서 직접 해줘야됨
 	//if (HealthBarWidget)
@@ -48,42 +47,60 @@ void ACEnemy::BeginPlay()
 {
 	Super::BeginPlay(); 
 
-	GetComponents<UCapsuleComponent>(CapsuleCollisions);
-
-	for (UShapeComponent* collision : CapsuleCollisions)
+	// 각종 바인딩
 	{
-		collision->OnComponentBeginOverlap.AddDynamic(this, &ACEnemy::OnBeginOverlap);
-		collision->OnComponentEndOverlap.AddDynamic(this, &ACEnemy::OnEndOverlap);
-		collision->OnComponentHit.AddDynamic(this, &ACEnemy::OnHit);
+		GetComponents<UCapsuleComponent>(CapsuleCollisions);
+
+		for (UShapeComponent* collision : CapsuleCollisions)
+		{
+			collision->OnComponentBeginOverlap.AddDynamic(this, &ACEnemy::OnBeginOverlap);
+			collision->OnComponentEndOverlap.AddDynamic(this, &ACEnemy::OnEndOverlap);
+			collision->OnComponentHit.AddDynamic(this, &ACEnemy::OnHit);
+		}
+	
+		if (GetMesh()->GetAnimInstance())
+			GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACEnemy::OnMontageEnded);
 	}
 
-	if (GetMesh()->GetAnimInstance())
-		GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACEnemy::OnMontageEnded);
-
-	FActorSpawnParameters params;
-	params.Owner = this;
-
-	for (int i = 0; i < WeaponClass.Num(); i++)
+	// 무기 스폰, 무기 오너 설정
 	{
-		if (WeaponClass[i])
-			Weapons.Add(GetWorld()->SpawnActor<ACWeapon>(WeaponClass[i], params));
+		FActorSpawnParameters params;
+		params.Owner = this;
 
-		if (Weapons[i])
-			Weapons[i]->SetOwner(this);
+		for (int i = 0; i < WeaponClass.Num(); i++)
+		{
+			if (WeaponClass[i])
+				Weapons.Add(GetWorld()->SpawnActor<ACWeapon>(WeaponClass[i], params));
+
+			if (Weapons[i])
+				Weapons[i]->SetOwner(this);
+		}
 	}
 
-	TArray<AActor*> outActorArr;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), outActorArr);
+	// 상대방(Player) 설정
+	{
+		TArray<AActor*> outActorArr;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), outActorArr);
 
-	for (int i = 0; i < outActorArr.Num(); i++)
-		Opponent = dynamic_cast<ACPlayer*>(outActorArr[i]);
+		for (int i = 0; i < outActorArr.Num(); i++)
+			Opponent = dynamic_cast<ACPlayer*>(outActorArr[i]);
+	}
 
-	if (HealthBarWidgetComponent)
-		HealthBarWidgetComponent->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
+	// HealthBar 위젯 Hidden 설정
+	{
+		if (HealthBarWidgetComponent)
+			HealthBarWidgetComponent->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
+	}
 
-	GetWorldTimerManager().SetTimer(StrafeTimer, this, &ACEnemy::ChangeStrafing, ChangeStrafingTypeInterval, true);
+	// 타이머 설정
+	{
+		//GetWorldTimerManager().SetTimer(StrafeTimer, this, &ACEnemy::ChangeStrafing, ChangeStrafingTypeInterval, true);
+	}
 
-	SetCurrentEnemyStateType(EEnemyStateType::Idle);
+	// 열거체 설정
+	{
+		SetCurrentEnemyStateType(EEnemyStateType::IdleOrJustMoving);
+	}
 }
 
 void ACEnemy::Tick(float DeltaTime)
@@ -101,9 +118,28 @@ void ACEnemy::Tick(float DeltaTime)
 		SetActorRotation(FMath::RInterpTo(GetActorRotation(), targetRotation, DeltaTime, RotationSpeed));
 	}
 
+	if (Opponent)
+	{
+		DistanceToOpponent = GetDistanceTo(this);
+	}
+
 	if (CanStrafing)
 	{
 		AddMovementInput(StrafeDirection);
+	}
+	
+	// MEMO: Enemy가 Dead 상태이면 모든 테스크 노드는 성공으로 종료되어야 함
+	if (CurrentStateType == EEnemyStateType::Dead)
+	{
+		if (OnEnemyAttackEnded.IsBound())
+			OnEnemyAttackEnded.Broadcast();
+
+		if (OnEnemyParkourEnded.IsBound())
+			OnEnemyParkourEnded.Broadcast();
+
+		GLog->Log("ACEnemy::MontageEnded By EnemyDead");
+
+		return;
 	}
 
 	UpdateHitNumbers();
@@ -159,7 +195,6 @@ void ACEnemy::Tick(float DeltaTime)
 
 float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
-	
 	// Check Execute function body
 	{
 		if (CurrentStateType == EEnemyStateType::Dead)
@@ -179,39 +214,6 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 		Hp -= Damaged.DamageAmount;
 	}
 
-	//TODO: HitStop 인터페이스로 구현 가능?
-	// HitStop
-	{
-		CustomTimeDilation = 10e-5f;
-
-		GetWorldTimerManager().SetTimer(StopTimer, this, &ACEnemy::RecoverDilation, StopTime, true);
-	}
-	
-	// Effect
-	{
-		if (DamageDatas[0].Effect)
-		{
-			DamageDatas[0].PlayEffect(GetWorld(), this);
-		}
-
-		if (Hp > 0.0f)
-		{
-			ActivateDamageEffect();
-		}
-		ShowHitNumber(DamageAmount, this->GetActorLocation());
-		ShakeCamera(Damaged);
-		ShowHealthBar();
-	}
-
-	Damage();
-
-	return Damaged.DamageAmount;
-}
-
-void ACEnemy::Damage()
-{
-	bMontageIsPlaying = true;
-
 	FVector start = GetActorLocation();
 	FVector target = Damaged.EventInstigator->GetPawn()->GetActorLocation();
 
@@ -221,41 +223,77 @@ void ACEnemy::Damage()
 	FTransform transform;
 	transform.SetLocation(GetActorLocation());
 
+	SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
+	LaunchCharacter(-direction * DeadDatas[0].Launch, true, false);
+
+	ShowHitNumber(DamageAmount, this->GetActorLocation());
+	ShowHealthBar();
+	ShakeCamera(Damaged);
+	//TODO: HitStop 인터페이스로 구현 가능?
+	// HitStop
+	{
+		CustomTimeDilation = 10e-5f;
+
+		GetWorldTimerManager().SetTimer(StopTimer, this, &ACEnemy::RecoverDilation, StopTime, true);
+	}
+	
+	Damage();
+	Dead();
+
+	return Damaged.DamageAmount;
+}
+
+void ACEnemy::Damage()
+{
+	for (int i = 0; i < DamageDatas.Num(); i++)
+		CheckFalse(DamageDatas[i].Montage);
+	
+	//CheckTrue(CurrentStateType == EEnemyStateType::Damage);
+
+	if (Hp > 0.0f)
+	{
+		//SetCurrentEnemyStateType(EEnemyStateType::Damage);
+		
+		if (DamageDatas[0].Effect)
+			DamageDatas[0].PlayEffect(GetWorld(), this);
+
+		ActivateDamageEffect();
+
+		//DamageDatas[0].PlayMontage(this);
+	}
+}
+
+void ACEnemy::Dead()
+{
+	for (int i = 0; i < DeadDatas.Num(); i++)
+		CheckFalse(DeadDatas[i].Montage);
+	
+	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
+	
 	if (Hp <= 0.0f)
 	{
-		for (int i = 0; i < DeadDatas.Num(); i++)
-			CheckFalse(DeadDatas[i].Montage);
-
-		if (DeadDatas[0].Montage)
+		SetCurrentEnemyStateType(EEnemyStateType::Dead);
+		
+		for (int i = 0; i < Weapons.Num(); i++)
 		{
-			CheckTrue(CurrentStateType == EEnemyStateType::Dead);
+			if (Weapons[i])
+				Weapons[i]->DestroyWeapon();
+		}
 
-			for (int i = 0; i < Weapons.Num(); i++)
-			{
-				if (Weapons[i])
-					Weapons[i]->DestroyWeapon();
-			}
+		DeadDatas[0].PlayMontage(this);
 
-			SetCurrentEnemyStateType(EEnemyStateType::Dead);
-
-			DeadDatas[0].PlayMontage(this);
-
-			SetActorRotation(FRotator(direction.Rotation().Pitch, direction.Rotation().Yaw - 90.0f, direction.Rotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
-			LaunchCharacter(-direction * DeadDatas[0].Launch, true, false);
-
-			ActivateDeadEffect();
-		}		
+		ActivateDeadEffect();
 	}
 }
 
 void ACEnemy::OnAttack()
 {
-	CheckTrue(bMontageIsPlaying);
-		
+	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
+
 	for (int i = 0; i < ActionDatas.Num(); i++)
 		CheckFalse(ActionDatas[i].Montage);
 
-	bMontageIsPlaying = true;
+	CheckTrue(CurrentStateType == EEnemyStateType::Attack);
 	SetCurrentEnemyStateType(EEnemyStateType::Attack);
 }
 
@@ -263,27 +301,27 @@ void ACEnemy::ChangeStrafing()
 {	
 	CheckTrue(CurrentStateType == EEnemyStateType::Attack);
 	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
-	
+
 	typedef EEnemyStrafingType s;
 
 	int32 select = UKismetMathLibrary::RandomIntegerInRange(0, 3);
-
+	
 	switch ((EEnemyStrafingType)select)
 	{
 		case s::Front :
 		{
-			CurrentStrafingType = s::Front;
-			
-			StrafeDirection = GetActorForwardVector();
-
+			//CurrentStrafingType = s::Front;
+			//
+			//StrafeDirection = GetActorForwardVector();
+	
 			break;
 		}
 		case s::Back:
 		{
-			CurrentStrafingType = s::Back;
-			
-			StrafeDirection = GetActorForwardVector() * -1.0f;
-
+			//CurrentStrafingType = s::Back;
+			//
+			//StrafeDirection = GetActorForwardVector() * -1.0f;
+	
 			break;
 		}
 		case s::Left:
@@ -291,13 +329,13 @@ void ACEnemy::ChangeStrafing()
 			CurrentStrafingType = s::Left;
 			
 			StrafeDirection = GetActorRightVector() * -1.0f;
-
+	
 			break;
 		}
 		case s::Right:
 		{
 			CurrentStrafingType = s::Right;
-
+	
 			StrafeDirection = GetActorRightVector();
 			
 			break;
@@ -305,7 +343,7 @@ void ACEnemy::ChangeStrafing()
 		default:
 		{
 			StrafeDirection = FVector::ZeroVector;
-
+	
 			break;
 		}
 	}
@@ -319,6 +357,21 @@ void ACEnemy::BeginStrafing()
 void ACEnemy::EndStrafing()
 {
 	CanStrafing = false;
+}
+
+void ACEnemy::BeginDodge()
+{
+	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
+
+	for (int i = 0; i < DodgeDatas.Num(); i++)
+		CheckFalse(DodgeDatas[i].Montage);
+
+	CheckTrue(CurrentStateType == EEnemyStateType::Parkour);
+	SetCurrentEnemyStateType(EEnemyStateType::Parkour);
+
+	int select = UKismetMathLibrary::RandomIntegerInRange(0, 1);
+
+	DodgeDatas[select].PlayMontage(this);
 }
 
 void ACEnemy::RecoverDilation()
@@ -412,29 +465,40 @@ void ACEnemy::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrim
 
 }
 
-void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool InInterrupted)
+void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool Interrupted)
 {
-	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
-	
-	if (!InInterrupted)
+	// MEMO: Enemy의 몽타주가 재생 후 정상적으로 종료될 경우 노드가 성공으로 끝나야함
+	if (!Interrupted)
 	{
 		if (CurrentStateType == EEnemyStateType::Attack)
 		{
-			bMontageIsPlaying = false;
-
 			if (OnEnemyAttackEnded.IsBound())
 				OnEnemyAttackEnded.Broadcast();
-			
-			SetCurrentEnemyStateType(EEnemyStateType::Idle);
+
+			//SetCurrentEnemyStateType(EEnemyStateType::IdleOrJustMoving);
+
+			GLog->Log("ACEnemy::OnMontageEnded Normal");
 
 			return;
 		}
-		else if (CurrentStateType == EEnemyStateType::Dead)
+		else if (CurrentStateType == EEnemyStateType::Parkour)
 		{
-			bMontageIsPlaying = false;
+			if (OnEnemyParkourEnded.IsBound())
+				OnEnemyParkourEnded.Broadcast();
+
+			//SetCurrentEnemyStateType(EEnemyStateType::IdleOrJustMoving);
+
+			GLog->Log("ACEnemy::OnMontageEnded Normal");
 
 			return;
 		}
+	}
+	// MEMO: 몽타주 재생 도중 다른 몽타주가 재생될 경우 Interrupted == true
+	else if (Interrupted)
+	{
+		GLog->Log("ACEnemy::OnMontageEnded Interrupted!");
+
+		return;
 	}
 }
 

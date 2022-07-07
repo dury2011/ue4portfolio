@@ -14,17 +14,14 @@ EBTNodeResult::Type UCBTTaskNode_StrafeBegin::ExecuteTask(UBehaviorTreeComponent
 {
 	EBTNodeResult::Type result = Super::ExecuteTask(OwnerComp, NodeMemory);
 
-	auto character = Cast<ACEnemy>(OwnerComp.GetAIOwner()->GetPawn());
+	Enemy = Cast<ACEnemy>(OwnerComp.GetAIOwner()->GetPawn());
 
-	if (character == nullptr)
+	if (Enemy == nullptr)
 		return EBTNodeResult::Failed;
-	else
-	{
-		bExecute = true;
-		
-		character->BeginStrafing();
-		character->GetWorldTimerManager().SetTimer(StopTimer, this, &UCBTTaskNode_StrafeBegin::StopStrafing, StrafingTime);
-	}
+	
+	Enemy->GetWorldTimerManager().SetTimer(EndTimer, this, &UCBTTaskNode_StrafeBegin::EndStrafing, StrafingTime, true);
+	Enemy->GetWorldTimerManager().SetTimer(ChangeDirectionTimer, this, &UCBTTaskNode_StrafeBegin::ChangeStrafing, ChangeDirectionTime, true);
+	Enemy->BeginStrafing();
 
 	return EBTNodeResult::InProgress;
 }
@@ -33,21 +30,22 @@ void UCBTTaskNode_StrafeBegin::TickTask(UBehaviorTreeComponent& OwnerComp, uint8
 {
 	Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
 
-	auto character = Cast<ACEnemy>(OwnerComp.GetAIOwner()->GetPawn());
-
-	if (character == nullptr)
-		return;
-
-	if (!bExecute)
-	{
-		character->GetWorldTimerManager().ClearTimer(StopTimer);
-		character->EndStrafing();
-		
+	if (!Enemy->GetCanStrafing())
 		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
-	}
 }
 
-void UCBTTaskNode_StrafeBegin::StopStrafing()
+void UCBTTaskNode_StrafeBegin::ChangeStrafing()
 {
-	bExecute = false;
+	Enemy->ChangeStrafing();
+	
+	Enemy->GetWorldTimerManager().ClearTimer(ChangeDirectionTimer);
 }
+
+void UCBTTaskNode_StrafeBegin::EndStrafing()
+{
+	Enemy->EndStrafing();
+
+	Enemy->GetWorldTimerManager().ClearTimer(EndTimer);
+}
+
+
