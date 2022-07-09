@@ -1,8 +1,5 @@
 /* MEMO: CPlayer.cpp 코드 배치 정리 완료 
 * .h 파일에 선언된 함수 원형 순으로 함수 정의를 작성하였다. */
-//TODO: 코드 배치 상시 정리 확인
-//TODO: OnAim(), OffAim() 보간 
-//TODO: 점프 이슈 수정
 #include "CPlayer.h"
 #include "Global.h"
 #include "Components/CapsuleComponent.h"
@@ -19,9 +16,7 @@
 #include "Components/ArrowComponent.h"
 #include "Enemy/CEnemy.h"
 #include "Components/CapsuleComponent.h"
-//#include "Weapon/CWeaponData.h"
 #include "Weapon/CDoAction.h"
-//#include "Skill/CSkill.h"
 #include "Component/CWidgetComponent.h"
 #include "Component/CCharacterComponent.h"
 #include "Weapon/CProjectile.h"
@@ -29,8 +24,6 @@
 #include "Object/CPortalDoor.h"
 #include "Object/CCrosshair.h"
 #include "Object/CCrosshair_SpellThrow.h"
-
-//#define LOG_PLAYER
 
 ACPlayer::ACPlayer()
 {
@@ -126,40 +119,35 @@ ACPlayer::ACPlayer()
 	//	}
 	//}
 
-	ConstructorHelpers::FClassFinder<ACPortalCrosshair> assetCrosshair_Portal(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CPortalCrosshair'"));
+	ConstructorHelpers::FClassFinder<ACPortalCrosshair> assetCrosshair_Portal(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CPortalCrosshair.BP_CPortalCrosshair_C'"));
 
 	if (assetCrosshair_Portal.Succeeded())
 		PortalCrosshairClass = assetCrosshair_Portal.Class;
 
-	ConstructorHelpers::FClassFinder<ACCrosshair> assetCrosshair_SpellMeteor(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CWeapon_SpellMeteor'"));
-
+	ConstructorHelpers::FClassFinder<ACCrosshair> assetCrosshair_SpellMeteor(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CCrosshair_SpellMeteor.BP_CCrosshair_SpellMeteor_C'"));
+	
 	if (assetCrosshair_SpellMeteor.Succeeded())
 		Crosshair_SpellMeteorClass = assetCrosshair_SpellMeteor.Class;
 
-	ConstructorHelpers::FClassFinder<ACProjectile> assetPortalProjectile(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CProjectile_Portal'"));
+	//ConstructorHelpers::FClassFinder<ACProjectile> assetPortalProjectile(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CProjectile_Portal'"));
+	//
+	//if (assetPortalProjectile.Succeeded())
+	//	PortalProjectileClass = assetPortalProjectile.Class;
+	//
+	//ConstructorHelpers::FClassFinder<ACPortalDoor> assetPortalDoorEntrance(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CPortalDoor_Enterance'"));
+	//
+	//if (assetPortalDoorEntrance.Succeeded())
+	//	PortalDoorEntranceClass = assetPortalDoorEntrance.Class;
+	//
+	//ConstructorHelpers::FClassFinder<ACPortalDoor> assetPortalDoorExit(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CPortalDoor_Exit'"));
+	//
+	//if (assetPortalDoorExit.Succeeded())
+		//PortalDoorExitClass = assetPortalDoorExit.Class;
 
-	if (assetPortalProjectile.Succeeded())
-		PortalProjectileClass = assetPortalProjectile.Class;
-
-	ConstructorHelpers::FClassFinder<ACPortalDoor> assetPortalDoorEntrance(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CPortalDoor_Enterance'"));
-
-	if (assetPortalDoorEntrance.Succeeded())
-		PortalDoorEntranceClass = assetPortalDoorEntrance.Class;
-
-	ConstructorHelpers::FClassFinder<ACPortalDoor> assetPortalDoorExit(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CPortalDoor_Exit'"));
-
-	if (assetPortalDoorExit.Succeeded())
-		PortalDoorExitClass = assetPortalDoorExit.Class;
-
-	ConstructorHelpers::FClassFinder<ACWeapon> assetMeteorWeapon(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CWeapon_SpellMeteor'"));
+	ConstructorHelpers::FClassFinder<ACWeapon> assetMeteorWeapon(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CWeapon_SpellMeteor.BP_CWeapon_SpellMeteor_C'"));
 
 	if (assetMeteorWeapon.Succeeded())
 		SpellMeteorClass = assetMeteorWeapon.Class;
-
-	//ConstructorHelpers::FClassFinder<ACProjectile> assetSpellThrowP(TEXT("Blueprint'/Game/FORUE4POFOL/Weapon/BP_CProjectile_SpellThrow'"));
-
-	//if (assetSpellThrowP.Succeeded())
-	//	SpellThrowProjectileClass = assetSpellThrowP.Class;
 	
 	RootComponent = GetCapsuleComponent();
 }
@@ -167,28 +155,25 @@ ACPlayer::ACPlayer()
 void ACPlayer::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	//bUseControllerRotationYaw = false;
-	//GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	Zooming = SpringArmComponent->TargetArmLength;
 
 	GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACPlayer::MontageEnded);
 
-	GetComponents<UCapsuleComponent>(CollisionCapsules);
+	GetComponents<UCapsuleComponent>(CapsuleCollisions);
 	
-	for (UShapeComponent* collision : CollisionCapsules)
+	for (UShapeComponent* collision : CapsuleCollisions)
 	{
 		collision->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnBeginOverlap);
 		collision->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnEndOverlap);
 	}
 
 	CharacterComponent->SetCurrentWeaponType(EWeaponType::Unarmed);
-	//ParkourComponent->SetIdleMode();
-
+	
 	OnTimelineFloat.BindUFunction(this, "InZooming");
 	Timeline.AddInterpFloat(AimCurve, OnTimelineFloat);
 	Timeline.SetPlayRate(200);
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 }
 
 void ACPlayer::Tick(float DeltaTime)
@@ -200,18 +185,6 @@ void ACPlayer::Tick(float DeltaTime)
 
 	Timeline.TickTimeline(DeltaTime);
 
-	if (bTargetting)
-	{
-		if (OutTargettingActorArr.Num() <= 0)
-			return;
-
-		if (OutTargettingActorArr[IndexTargetting])
-		{
-			//TargetLocation = OutTargettingActorArr[IndexTargetting]->GetActorLocation();
-			GetController()->SetControlRotation(FMath::RInterpTo(GetActorRotation(), TargetRotator, DeltaTime, 2.0f));
-		}
-	}
-	
 #ifdef LOG_PLAYER
 	PlayerLog();
 #endif 
@@ -230,29 +203,16 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("Run", EInputEvent::IE_Released, this, &ACPlayer::OffRun);
 	PlayerInputComponent->BindAction("Onehand", EInputEvent::IE_Pressed, this, &ACPlayer::OnOnehand);
 	PlayerInputComponent->BindAction("Spell", EInputEvent::IE_Pressed, this, &ACPlayer::OnSpell);
-	//PlayerInputComponent->BindAction("Rifle", EInputEvent::IE_Pressed, this, &ACPlayer::OnRifle);
-	PlayerInputComponent->BindAction("Critical1", EInputEvent::IE_Pressed, this, &ACPlayer::OnCriticalOne);
-	PlayerInputComponent->BindAction("Critical1", EInputEvent::IE_Released, this, &ACPlayer::OffCriticalOne);
-	PlayerInputComponent->BindAction("Critical2", EInputEvent::IE_Pressed, this, &ACPlayer::OnCriticalTwo);
-	PlayerInputComponent->BindAction("Skill", EInputEvent::IE_Pressed, this, &ACPlayer::OnSkill);
+	PlayerInputComponent->BindAction("Skill1", EInputEvent::IE_Pressed, this, &ACPlayer::OnSkillOne);
+	PlayerInputComponent->BindAction("Skill1", EInputEvent::IE_Released, this, &ACPlayer::OffSkillOne);
+	PlayerInputComponent->BindAction("Skill2", EInputEvent::IE_Pressed, this, &ACPlayer::OnSkillTwo);
+	PlayerInputComponent->BindAction("Skill3", EInputEvent::IE_Pressed, this, &ACPlayer::OnSkillThree);
 	PlayerInputComponent->BindAction("Action", EInputEvent::IE_Pressed, this, &ACPlayer::OnAction);
 	PlayerInputComponent->BindAction("Aim", EInputEvent::IE_Pressed, this, &ACPlayer::OnAim);
 	PlayerInputComponent->BindAction("Aim", EInputEvent::IE_Released, this, &ACPlayer::OffAim);
-	//PlayerInputComponent->BindAction("Fire", EInputEvent::IE_Pressed, this, &ACPlayer::OnFire);
-	//PlayerInputComponent->BindAction("Fire", EInputEvent::IE_Released, this, &ACPlayer::OffFire);
-	//PlayerInputComponent->BindAction("AutoFire", EInputEvent::IE_Pressed, this, &ACPlayer::OnAutoFire);
-	//PlayerInputComponent->BindAction("Skill", EInputEvent::IE_Pressed, this, &ACPlayer::OnSkill);
-	//PlayerInputComponent->BindAction("Critical", EInputEvent::IE_Pressed, this, &ACPlayer::OnCritical);
 	PlayerInputComponent->BindAction("Parkour", EInputEvent::IE_Pressed, this, &ACPlayer::OnParkour);
-	//PlayerInputComponent->BindAction("Block", EInputEvent::IE_Pressed, this, &ACPlayer::OnShield);
-	//PlayerInputComponent->BindAction("Block", EInputEvent::IE_Released, this, &ACPlayer::OffShield);
 	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Pressed, this, &ACPlayer::OnJump);
 	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Released, this, &ACPlayer::OffJump);
-	//PlayerInputComponent->BindAction("Dash", EInputEvent::IE_DoubleClick, this, &ACPlayer::OnDash);
-	//PlayerInputComponent->BindAction("ControllerRotationYaw", EInputEvent::IE_Pressed, this, &ACPlayer::OnControllerRotationYaw_Debug);
-	
-	//PlayerInputComponent->BindAction("Targetting_Select_Left", EInputEvent::IE_Pressed, this, &ACPlayer::TargettingSelectLeft);
-	//PlayerInputComponent->BindAction("Targetting_Select_Right", EInputEvent::IE_Pressed, this, &ACPlayer::TargettingSelectRight);
 }
  
 void ACPlayer::OnMoveForward(float AxisValue)
@@ -299,15 +259,11 @@ void ACPlayer::OnMoveRight(float AxisValue)
 
 void ACPlayer::OnVerticalLook(float AxisValue)
 {	
-	CheckTrue(bTargetting);
-	
 	AddControllerPitchInput(AxisValue);
 }
 
 void ACPlayer::OnHorizontalLook(float AxisValue)
 {	
-	CheckTrue(bTargetting);
-	
 	AddControllerYawInput(AxisValue);
 }
 
@@ -348,24 +304,8 @@ void ACPlayer::OffJump()
 void ACPlayer::OnAim()
 {	
 	bAiming = true;
-	
-	if (CharacterComponent->GetIsWeaponOnehandMode())
-	{
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACEnemy::StaticClass(), OutTargettingActorArr);
-		
-		bTargetting = true;
 
-		//bUseControllerRotationYaw = true;
-		GetCharacterMovement()->bOrientRotationToMovement = false;
-
-		SpringArmComponent->TargetArmLength = 95.0f;
-		SpringArmComponent->SocketOffset = FVector(0, 30, 10);
-		SpringArmComponent->bEnableCameraLag = false;
-
-		Timeline.PlayFromStart();
-	}
-
-	else if (CharacterComponent->GetIsWeaponSpellMode())
+	if (CharacterComponent->GetIsWeaponSpellMode())
 	{
 		PlaySpellPortalOnAimSound();
 
@@ -388,20 +328,6 @@ void ACPlayer::OnAim()
 
 void ACPlayer::OffAim()
 {
-	if (CharacterComponent->GetIsWeaponOnehandMode())
-	{
-		bUseControllerRotationYaw = false;
-		GetCharacterMovement()->bOrientRotationToMovement = true;
-
-		Timeline.ReverseFromEnd();
-
-		SpringArmComponent->TargetArmLength = 350.0f;
-		SpringArmComponent->SocketOffset = FVector(0, 60, 0);
-		SpringArmComponent->bEnableCameraLag = true;
-
-		bTargetting = false;
-	}
-
 	if (CharacterComponent->GetIsWeaponSpellMode())
 	{
 		if(PortalCrosshair)
@@ -434,64 +360,11 @@ void ACPlayer::OffAim()
 void ACPlayer::OnRun()
 {
 	GetCharacterMovement()->MaxWalkSpeed = 600.0;
-	IsRunning = true;
 }
 
 void ACPlayer::OffRun()
 {
 	GetCharacterMovement()->MaxWalkSpeed = 350.0;
-	IsRunning = false;
-}
-
-void ACPlayer::OnDash()
-{	
-	//CheckTrue(bDashing);
-	//
-	//StateComponent->SetParkourMode();
-	//
-	//if (ParkourComponent->IsJumpMode())
-	//{	
-	//	//CheckFalse(//WeaponComponent->IsOnehandMode());
-	//	
-	//	LaunchCharacter(GetActorForwardVector() * 10000.0f, true, true);
-	//	//WeaponComponent->GetWeaponData(0)->GetDoActionData(3).PlayMontage(this);
-	//	
-	//	//FLatentActionInfo latentInfo;
-	//	//latentInfo.CallbackTarget = this;
-	//	//
-	//	//UKismetSystemLibrary::MoveComponentTo
-	//	//(
-	//	//	GetCapsuleComponent(),
-	//	//	GetMesh()->GetSocketLocation(FName("jumpDashLocation")),
-	//	//	GetActorRotation(),
-	//	//	true,
-	//	//	false,
-	//	//	JumpDashEaseOutTime,
-	//	//	false,
-	//	//	EMoveComponentAction::Move,
-	//	//	latentInfo
-	//	//);
-	//	
-	//
-	//	bDashing = true;
-	//
-	//	return;
-	//}
-	//
-	//bDashing = true;
-	//
-	////WeaponComponent->GetWeaponData(0)->GetDoActionData(4).PlayMontage(this);
-	//
-	//GetCharacterMovement()->MaxWalkSpeed = DashSpeed;
-	//GetCharacterMovement()->MaxAcceleration = 4096.0f;
-}
-
-void ACPlayer::OffDash()
-{
-	//CheckFalse(bDashing);
-	//
-	//GetCharacterMovement()->MaxWalkSpeed = 800.0f;
-	//GetCharacterMovement()->MaxAcceleration = 2048.0f;
 }
 
 void ACPlayer::OnParkour()
@@ -553,7 +426,7 @@ void ACPlayer::OnAction()
 	}
 }
 
-void ACPlayer::OnCriticalOne()
+void ACPlayer::OnSkillOne()
 {
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
@@ -585,7 +458,7 @@ void ACPlayer::OnCriticalOne()
 	}
 }
 
-void ACPlayer::OffCriticalOne()
+void ACPlayer::OffSkillOne()
 {
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
@@ -618,22 +491,30 @@ void ACPlayer::OffCriticalOne()
 	}
 }
 
-void ACPlayer::OnCriticalTwo()
+void ACPlayer::OnSkillTwo()
 {
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
+		CharacterComponent->SetCurrentStateType(EStateType::Attack);
+		CharacterComponent->SetIsMontagePlaying(true);
+
+		if (CharacterComponent->GetCriticalDatasOnehand(1).Montage)
+		{
+			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
+			CharacterComponent->GetCriticalDatasOnehand(1).PlayMontage(this);
+		}
 	}
 	else if (CharacterComponent->GetIsWeaponSpellMode())
 	{
 		CharacterComponent->SetCurrentStateType(EStateType::Attack);
 		CharacterComponent->SetIsMontagePlaying(true);
 
-		CharacterComponent->GetCriticalDatasSpell(1).PlayMontage(this);
+		if(CharacterComponent->GetCriticalDatasSpell(1).Montage)
+			CharacterComponent->GetCriticalDatasSpell(1).PlayMontage(this);
 	}
-
 }
 
-void ACPlayer::OnSkill()
+void ACPlayer::OnSkillThree()
 {
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
@@ -641,44 +522,6 @@ void ACPlayer::OnSkill()
 	else if (CharacterComponent->GetIsWeaponSpellMode())
 	{
 	}
-}
-
-void ACPlayer::ShootSpawnedProjectile(ACProjectile* InTargetProjectile, FName InShootSocketName)
-{
-	if (WidgetComponent->GetHitResult().GetActor())
-		InTargetProjectile->ShootProjectile(UKismetMathLibrary::GetDirectionUnitVector(GetMesh()->GetSocketLocation(InShootSocketName), WidgetComponent->GetHitResult().ImpactPoint));
-	else
-		InTargetProjectile->ShootProjectile(CameraComponent->GetForwardVector());
-}
-
-void ACPlayer::SpawnSpellProjectileL()
-{
-	SpellProjectileL = ACProjectile::SpawnProjectile(this, CharacterComponent->GetProjectileClass(), FName("Spawn_Spell_Projectile_L"));
-	SpellProjectileL->SetOwner(this);
-
-	SpellProjectileL->SetActorRotation(CameraComponent->GetComponentRotation());
-
-	ShootSpawnedProjectile(SpellProjectileL, "Spawn_Spell_Projectile_L");	
-}
-
-void ACPlayer::SpawnSpellProjectileR()
-{
-	SpellProjectileR = ACProjectile::SpawnProjectile(this, CharacterComponent->GetProjectileClass(), FName("Spawn_Spell_Projectile_R"));
-	SpellProjectileR->SetOwner(this);
-
-	SpellProjectileR->SetActorRotation(CameraComponent->GetComponentRotation());
-	
-	ShootSpawnedProjectile(SpellProjectileR, "Spawn_Spell_Projectile_R");
-}
-
-void ACPlayer::SpawnPortalProjectile()
-{
-	PortalProjectile = ACProjectile::SpawnProjectile(this, PortalProjectileClass, FName("Spawn_Spell_Projectile_R"));
-	PortalProjectile->SetOwner(this);
-	
-	PortalProjectile->SetActorRotation(CameraComponent->GetComponentRotation());
-	
-	ShootSpawnedProjectile(PortalProjectile, "Spawn_Spell_Projectile_R");
 }
 
 void ACPlayer::SpawnWarriorSkillOneProjectile()
@@ -689,37 +532,19 @@ void ACPlayer::SpawnWarriorSkillOneProjectile()
 
 		WarriorSkill1Projectile = ACProjectile::SpawnProjectile(this, WarriorSkill1ProjectileClass, FName("Spawn_Player_Warrior_Skill1_Projectile"));
 		WarriorSkill1Projectile->SetOwner(this);
-
 		WarriorSkill1Projectile->SetActorRotation(CameraComponent->GetComponentRotation());
 
-		ShootSpawnedProjectile(WarriorSkill1Projectile, "Spawn_Player_Warrior_Skill1_Projectile");
+		if (WidgetComponent->GetHitResult().GetActor())
+			WarriorSkill1Projectile->ShootProjectile(UKismetMathLibrary::GetDirectionUnitVector(GetMesh()->GetSocketLocation("Spawn_Player_Warrior_Skill1_Projectile"), WidgetComponent->GetHitResult().ImpactPoint));
+		else
+			WarriorSkill1Projectile->ShootProjectile(CameraComponent->GetForwardVector());
 	}
-}
-
-void ACPlayer::SpawnSpellThrowProjectile()
-{
-	SpellThrowProjectile = ACProjectile::SpawnProjectile(this, SpellThrowProjectileClass, FName("Spawn_SpellThrow_Projectile"));
-	SpellThrowProjectile->SetOwner(this);
-
-	SpellThrowProjectile->SetActorRotation(CameraComponent->GetComponentRotation());
-
-	ShootSpawnedProjectile(SpellThrowProjectile, "Spawn_SpellThrow_Projectile");
 }
 
 void ACPlayer::SpawnSpellMeteorWeapon()
 {
 	SpellMeteorWeapon = ACWeapon::SpawnWeapon(this, SpellMeteorClass, Cast<ACCrosshair_SpellThrow>(Crosshair_SpellMeteor)->GetImpactPoint());
 	SpellMeteorWeapon->SetOwner(this);
-}
-
-void ACPlayer::SpawnPortalDoorEntrance()
-{
-	PortalDoorEntrance = ACPortalDoor::SpawnPortalDoor(this, GetMesh()->GetSocketLocation("Spawn_Spell_Projectile_R"), PortalDoorEntranceClass);
-}
-
-void ACPlayer::SpawnPortalDoorExit()
-{
-	PortalDoorExit = ACPortalDoor::SpawnPortalDoor(this, GetMesh()->GetSocketLocation("FX_Ring_Outer"), PortalDoorExitClass);
 }
 
 void ACPlayer::SetPlayerPortalLocation()
@@ -891,13 +716,13 @@ float ACPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& Damage
 
 void ACPlayer::OnCollision()
 {
-	for (UShapeComponent* collision : CollisionCapsules)
+	for (UShapeComponent* collision : CapsuleCollisions)
 		collision->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
 void ACPlayer::OffCollision()
 {
-	for (UShapeComponent* collision : CollisionCapsules)
+	for (UShapeComponent* collision : CapsuleCollisions)
 		collision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
@@ -968,44 +793,6 @@ void ACPlayer::MontageEnded(UAnimMontage* InMontage, bool Ininterrupted)
 	//Index = 0;
 
 	CharacterComponent->SetIsMontagePlaying(false);
-}
-
-void ACPlayer::SpawnEmitter()
-{
-	if (OnehandSkillEffect1Class)
-	{
-		// CheckFalse(IsOnehandSkillMode);
-
-		FTransform targetTransform = GetMesh()->GetSocketTransform(FName("spawnSkillEffect1"));
-
-		ACWeapon* spawnedWeapon = GetWorld()->SpawnActorDeferred<ACWeapon>(OnehandSkillEffect1Class, targetTransform, this);
-
-		spawnedWeapon->SetOwner(this);
-
-		//spawnedWeapon->OnWeaponBeginOverlapForSkill.AddDynamic(//WeaponComponent->GetWeaponData(0)->GetSkill(), &UCSkill::OnWeaponBeginOverlap);
-		//spawnedWeapon->OnWeaponEndOverlapForSkill.AddDynamic(//WeaponComponent->GetWeaponData(0)->GetSkill(), &UCSkill::OnWeaponEndOverlap);
-
-		UGameplayStatics::FinishSpawningActor(spawnedWeapon, targetTransform);
-	}
-}
-
-void ACPlayer::SpawnEmitter2()
-{
-	if (OnehandSkillEffect2Class)
-	{
-		// CheckFalse(IsOnehandSkillMode);
-
-		FTransform targetTransform = GetMesh()->GetSocketTransform(FName("spawnSkillEffect2"));
-
-		ACWeapon* spawnedWeapon = GetWorld()->SpawnActorDeferred<ACWeapon>(OnehandSkillEffect2Class, targetTransform, this);
-
-		spawnedWeapon->SetOwner(this);
-
-		//spawnedWeapon->OnWeaponBeginOverlapForSkill.AddDynamic(//WeaponComponent->GetWeaponData(0)->GetSkill(), &UCSkill::OnWeaponBeginOverlap);
-		//spawnedWeapon->OnWeaponEndOverlapForSkill.AddDynamic(//WeaponComponent->GetWeaponData(0)->GetSkill(), &UCSkill::OnWeaponEndOverlap);
-
-		UGameplayStatics::FinishSpawningActor(spawnedWeapon, targetTransform);
-	}
 }
 
 void ACPlayer::OnControllerRotationYaw_Debug()
@@ -1091,4 +878,34 @@ void ACPlayer::ShakeCamera()
 {
 	if (GetWorld()->GetFirstPlayerController() && DamageCameraShakeClass)
 		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(DamageCameraShakeClass);
+}
+
+float ACPlayer::CurrentHp()
+{
+	return CharacterComponent->GetCurrentHp();
+}
+
+float ACPlayer::CurrentMp()
+{
+	return CharacterComponent->GetCurrentMp();
+}
+
+float ACPlayer::CurrentSp()
+{
+	return CharacterComponent->GetCurrentSp();
+}
+
+float ACPlayer::MaxHp()
+{
+	return CharacterComponent->GetMaxHp();
+}
+
+float ACPlayer::MaxMp()
+{
+	return CharacterComponent->GetMaxMp();
+}
+
+float ACPlayer::MaxSp()
+{
+	return CharacterComponent->GetMaxSp();
 }

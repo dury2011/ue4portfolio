@@ -179,7 +179,10 @@ public:
 	FORCEINLINE bool GetIsMontagePlaying() { return IsMontagePlaying; }
 	FORCEINLINE void SetIsMontagePlaying(bool InIsMontagePlaying) { IsMontagePlaying = InIsMontagePlaying; }
 
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE EStateType GetCurrentStateType() { return CurrentStateType; }
+	
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE EWeaponType GetCurrentWeaponType() { return CurrentWeaponType; }
 
 	UFUNCTION(BlueprintCallable)

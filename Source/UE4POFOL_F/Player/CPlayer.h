@@ -11,7 +11,9 @@
 #include "GenericTeamAgentInterface.h"
 #include "Weapon/CWeaponStructure.h"
 #include "Components/TimelineComponent.h"
+#include "Interface/CInterface_PlayerState.h"
 #include "CPlayer.generated.h"
+
 
 UENUM(BlueprintType)
 enum class ECameraEffectType : uint8
@@ -24,44 +26,36 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnPlayerOverlap, class ACharacte
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerActiveBlock, bool, IsBlocked);
 
 UCLASS()
-class UE4POFOL_F_API ACPlayer : public ACharacter, public IGenericTeamAgentInterface
+class UE4POFOL_F_API ACPlayer : public ACharacter, public IGenericTeamAgentInterface, public ICInterface_PlayerState
 {
 	GENERATED_BODY()
-	
+
 public:
 	UPROPERTY(BlueprintReadonly, VisibleDefaultsOnly)
 	class UCameraComponent* CameraComponent;
 
 	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
 	class UCCharacterComponent* CharacterComponent;
-	
+
 	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
 	class UCWidgetComponent* WidgetComponent;
-	
-	//UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
-	//class UCParkourComponent* ParkourComponent;
 
 	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
 	class UCIKComponent* IKComponent;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Class Setting")
-	TSubclassOf<class ACWeapon> OnehandSkillEffect1Class;
+	//UPROPERTY(EditDefaultsOnly, Category = "Class Setting")
+	//TSubclassOf<class ACWeapon> OnehandSkillEffect1Class;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Class Setting")
-	TSubclassOf<class ACWeapon> OnehandSkillEffect2Class;
-	
-	// Collision //////////////////////////////////////////////////
+	//UPROPERTY(EditDefaultsOnly, Category = "Class Setting")
+	//TSubclassOf<class ACWeapon> OnehandSkillEffect2Class;
+
 	UPROPERTY(BlueprintReadOnly)
-	TArray<class UCapsuleComponent*> CollisionCapsules; // CapsuleCollisions로 수정
+	TArray<class UCapsuleComponent*> CapsuleCollisions; 
 	
-	UPROPERTY(BlueprintAssignable)
-	FOnPlayerActiveBlock OnPlayerActiveBlock;
-	
-	// Other //////////////////////////////////////////////////
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "UI Setting")
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Player Setting")
 	float ComboCountExistTime = 2.0f;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "UI Setting")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Player Setting")
 	int32 ComboCount = 0;
 
 	UPROPERTY(BlueprintReadOnly)
@@ -70,8 +64,8 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	ECameraEffectType CurrentCameraEffectType;
 
-	UPROPERTY(BlueprintReadOnly)
-	bool bTargetting = false;
+	
+	FOnPlayerActiveBlock OnPlayerActiveBlock;
 
 private:
 	struct FDamaged
@@ -90,25 +84,25 @@ private:
 
 	FTimeline Timeline;
 	FOnTimelineFloat OnTimelineFloat;
-	
+
 	UPROPERTY()
 	UAnimMontage * BlockAnimMontage;
-	
+
 	UPROPERTY(VisibleDefaultsOnly)
 	class USceneComponent* ArrowGroup;
-	
+
 	UPROPERTY(VisibleDefaultsOnly)
 	class UArrowComponent* Arrows[6];
-	
+
 	UPROPERTY(VisibleDefaultsOnly)
 	class USpringArmComponent* SpringArmComponent;
-	
+
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	uint8 TeamId = 1;
-	
+
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	FVector2D ZoomRange = FVector2D(120.0f, 2400.0f);
-	
+
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	float ZoomSpeed = 1000.f;
 
@@ -120,51 +114,22 @@ private:
 
 	UPROPERTY()
 	TSubclassOf<class ACCrosshair> Crosshair_SpellMeteorClass;
-
 	UPROPERTY()
 	class ACCrosshair* Crosshair_SpellMeteor;
-
 	UPROPERTY()
 	TSubclassOf<class ACPortalCrosshair> PortalCrosshairClass;
-
 	UPROPERTY()
 	class ACPortalCrosshair* PortalCrosshair;
-
-	UPROPERTY()
-	TSubclassOf<class ACProjectile> PortalProjectileClass;
 	
-	UPROPERTY()
-	TSubclassOf<class ACPortalDoor> PortalDoorEntranceClass;
-
-	UPROPERTY()
-	TSubclassOf<class ACPortalDoor> PortalDoorExitClass;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class ACProjectile> WarriorSkill1ProjectileClass;
-
-	UPROPERTY()
-	TSubclassOf<class ACWeapon> SpellMeteorClass;
-
-	UPROPERTY()
-	class ACProjectile* PortalProjectile;
-
-	UPROPERTY()
-	class ACWeapon* SpellMeteorWeapon;
-	
-	UPROPERTY()
-	class ACPortalDoor* PortalDoorEntrance;
-
-	UPROPERTY()
-	class ACPortalDoor* PortalDoorExit;
-
-	UPROPERTY()
-	class ACProjectile* SpellProjectileL;
-
-	UPROPERTY()
-	class ACProjectile* SpellProjectileR;
-
 	UPROPERTY()
 	class ACProjectile* WarriorSkill1Projectile;
+	
+	UPROPERTY()
+	TSubclassOf<class ACWeapon> SpellMeteorClass;
+	UPROPERTY()
+	class ACWeapon* SpellMeteorWeapon;
 
 	UPROPERTY()
 	TArray<AActor*> OutTargettingActorArr;
@@ -175,27 +140,21 @@ private:
 
 	FTimerHandle ComboCountTimer;
 	FTimerHandle WarriorSkillTimer;
-	float Zooming;
-	float ZoomInterpSpeed = 2.0f;
 	int32 Index = 0;
 	int32 IndexTargetting = 0;
 	FVector TargetLocation;
 	FRotator TargetRotator;
+	float Zooming;
+	float ZoomInterpSpeed = 2.0f;
 	bool bAiming = false;
 	bool bCanCritical = false;;
-	bool bEquipping = false;
 	bool bUnequipping = false;
 	bool bChanging = false;
-	bool bDashing = false;
-	bool bJumping = false;
 	bool bOnCriticalReady = false;
 	bool bCanNextAction;
 	bool bAttacking = false;
 	bool bCanCombo = false;
-
-	bool IsRunning = false;
-	bool IsOrientRotationToMovement = false;
- 
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class ACProjectile> SpellThrowProjectileClass;
 
@@ -225,29 +184,16 @@ private:
 	void OffAim();
 	void OnRun();
 	void OffRun();
-	void OnDash();
-	void OffDash();
 	void OnParkour();
 	void OnAction();
-	void OnCriticalOne();
-	void OffCriticalOne();
-	void OnCriticalTwo();
-	void OnSkill();
+	void OnSkillOne();
+	void OffSkillOne();
+	void OnSkillTwo();
+	void OnSkillThree();
 
-private:
-	void ShootSpawnedProjectile(ACProjectile* InTargetProjectile, FName InShootSocketName);
-	
 public:
-	void SpawnSpellProjectileL();
-	void SpawnSpellProjectileR();
-	void SpawnPortalProjectile();
 	void SpawnWarriorSkillOneProjectile();
-	void SpawnSpellThrowProjectile();
 	void SpawnSpellMeteorWeapon();
-
-	void SpawnPortalDoorEntrance();
-	void SpawnPortalDoorExit();
-	
 	void SetPlayerPortalLocation();
 
 	UFUNCTION(BlueprintImplementableEvent)
@@ -281,35 +227,15 @@ public:
 
 	UFUNCTION()
 	void OffCollision();
-	
+
 	UFUNCTION()
 	void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-	
+
 	UFUNCTION()
 	void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-	
+
 	UFUNCTION()
 	void MontageEnded(UAnimMontage* InMontage, bool Ininterrupted);
-	
-	//UFUNCTION(BlueprintNativeEvent)
-	//void ShowComboCount();
-	//void ShowComboCount_Implementation();
-	//
-	//UFUNCTION(BlueprintNativeEvent)
-	//void HideComboCount();
-	//void HideComboCount_Implementation();
-	//
-	//UFUNCTION(BlueprintNativeEvent)
-	//void OnCritical();
-	//void OnCritical_Implementation();
-	//
-	//UFUNCTION(BlueprintNativeEvent)
-	//void ShowCriticalImage();
-	//void ShowCriticalImage_Implementation();
-	
-	void SpawnEmitter();
-
-	void SpawnEmitter2();
 
 public:
 	virtual FGenericTeamId GetGenericTeamId() const override { return FGenericTeamId(TeamId); }
@@ -326,6 +252,15 @@ private:
 	void ShakeCamera();
 
 public:
+	// ICInterface_PlayerState에서 override
+	virtual float CurrentHp() override;
+	virtual float CurrentMp() override;
+	virtual float CurrentSp() override;
+
+	virtual float MaxHp() override;
+	virtual float MaxMp() override;
+	virtual float MaxSp() override;
+	
 	FORCEINLINE bool GetbAiming() { return bAiming; }
 	FORCEINLINE bool GetbAttacking() { return bAttacking; }
 	FORCEINLINE void SetbCanCombo(bool Inbool) { bCanCombo = Inbool; }

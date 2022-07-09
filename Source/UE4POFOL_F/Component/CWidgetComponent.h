@@ -4,6 +4,11 @@
 #include "Components/ActorComponent.h"
 #include "CWidgetComponent.generated.h"
 
+UENUM(BlueprintType)
+enum class EWarnningTextType : uint8
+{
+	LowHp, LowMp, LowMp_Skill, CoolTime_Skill
+};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class UE4POFOL_F_API UCWidgetComponent : public UActorComponent
@@ -19,12 +24,20 @@ private:
 
 	UPROPERTY()
 	class UPoseableMeshComponent* Poseable;
-
-	//UPROPERTY(EditDefaultsOnly, Category = "Debug Setting")
-	//TEnumAsByte<EDrawDebugTrace::Type> DrawDebugType;
 	
+	class ICInterface_PlayerState* PlayerInterface;
+
+	float CurrentHp;
+	float CurrentMp;
+	float CurrentSp;
+
+	float MaxHp;
+	float MaxMp;
+	float MaxSp;
+
 	FHitResult HitResult;
 
+	bool IsEventCalled = false;
 	bool bCrosshairVisible = true;
 
 public:	
@@ -49,4 +62,19 @@ public:
 	FORCEINLINE bool GetbCrosshairVisible() { return bCrosshairVisible; }
 
 	FORCEINLINE FHitResult GetHitResult() { return HitResult; }
+
+	
+	void CheckWarnningText();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void WarnningText_LowMp();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void WarnningText_LowHp();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void WarnningText_CannotUseSkill_LowMp();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void WarnningText_CannotUseSkill_CoolTime();
 };

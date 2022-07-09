@@ -142,6 +142,8 @@ void ACEnemy::Tick(float DeltaTime)
 		return;
 	}
 
+	
+
 	UpdateHitNumbers();
 
 	//
@@ -231,12 +233,14 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 	ShakeCamera(Damaged);
 	//TODO: HitStop 인터페이스로 구현 가능?
 	// HitStop
-	{
-		CustomTimeDilation = 10e-5f;
-
-		GetWorldTimerManager().SetTimer(StopTimer, this, &ACEnemy::RecoverDilation, StopTime, true);
-	}
+	//{
+	//	CustomTimeDilation = 10e-5f;
+	//
+	//	GetWorldTimerManager().SetTimer(StopTimer, this, &ACEnemy::RecoverDilation, StopTime, true);
+	//}
 	
+	OpponentSkillLaunch();
+
 	Damage();
 	Dead();
 
@@ -283,6 +287,17 @@ void ACEnemy::Dead()
 		DeadDatas[0].PlayMontage(this);
 
 		ActivateDeadEffect();
+	}
+}
+
+void ACEnemy::OpponentSkillLaunch()
+{
+	if (Damaged.EventInstigator)
+	{	
+		ACharacter* character = Damaged.EventInstigator->GetCharacter();
+		FVector opponentLocation = character->GetActorLocation();
+
+		SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y, opponentLocation.Z));
 	}
 }
 
@@ -468,6 +483,17 @@ void ACEnemy::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrim
 void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool Interrupted)
 {
 	// MEMO: Enemy의 몽타주가 재생 후 정상적으로 종료될 경우 노드가 성공으로 끝나야함
+	if (CurrentStateType == EEnemyStateType::Dead)
+	{
+		if (OnEnemyAttackEnded.IsBound())
+			OnEnemyAttackEnded.Broadcast();
+
+		if (OnEnemyParkourEnded.IsBound())
+			OnEnemyParkourEnded.Broadcast();
+
+		return;
+	}
+
 	if (!Interrupted)
 	{
 		if (CurrentStateType == EEnemyStateType::Attack)

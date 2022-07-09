@@ -96,6 +96,7 @@ protected:
 	bool bMontageIsPlaying = false;
 	bool bActivateRotateToOpponent = true;
 	bool CanStrafing = false;
+	bool IsLaunching = false;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
 	FName EffectWeaponSpawnSocketName;
@@ -162,6 +163,7 @@ public:
 private:
 	void Damage();
 	void Dead();
+	void OpponentSkillLaunch();
 
 public:
 	void BeginStrafing();

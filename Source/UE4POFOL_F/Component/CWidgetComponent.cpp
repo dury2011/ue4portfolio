@@ -18,11 +18,27 @@ void UCWidgetComponent::BeginPlay()
 	Super::BeginPlay();
 
 	OwnerCharacter = Cast<ACharacter>(GetOwner());
+
+	PlayerInterface = Cast<ICInterface_PlayerState>(OwnerCharacter);
+
+	if (PlayerInterface)
+	{
+		MaxHp = PlayerInterface->MaxHp();
+		MaxMp = PlayerInterface->MaxMp();
+		MaxSp = PlayerInterface->MaxSp();
+	}
 }
 
 void UCWidgetComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (PlayerInterface)
+	{
+		CurrentHp = PlayerInterface->CurrentHp();
+		CurrentMp = PlayerInterface->CurrentMp();
+		CurrentSp = PlayerInterface->CurrentSp();
+	}
 
 	if(bCrosshairVisible)
 		CreateLineTrace();
@@ -99,4 +115,31 @@ bool UCWidgetComponent::CanCrosshairWidgetColorChange()
 	}
 	
 	return false;
+}
+
+void UCWidgetComponent::CheckWarnningText()
+{
+	if (PlayerInterface)
+	{
+		if ((CurrentHp / MaxHp <= 0.3f) && !IsEventCalled)
+		{
+			WarnningText_LowHp();
+
+			IsEventCalled = true;
+		}
+		else if ((CurrentHp / MaxHp > 0.3f) && IsEventCalled)
+		{
+			IsEventCalled = false;
+		}
+		if ((CurrentMp / MaxMp <= 0.3f) && !IsEventCalled)
+		{
+			WarnningText_LowMp();
+
+			IsEventCalled = true;
+		}
+		else if ((CurrentMp / MaxMp > 0.3f) && IsEventCalled)
+		{
+			IsEventCalled = false;
+		}
+	}
 }
