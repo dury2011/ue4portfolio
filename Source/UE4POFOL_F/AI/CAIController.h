@@ -13,11 +13,6 @@ class UE4POFOL_F_API ACAIController : public AAIController
 	//UPROPERTY(VisibleDefaultsOnly)
 	//class UAIPerceptionComponent* Perception;
 	//
-	UPROPERTY()
-	class ACPlayer* Player;
-
-	UPROPERTY()
-	class ACEnemy* Enemy;
 	//UPROPERTY()
 	//class UAISenseConfig_Sight* Sight;
 	//
@@ -25,6 +20,14 @@ class UE4POFOL_F_API ACAIController : public AAIController
 	//class UBlackboardData* Blackboard;
 //private:
 	//FTimerHandle Timer;
+private:	
+	UPROPERTY()
+	class ACPlayer* Player;
+
+	UPROPERTY()
+	class ACEnemy* Enemy;
+
+	bool IsSkillActivate = false;
 
 public:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "AIController Setting")

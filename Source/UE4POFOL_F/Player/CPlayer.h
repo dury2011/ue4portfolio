@@ -21,9 +21,11 @@ enum class ECameraEffectType : uint8
 	Damage, LowHp, Teleport, Max
 };
 
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerCollision);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnPlayerOverlap, class ACharacter*, InAttacker, class AActor*, InAttackCauser, class ACharacter*, InOtherCharacter);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerActiveBlock, bool, IsBlocked);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerSkillAttack);
 
 UCLASS()
 class UE4POFOL_F_API ACPlayer : public ACharacter, public IGenericTeamAgentInterface, public ICInterface_PlayerState
@@ -43,14 +45,11 @@ public:
 	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
 	class UCIKComponent* IKComponent;
 
-	//UPROPERTY(EditDefaultsOnly, Category = "Class Setting")
-	//TSubclassOf<class ACWeapon> OnehandSkillEffect1Class;
-
-	//UPROPERTY(EditDefaultsOnly, Category = "Class Setting")
-	//TSubclassOf<class ACWeapon> OnehandSkillEffect2Class;
-
 	UPROPERTY(BlueprintReadOnly)
 	TArray<class UCapsuleComponent*> CapsuleCollisions; 
+
+	UPROPERTY(BlueprintReadOnly)
+	TArray<class UBoxComponent*> BoxCollisions;
 	
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Player Setting")
 	float ComboCountExistTime = 2.0f;
@@ -63,18 +62,25 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	ECameraEffectType CurrentCameraEffectType;
-
 	
 	FOnPlayerActiveBlock OnPlayerActiveBlock;
+
+	FOnPlayerSkillAttack OnPlayerSkillAttack;
 
 private:
 	struct FDamaged
 	{
-		float DamageAmount;
+		float DamageAmount; 
 		FActionDamageEvent* DamageEvent;
 		class AController* EventInstigator;
 		class AActor* DamageCauser;
 	} Damaged;
+
+	struct FSkilledEnemy
+	{
+		class ACEnemy* SkilledEnemy;
+	
+	}Skilled;
 
 	UPROPERTY()
 	TSubclassOf<UAnimInstance> AnimInstance;
@@ -138,6 +144,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class UMatineeCameraShake> DamageCameraShakeClass;
 
+	EPlayerSkillType CurrentPlayerSkillType;
 	FTimerHandle ComboCountTimer;
 	FTimerHandle WarriorSkillTimer;
 	int32 Index = 0;
@@ -154,6 +161,7 @@ private:
 	bool bCanNextAction;
 	bool bAttacking = false;
 	bool bCanCombo = false;
+	bool IsActivateSkill = false;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class ACProjectile> SpellThrowProjectileClass;
@@ -192,6 +200,7 @@ private:
 	void OnSkillThree();
 
 public:
+	void OnSkillAttack();
 	void SpawnWarriorSkillOneProjectile();
 	void SpawnSpellMeteorWeapon();
 	void SetPlayerPortalLocation();
@@ -233,6 +242,12 @@ public:
 
 	UFUNCTION()
 	void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	
+	UFUNCTION()
+	void OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
 	void MontageEnded(UAnimMontage* InMontage, bool Ininterrupted);
@@ -260,6 +275,11 @@ public:
 	virtual float MaxHp() override;
 	virtual float MaxMp() override;
 	virtual float MaxSp() override;
+	virtual EPlayerSkillType GetCurrentPlayerSkillType() override;
+	void SetCurrentPlayerSkillType(EPlayerSkillType InType); 
+
+	virtual bool GetPlayerActivateSkill() override;
+	virtual void SetPlayerActivateSkill(bool InBool) override;
 	
 	FORCEINLINE bool GetbAiming() { return bAiming; }
 	FORCEINLINE bool GetbAttacking() { return bAttacking; }

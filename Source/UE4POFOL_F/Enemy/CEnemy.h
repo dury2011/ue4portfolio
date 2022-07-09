@@ -41,6 +41,9 @@ public:
 
 	FOnEnemyParkourEnded OnEnemyParkourEnded;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
+	bool CanLaucnhEnemy = false;
+
 protected:	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
 	float Hp = 1000.0f;
@@ -126,6 +129,8 @@ private:
 	UPROPERTY()
 	TArray<class ACWeapon*> Weapons;	
 	
+	bool IsDeadBySkill = false;
+
 	FVector StrafeDirection = FVector::ZeroVector;
 	EEnemyStateType CurrentStateType = EEnemyStateType::Max;
 	EEnemyStateType PreviousStateType = EEnemyStateType::Max;
@@ -163,7 +168,7 @@ public:
 private:
 	void Damage();
 	void Dead();
-	void OpponentSkillLaunch();
+	void OpponentSkillState();
 
 public:
 	void BeginStrafing();
@@ -205,11 +210,12 @@ protected:
 public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowHitNumber(int32 InDamage, FVector InHitLocation);
+	
+	UFUNCTION()
+	void TakeDamage_OpponentUsingSkill();
 
 	static void SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass);
-	
 	void DestroyEnemy();
-
 	void SpawnEnemyEffectWeapon();
 
 protected:

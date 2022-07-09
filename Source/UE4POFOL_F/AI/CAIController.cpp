@@ -52,7 +52,37 @@ void ACAIController::Tick(float DeltaTime)
 		//if (Enemy->GetOpponent())
 		//	Blackboard->SetValueAsObject("Player", Enemy->GetOpponent());
 	
-		Blackboard->SetValueAsEnum("State", (uint8)Enemy->GetCurrentEnemyStateType());		
+		Blackboard->SetValueAsEnum("State", (uint8)Enemy->GetCurrentEnemyStateType());
+		Blackboard->SetValueAsObject("Player", Enemy->GetOpponent());
+
+		if (Enemy->GetCurrentEnemyStateType() == EEnemyStateType::Dead)
+		{
+			BrainComponent->StopLogic(FString("Enemy Died"));
+			SetActorTickEnabled(false);
+
+			return;
+		}
+
+		if (Enemy->GetOpponent())
+		{
+			ICInterface_PlayerState* interfacePlayer = Cast<ICInterface_PlayerState>(Enemy->GetOpponent());
+			
+			if (interfacePlayer)
+			{
+				if (interfacePlayer->GetPlayerActivateSkill() && !IsSkillActivate)
+				{
+					IsSkillActivate = true;
+
+					BrainComponent->StopLogic(FString("Enemy Skill Damage"));
+				}
+				else if (!interfacePlayer->GetPlayerActivateSkill() && IsSkillActivate)
+				{
+					IsSkillActivate = false;
+					
+					BrainComponent->RestartLogic();
+				}
+			}
+		}
 	}
 }
 
@@ -63,7 +93,6 @@ void ACAIController::OnPossess(APawn* InPawn)
 	//GetWorld()->GetTimerManager().SetTimer(Timer, this, &ACAIController::OnRepeatTimer, 2.0f, true);
 	Enemy = Cast<ACEnemy>(InPawn);
 
-	
 	if (BehaviorTree)
 	{	
 		if(UseBlackboard(BehaviorTree->BlackboardAsset, Blackboard))
@@ -74,6 +103,8 @@ void ACAIController::OnPossess(APawn* InPawn)
 		//if (Enemy->GetOpponent())
 		//	Blackboard->SetValueAsObject("Player", Enemy->GetOpponent());
 	}
+
+	IsSkillActivate = false;
 	
 	//TODO: 아래 코드 주석 건너뛰는 부분 전까지, Spawn되는 Actor에서는 동작을 하는데 Play전에 Viewport에 Placed된 Actor에서는 동작을 안 함
 	//TArray<AActor*> outActorArr;

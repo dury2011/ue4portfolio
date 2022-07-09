@@ -86,6 +86,11 @@ void ACEnemy::BeginPlay()
 			Opponent = dynamic_cast<ACPlayer*>(outActorArr[i]);
 	}
 
+	if (Opponent)
+	{
+		Cast<ACPlayer>(Opponent)->OnPlayerSkillAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentUsingSkill);
+	}
+
 	// HealthBar 위젯 Hidden 설정
 	{
 		if (HealthBarWidgetComponent)
@@ -127,67 +132,9 @@ void ACEnemy::Tick(float DeltaTime)
 	{
 		AddMovementInput(StrafeDirection);
 	}
-	
-	// MEMO: Enemy가 Dead 상태이면 모든 테스크 노드는 성공으로 종료되어야 함
-	if (CurrentStateType == EEnemyStateType::Dead)
-	{
-		if (OnEnemyAttackEnded.IsBound())
-			OnEnemyAttackEnded.Broadcast();
 
-		if (OnEnemyParkourEnded.IsBound())
-			OnEnemyParkourEnded.Broadcast();
-
-		GLog->Log("ACEnemy::MontageEnded By EnemyDead");
-
-		return;
-	}
-
-	
 
 	UpdateHitNumbers();
-
-	//
-	//if (Controller)
-	//{
-	//	//UObject* obj = Controller->GetBlackboardComponent()->GetValueAsObject(FName("Player"));
-	//	//Player = Cast<ACPlayer>(obj);
-	//
-	//	float yawDeg = FMath::DegreesToRadians(GetActorRotation().Yaw);
-	//	float actorX = GetActorLocation().X;
-	//	float actorY = GetActorLocation().Y;
-	//	float x1 = GetActorLocation().X;
-	//	float x2 = GetActorLocation().X;
-	//	float y1 = GetActorLocation().Y + 100.f;
-	//	float y2 = GetActorLocation().Y - 100.f;
-	//
-	//	FMatrix2x2 rotationMatrix2D(FMath::Cos(yawDeg), -(FMath::Sin(yawDeg)), FMath::Sin(yawDeg), FMath::Cos(yawDeg));
-	//
-	//	float cos00, mSin01, sin10, cos11;
-	//
-	//	rotationMatrix2D.GetMatrix(cos00, mSin01, sin10, cos11);
-	//
-	//	// rotationMatrix2D * (x1, y1)
-	//	float newX1 = (cos00 * (x1 - actorX)) + (mSin01 * (y1 - actorY));
-	//	float newY1 = (sin10 * (x1 - actorX)) + (cos11 * (y1 - actorY));
-	//
-	//	// rotationMatrix2D * (x2, y2)
-	//	float newX2 = (cos00 * (x2 - actorX)) + (mSin01 * (y2 - actorY));
-	//	float newY2 = (sin10 * (x2 - actorX)) + (cos11 * (y2 - actorY));
-	//	
-	//	if (WeaponComponent->IsRifleMode() || WeaponComponent->IsOnehandMode())
-	//	{	
-	//		WorldAttackPoint = FVector(Pos.X + newX1, Pos.Y + newY1, Pos.Z);
-	//		WorldAttackPoint2 = FVector(Pos.X + newX2, Pos.Y + newY2, Pos.Z);
-	//	
-	//		Controller->GetBlackboardComponent()->SetValueAsVector(TEXT("AttackPoint"), WorldAttackPoint);
-	//		Controller->GetBlackboardComponent()->SetValueAsVector(TEXT("AttackPoint2"), WorldAttackPoint2);
-	//	}
-	//	else
-	//	{
-	//		WorldAttackPoint = FVector(GetActorLocation().X + newX1, GetActorLocation().Y + newY1, GetActorLocation().Z);
-	//		WorldAttackPoint2 = FVector(GetActorLocation().X + newX2, GetActorLocation().Y + newY2, GetActorLocation().Z);
-	//	}
-	//}
 
 #ifdef DEBUG_CENEMY
 	DrawDebugSphere(GetWorld(), WorldAttackPoint, 25.f, 12, FColor::Red, false);
@@ -197,7 +144,7 @@ void ACEnemy::Tick(float DeltaTime)
 
 float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
-	// Check Execute function body
+	// 몸체 실행 전 조건 확인
 	{
 		if (CurrentStateType == EEnemyStateType::Dead)
 			return 0.0f;
@@ -216,30 +163,29 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 		Hp -= Damaged.DamageAmount;
 	}
 
-	FVector start = GetActorLocation();
-	FVector target = Damaged.EventInstigator->GetPawn()->GetActorLocation();
+	// Enemy 피격시 회전과 넉백 설정
+	{
+		FVector start = GetActorLocation();
+		FVector target = Damaged.EventInstigator->GetPawn()->GetActorLocation();
 
-	FVector direction = target - start;
-	direction.Normalize();
+		FVector direction = target - start;
+		direction.Normalize();
 
-	FTransform transform;
-	transform.SetLocation(GetActorLocation());
+		FTransform transform;
+		transform.SetLocation(GetActorLocation());
 
-	SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
-	LaunchCharacter(-direction * DeadDatas[0].Launch, true, false);
+		SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
+		LaunchCharacter(-direction * DeadDatas[0].Launch, true, false);
+	}
 
-	ShowHitNumber(DamageAmount, this->GetActorLocation());
-	ShowHealthBar();
-	ShakeCamera(Damaged);
-	//TODO: HitStop 인터페이스로 구현 가능?
-	// HitStop
-	//{
-	//	CustomTimeDilation = 10e-5f;
-	//
-	//	GetWorldTimerManager().SetTimer(StopTimer, this, &ACEnemy::RecoverDilation, StopTime, true);
-	//}
+	// Widget 각종 효과
+	{
+		ShowHitNumber(DamageAmount, this->GetActorLocation());
+		ShowHealthBar();
+		ShakeCamera(Damaged);
+	}
 	
-	OpponentSkillLaunch();
+	//OpponentSkillState();
 
 	Damage();
 	Dead();
@@ -290,14 +236,16 @@ void ACEnemy::Dead()
 	}
 }
 
-void ACEnemy::OpponentSkillLaunch()
+void ACEnemy::OpponentSkillState()
 {
 	if (Damaged.EventInstigator)
 	{	
 		ACharacter* character = Damaged.EventInstigator->GetCharacter();
-		FVector opponentLocation = character->GetActorLocation();
+		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(character);
 
-		SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y, opponentLocation.Z));
+		if (playerInterface)
+		{
+		}
 	}
 }
 
@@ -456,6 +404,79 @@ void ACEnemy::SetCurrentEnemyStateType(EEnemyStateType InType)
 		OnEnemyStateTypeChanged.Broadcast(PreviousStateType, CurrentStateType);
 }
 
+void ACEnemy::TakeDamage_OpponentUsingSkill()
+{
+	Hp -= 100.0f;
+
+	// 피격 회전 
+	{
+		FVector start = GetActorLocation();
+		FVector target = Opponent->GetActorLocation();
+
+		FVector direction = target - start;
+		direction.Normalize();
+
+		FTransform transform;
+		transform.SetLocation(GetActorLocation());
+
+		SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
+		LaunchCharacter(-direction * 1.0f, true, false);
+	}
+
+	// Widget 각종 효과
+	{
+		ShowHitNumber(100.0f, this->GetActorLocation());
+		ShowHealthBar();
+		ShakeCamera(Damaged);
+	}
+	
+	ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
+
+	if (playerInterface)
+	{
+		if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W2_S)
+		{		
+			if (DamageDatas[0].Montage)
+				DamageDatas[0].PlayMontage(this);
+
+			if (DamageDatas[0].Effect)
+				DamageDatas[0].PlayEffect(GetWorld(), this);
+			
+			FVector thisLocation = GetActorLocation();
+			FVector opponentLocation = Opponent->GetActorLocation();
+
+			SetActorLocation(FVector(thisLocation.X, thisLocation.Y, opponentLocation.Z));
+			
+		}
+		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W2_E)
+		{
+			if (DamageDatas[1].Montage)
+				DamageDatas[1].PlayMontage(this);
+
+			if (DamageDatas[1].Effect)
+				DamageDatas[1].PlayEffect(GetWorld(), this);
+		}
+
+		//if (Hp > 0.0f)
+		//{
+		//	//ActivateDamageEffect();
+		//}
+
+		if (Hp <= 0.0f)
+		{
+			SetCurrentEnemyStateType(EEnemyStateType::Dead);
+
+			IsDeadBySkill = true;
+
+			for (int i = 0; i < Weapons.Num(); i++)
+			{
+				if (Weapons[i])
+					Weapons[i]->DestroyWeapon();
+			}
+		}
+	}
+}
+
 void ACEnemy::OnStateTypeChange(EEnemyStateType InCurrentStateType)
 {
 	PreviousStateType = CurrentStateType;
@@ -482,16 +503,22 @@ void ACEnemy::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrim
 
 void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool Interrupted)
 {
-	// MEMO: Enemy의 몽타주가 재생 후 정상적으로 종료될 경우 노드가 성공으로 끝나야함
-	if (CurrentStateType == EEnemyStateType::Dead)
+	//// MEMO: Enemy의 몽타주가 재생 후 정상적으로 종료될 경우 노드가 성공으로 끝나야함
+	//if (CurrentStateType == EEnemyStateType::Dead)
+	//{
+	//	if (OnEnemyAttackEnded.IsBound())
+	//		OnEnemyAttackEnded.Broadcast();
+	//
+	//	if (OnEnemyParkourEnded.IsBound())
+	//		OnEnemyParkourEnded.Broadcast();
+	//
+	//	return;
+	//}
+	if (IsDeadBySkill)
 	{
-		if (OnEnemyAttackEnded.IsBound())
-			OnEnemyAttackEnded.Broadcast();
+		ActivateDeadEffect();
 
-		if (OnEnemyParkourEnded.IsBound())
-			OnEnemyParkourEnded.Broadcast();
-
-		return;
+		IsDeadBySkill = false;
 	}
 
 	if (!Interrupted)

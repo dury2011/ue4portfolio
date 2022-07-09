@@ -161,6 +161,13 @@ void ACPlayer::BeginPlay()
 	GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACPlayer::MontageEnded);
 
 	GetComponents<UCapsuleComponent>(CapsuleCollisions);
+	GetComponents<UBoxComponent>(BoxCollisions);
+
+	for (UShapeComponent* collision : BoxCollisions)
+	{
+		collision->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnBoxBeginOverlap);
+		collision->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnBoxEndOverlap);
+	}
 	
 	for (UShapeComponent* collision : CapsuleCollisions)
 	{
@@ -495,6 +502,8 @@ void ACPlayer::OnSkillTwo()
 {
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
+		SetPlayerActivateSkill(true);
+		
 		CharacterComponent->SetCurrentStateType(EStateType::Attack);
 		CharacterComponent->SetIsMontagePlaying(true);
 
@@ -522,6 +531,12 @@ void ACPlayer::OnSkillThree()
 	else if (CharacterComponent->GetIsWeaponSpellMode())
 	{
 	}
+}
+
+void ACPlayer::OnSkillAttack()
+{
+	if (OnPlayerSkillAttack.IsBound())
+		OnPlayerSkillAttack.Broadcast();
 }
 
 void ACPlayer::SpawnWarriorSkillOneProjectile()
@@ -730,9 +745,23 @@ void ACPlayer::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 {
 	CheckTrue(OverlappedComponent == GetCapsuleComponent());
 
+	
 }
 
 void ACPlayer::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	CheckTrue(OverlappedComponent == GetCapsuleComponent());
+
+}
+
+void ACPlayer::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	CheckTrue(OverlappedComponent == GetCapsuleComponent());
+
+
+}
+
+void ACPlayer::OnBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	CheckTrue(OverlappedComponent == GetCapsuleComponent());
 
@@ -786,6 +815,9 @@ void ACPlayer::MontageEnded(UAnimMontage* InMontage, bool Ininterrupted)
 		CharacterComponent->SetbCanMove(true);
 	if (!CharacterComponent->GetbFixedCamera())
 		CharacterComponent->SetbFixedCamera(true);
+
+	if (IsActivateSkill)
+		SetPlayerActivateSkill(false);
 
 	//if (bAttacking)
 		//bAttacking = false;
@@ -908,4 +940,24 @@ float ACPlayer::MaxMp()
 float ACPlayer::MaxSp()
 {
 	return CharacterComponent->GetMaxSp();
+}
+
+EPlayerSkillType ACPlayer::GetCurrentPlayerSkillType()
+{
+	return CurrentPlayerSkillType;
+}
+
+void ACPlayer::SetCurrentPlayerSkillType(EPlayerSkillType InType)
+{
+	CurrentPlayerSkillType = InType;
+}
+
+bool ACPlayer::GetPlayerActivateSkill()
+{
+	return IsActivateSkill;
+}
+
+void ACPlayer::SetPlayerActivateSkill(bool InBool)
+{
+	IsActivateSkill = InBool;
 }
