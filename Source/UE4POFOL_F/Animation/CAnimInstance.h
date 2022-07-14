@@ -55,6 +55,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Animation")
 	bool IsRunning;
 
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Animation")
+	bool IsSpellTravel;
+
 	//UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Weapon Type")
 	//EWeaponType ActiveWeaponType = EWeaponType::Max;
 

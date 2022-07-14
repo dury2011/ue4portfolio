@@ -20,10 +20,10 @@ ACCannon::ACCannon()
 	if (assetSkeletalMesh.Succeeded())
 		SkeletalMesh = assetSkeletalMesh.Object;
 
-	ConstructorHelpers::FClassFinder<ACProjectile> classProjectile(*FString("Blueprint'/Game/FORUE4POFOL/Weapon/BP_CProjectile_Cannon.BP_CProjectile_Cannon_C'"));
+	//ConstructorHelpers::FClassFinder<ACProjectile> classProjectile(*FString("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CCannon.BP_CCannon_C'"));
 
-	if (classProjectile.Succeeded())
-		CannonProjectileClass = classProjectile.Class;
+	//if (classProjectile.Succeeded())
+		//CannonProjectileClass = classProjectile.Class;
 
 	WidgetComponent = CreateDefaultSubobject<UCWidgetComponent>("CWidgetComponent");
 	GetMesh()->SetSkeletalMesh(SkeletalMesh);

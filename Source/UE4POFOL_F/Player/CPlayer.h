@@ -45,12 +45,19 @@ public:
 	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
 	class UCIKComponent* IKComponent;
 
+	// for skill and critical
+	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
+	class UBoxComponent* BoxComponentSkill2;
+
+	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
+	class UBoxComponent* BoxComponentSkill3;
+	
+	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
+	class USphereComponent* SphereComponentCritical;
+
 	UPROPERTY(BlueprintReadOnly)
 	TArray<class UCapsuleComponent*> CapsuleCollisions; 
 
-	UPROPERTY(BlueprintReadOnly)
-	TArray<class UBoxComponent*> BoxCollisions;
-	
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Player Setting")
 	float ComboCountExistTime = 2.0f;
 
@@ -149,6 +156,7 @@ private:
 	FTimerHandle WarriorSkillTimer;
 	int32 Index = 0;
 	int32 IndexTargetting = 0;
+	int32 JumpCount = 0;
 	FVector TargetLocation;
 	FRotator TargetRotator;
 	float Zooming;
@@ -162,6 +170,7 @@ private:
 	bool bAttacking = false;
 	bool bCanCombo = false;
 	bool IsActivateSkill = false;
+	bool IsSpellTravel = false;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class ACProjectile> SpellThrowProjectileClass;
@@ -192,21 +201,30 @@ private:
 	void OffAim();
 	void OnRun();
 	void OffRun();
+	void OnSpellTravel();
 	void OnParkour();
 	void OnAction();
 	void OnSkillOne();
 	void OffSkillOne();
 	void OnSkillTwo();
 	void OnSkillThree();
+	void OnCritical();
 
 public:
 	void OnSkillAttack();
 	void SpawnWarriorSkillOneProjectile();
 	void SpawnSpellMeteorWeapon();
+	void SpawnGhostTrail();
 	void SetPlayerPortalLocation();
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void SpawnCameraEffect();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void SpawnTravelModeEffect();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void DestroyTravelModeEffect();
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void SpawnWarriorSkillOneEffect();
@@ -242,12 +260,24 @@ public:
 
 	UFUNCTION()
 	void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-	
-	UFUNCTION()
-	void OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
-	void OnBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	void OnBoxSkill2BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnBoxSkill2EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	
+	UFUNCTION()
+	void OnBoxSkill3BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnBoxSkill3EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void OnSphereCriticalBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnSphereCriticalEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
 	void MontageEnded(UAnimMontage* InMontage, bool Ininterrupted);
@@ -286,4 +316,6 @@ public:
 	FORCEINLINE void SetbCanCombo(bool Inbool) { bCanCombo = Inbool; }
 	FORCEINLINE bool GetbCanCombo() { return bCanCombo; }
 	FORCEINLINE void SetIncreaseIndex() { Index++; }
+	FORCEINLINE bool GetIsSpellTravel() { return IsSpellTravel; }
+	FORCEINLINE void SetIsSpellTravel(bool InBool) { IsSpellTravel = InBool; }
 };

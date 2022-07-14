@@ -12,7 +12,7 @@
 #include "Player/CPlayer.h"
 #include "AI/CAIController.h"
 #include "Kismet/GameplayStatics.h"
-#include "Weapon/CRifle.h"
+//#include "Weapon/CRifle.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "DrawDebugHelpers.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -131,6 +131,11 @@ void ACEnemy::Tick(float DeltaTime)
 	if (CanStrafing)
 	{
 		AddMovementInput(StrafeDirection);
+	}
+
+	if (IsLaunchBySkill)
+	{
+		SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y, Opponent->GetActorLocation().Z));
 	}
 
 
@@ -404,7 +409,7 @@ void ACEnemy::SetCurrentEnemyStateType(EEnemyStateType InType)
 		OnEnemyStateTypeChanged.Broadcast(PreviousStateType, CurrentStateType);
 }
 
-void ACEnemy::TakeDamage_OpponentUsingSkill()
+void ACEnemy::SkillDamage()
 {
 	Hp -= 100.0f;
 
@@ -427,51 +432,108 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 	{
 		ShowHitNumber(100.0f, this->GetActorLocation());
 		ShowHealthBar();
+
+		Damaged.EventInstigator = Opponent->GetController();
 		ShakeCamera(Damaged);
 	}
-	
-	ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
+}
 
-	if (playerInterface)
+void ACEnemy::TakeDamage_OpponentUsingSkill()
+{
+	if (IsAttackBySkill)
 	{
-		if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W2_S)
-		{		
-			if (DamageDatas[0].Montage)
-				DamageDatas[0].PlayMontage(this);
+		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
 
-			if (DamageDatas[0].Effect)
-				DamageDatas[0].PlayEffect(GetWorld(), this);
-			
-			FVector thisLocation = GetActorLocation();
-			FVector opponentLocation = Opponent->GetActorLocation();
-
-			SetActorLocation(FVector(thisLocation.X, thisLocation.Y, opponentLocation.Z));
-			
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W2_E)
+		if (playerInterface)
 		{
-			if (DamageDatas[1].Montage)
-				DamageDatas[1].PlayMontage(this);
+			if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W2_S)
+			{		
+				SkillDamage();
+				
+				IsLaunchBySkill = true;
+				
+				if (DamageDatas[0].Montage)
+					DamageDatas[0].PlayMontage(this);
 
-			if (DamageDatas[1].Effect)
-				DamageDatas[1].PlayEffect(GetWorld(), this);
-		}
+				if (DamageDatas[0].Effect)
+					DamageDatas[0].PlayEffect(GetWorld(), this);
+				
+				FVector thisLocation = GetActorLocation();
+				FVector opponentLocation = Opponent->GetActorLocation();
 
-		//if (Hp > 0.0f)
-		//{
-		//	//ActivateDamageEffect();
-		//}
-
-		if (Hp <= 0.0f)
-		{
-			SetCurrentEnemyStateType(EEnemyStateType::Dead);
-
-			IsDeadBySkill = true;
-
-			for (int i = 0; i < Weapons.Num(); i++)
+				SetActorLocation(FVector(thisLocation.X, thisLocation.Y, opponentLocation.Z));
+				
+			}
+			else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W2_E)
 			{
-				if (Weapons[i])
-					Weapons[i]->DestroyWeapon();
+				SkillDamage();
+				
+				if (DamageDatas[1].Montage)
+					DamageDatas[1].PlayMontage(this);
+
+				if (DamageDatas[1].Effect)
+					DamageDatas[1].PlayEffect(GetWorld(), this);
+
+				IsLaunchBySkill = false;
+				IsAttackBySkill = false;
+			}
+			else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::WC_S)
+			{
+				SkillDamage();
+				
+				IsAttackBySkill = true;
+				
+				if (DamageDatas[1].Montage)
+					DamageDatas[1].PlayMontage(this);
+
+				if (DamageDatas[1].Effect)
+					DamageDatas[1].PlayEffect(GetWorld(), this);
+			}
+			else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::WC_E)
+			{
+				SkillDamage();
+				
+				IsAttackBySkill = false;
+			}
+			else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::S3_S)
+			{
+				SkillDamage();
+				
+				LaunchCharacter(FVector(0.0f, 0.0f, 500.0f), false, false);
+
+				if (DamageDatas[0].Montage)
+					DamageDatas[0].PlayMontage(this);
+
+				if (DamageDatas[0].Effect)
+					DamageDatas[0].PlayEffect(GetWorld(), this);
+			}
+			else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::S3_E)
+			{
+				SkillDamage();
+
+				if (DamageDatas[1].Montage)
+					DamageDatas[1].PlayMontage(this);
+
+				if (DamageDatas[1].Effect)
+					DamageDatas[1].PlayEffect(GetWorld(), this);
+			}
+
+			//if (Hp > 0.0f)
+			//{
+			//	//ActivateDamageEffect();
+			//}
+
+			if (Hp <= 0.0f)
+			{
+				SetCurrentEnemyStateType(EEnemyStateType::Dead);
+
+				IsDeadBySkill = true;
+
+				for (int i = 0; i < Weapons.Num(); i++)
+				{
+					if (Weapons[i])
+						Weapons[i]->DestroyWeapon();
+				}
 			}
 		}
 	}

@@ -5,6 +5,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Enemy/CEnemy.h"
 #include "Component/CCharacterComponent.h"
+#include "Player/CPlayer.h"
 
 void UCAnimInstance::NativeBeginPlay()
 {
@@ -62,6 +63,11 @@ void UCAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		bFullBody = true;
 	else 
 		bFullBody = false;
+
+	ACPlayer* player = Cast<ACPlayer>(OwnerCharacter);
+
+	if (player)
+		IsSpellTravel = player->GetIsSpellTravel();
 	
 	//if (UKismetMathLibrary::NearlyEqual_FloatFloat(Yaw, 175.0f, 0.1f))
 	//	bTurnBack = true;

@@ -29,7 +29,7 @@ UCLASS()
 class UE4POFOL_F_API ACEnemy : public ACharacter, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
-	
+
 public:
 	FOnEnemyStateTypeChanged OnEnemyStateTypeChanged;
 
@@ -42,59 +42,59 @@ public:
 	FOnEnemyParkourEnded OnEnemyParkourEnded;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
-	bool CanLaucnhEnemy = false;
+		bool CanLaucnhEnemy = false;
 
-protected:	
+protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
-	float Hp = 1000.0f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
-	float MaxHp = 1000.0f;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
-	float Mp = 1000.0f;
+		float Hp = 1000.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
-	float MaxMp = 1000.0f;
-	
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
-	float RotationSpeed = 3.0f;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	TArray<FActionData> ActionDatas;
+		float MaxHp = 1000.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	TArray<FDamageData> DamageDatas;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
+		float Mp = 1000.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	TArray<FDamageData> DeadDatas;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	TArray<FActionData> DodgeDatas;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	TArray<TSubclassOf<class ACWeapon>> WeaponClass;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	TArray<TSubclassOf<class ACWeapon>> EffectWeaponClass;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	TArray<TSubclassOf<class ACProjectile>> ProjectileClass;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	TSubclassOf<class UMatineeCameraShake> DamageCameraShakeClass;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	TSubclassOf<class UAnimInstance> AnimBlueprint;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
+		float MaxMp = 1000.0f;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
-	class UWidgetComponent* HealthBarWidgetComponent;
+		float RotationSpeed = 3.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	float StopTime = 0.2f;
+		TArray<FActionData> ActionDatas;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	float ChangeStrafingTypeInterval = 2.0f;
+		TArray<FDamageData> DamageDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+		TArray<FDamageData> DeadDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+		TArray<FActionData> DodgeDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+		TArray<TSubclassOf<class ACWeapon>> WeaponClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+		TArray<TSubclassOf<class ACWeapon>> EffectWeaponClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+		TArray<TSubclassOf<class ACProjectile>> ProjectileClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+		TSubclassOf<class UMatineeCameraShake> DamageCameraShakeClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+		TSubclassOf<class UAnimInstance> AnimBlueprint;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
+		class UWidgetComponent* HealthBarWidgetComponent;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+		float StopTime = 0.2f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+		float ChangeStrafingTypeInterval = 2.0f;
 
 	bool bMontageIsPlaying = false;
 	bool bActivateRotateToOpponent = true;
@@ -102,33 +102,35 @@ protected:
 	bool IsLaunching = false;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
-	FName EffectWeaponSpawnSocketName;
+		FName EffectWeaponSpawnSocketName;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
-	int32 EffectWeaponIndex;
+		int32 EffectWeaponIndex;
 
 private:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
-	float HealthBarDisplayTime = 1.5f;
-	
+		float HealthBarDisplayTime = 1.5f;
+
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
-	float HitNumberDestroyTime = 1.0f;
-	
+		float HitNumberDestroyTime = 1.0f;
+
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
-	TMap<UUserWidget*, FVector> HitNumbers;
-	
-	UPROPERTY()
-	TArray<class UCapsuleComponent*> CapsuleCollisions;
-	
-	UPROPERTY()
-	class UBlackboardComponent* Blackboard;
-	
-	UPROPERTY()
-	class ACharacter* Opponent;
+		TMap<UUserWidget*, FVector> HitNumbers;
 
 	UPROPERTY()
-	TArray<class ACWeapon*> Weapons;	
-	
+		TArray<class UCapsuleComponent*> CapsuleCollisions;
+
+	UPROPERTY()
+		class UBlackboardComponent* Blackboard;
+
+	UPROPERTY()
+		class ACharacter* Opponent;
+
+	UPROPERTY()
+		TArray<class ACWeapon*> Weapons;
+
+	bool IsLaunchBySkill = false;
+	bool IsAttackBySkill = false;
 	bool IsDeadBySkill = false;
 
 	FVector StrafeDirection = FVector::ZeroVector;
@@ -182,13 +184,13 @@ private:
 
 protected:
 	UFUNCTION(BlueprintCallable)
-	void StoreHitNumber(UUserWidget* InHitNumber, FVector InLocation);
+		void StoreHitNumber(UUserWidget* InHitNumber, FVector InLocation);
 
 	UFUNCTION()
-	void DestroyHitNumber(UUserWidget* InHitNumber);
+		void DestroyHitNumber(UUserWidget* InHitNumber);
 
 	UFUNCTION()
-	void UpdateHitNumbers();
+		void UpdateHitNumbers();
 
 	//UFUNCTION(BlueprintNativeEvent)
 	void ShowHealthBar();
@@ -199,20 +201,22 @@ protected:
 	//void HideHealthBar_Implementation();
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void ActivateDeadEffect();	
+		void ActivateDeadEffect();
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void ActivateDamageEffect();
+		void ActivateDamageEffect();
 
 	UFUNCTION()
-	void SetCurrentEnemyStateType(EEnemyStateType InType);
+		void SetCurrentEnemyStateType(EEnemyStateType InType);
+
+	void SkillDamage();
 
 public:
 	UFUNCTION(BlueprintImplementableEvent)
-	void ShowHitNumber(int32 InDamage, FVector InHitLocation);
-	
+		void ShowHitNumber(int32 InDamage, FVector InHitLocation);
+
 	UFUNCTION()
-	void TakeDamage_OpponentUsingSkill();
+		void TakeDamage_OpponentUsingSkill();
 
 	static void SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass);
 	void DestroyEnemy();
@@ -220,21 +224,21 @@ public:
 
 protected:
 	UFUNCTION()
-	virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+		virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
-	virtual void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+		virtual void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
-	virtual void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+		virtual void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 	UFUNCTION()
-	void OnMontageEnded(UAnimMontage* InMontage, bool InInterrupted);
+		void OnMontageEnded(UAnimMontage* InMontage, bool InInterrupted);
 
 public:
 	void MontageEnded();
 	void OnStateTypeChange(EEnemyStateType InCurrentStateType);
-	
+
 	//FORCEINLINE bool GetbDamage() { return bDamage; }
 	//FORCEINLINE void SetbMontageIsPlaying(bool InBool) { bMontageIsPlaying = InBool; }
 	//FORCEINLINE bool GetbMontageIsPlaying() { return bMontageIsPlaying; }
@@ -243,5 +247,6 @@ public:
 	FORCEINLINE EEnemyStateType GetCurrentEnemyStateType() { return CurrentStateType; }
 	FORCEINLINE ACWeapon* GetWeapon(int32 InIndex) { if (Weapons[InIndex]) return Weapons[InIndex]; else return nullptr; }
 	FORCEINLINE bool GetCanStrafing() { return CanStrafing; }
+	FORCEINLINE void SetIsAttackBySkill(bool InBool) { IsAttackBySkill = InBool; }
 	//FORCEINLINE bool GetIsAttacking() { return IsAttacking; }
 };

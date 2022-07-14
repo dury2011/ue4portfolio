@@ -24,10 +24,10 @@ private:
 	class UMaterialInstanceConstant* Material;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Time")
-	float StartDelay = 0.5f;
+	float StartDelay = 0.1f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Time")
-	float Interval = 0.25f;
+	float Interval = 0.1f;
 	
 public:	
 	ACGhostTrail();
@@ -36,7 +36,7 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	void SpawnGhostTrail(ACharacter* InCharacter);
+	static ACGhostTrail* SpawnGhostTrail(ACharacter* InSpawner, TSubclassOf<ACGhostTrail> InGhostTrailClass);
 	void ToggleOn();
 	void ToggleOff();
 	void DeleteTrail();

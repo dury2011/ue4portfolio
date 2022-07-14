@@ -47,20 +47,22 @@ void ACGhostTrail::BeginPlay()
 	GetWorld()->GetTimerManager().SetTimer(destoryTimer, this, &ACGhostTrail::DeleteTrail, 1.0f, true);
 }
 
-void ACGhostTrail::SpawnGhostTrail(ACharacter* InCharacter)
+ACGhostTrail* ACGhostTrail::SpawnGhostTrail(ACharacter* InSpawner, TSubclassOf<ACGhostTrail> InGhostTrailClass)
 {
 	FActorSpawnParameters params;
-	params.Owner = InCharacter;
+	params.Owner = InSpawner;
 	params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	FVector vector = InCharacter->GetActorLocation();
+	FVector vector = InSpawner->GetActorLocation();
 	vector.Z -= 90;
 
 	FTransform transform;
 	transform.SetLocation(vector);
 
+	return InSpawner->GetWorld()->SpawnActor<ACGhostTrail>(InGhostTrailClass, transform, params);
 	// BUG: this->GetClass() 이 부분 혹시 터지면 확인하기 
-	GetWorld()->SpawnActor<ACGhostTrail>(this->GetClass(), transform, params);
+	// MEMO: 22.07.09 이 코드로 스폰이 됬었나 왜 뒀지? 잘못 한것 같은데 일단 수정함
+	//GetWorld()->SpawnActor<ACGhostTrail>(this->GetClass(), transform, params);
 }
 
 void ACGhostTrail::ToggleOn()

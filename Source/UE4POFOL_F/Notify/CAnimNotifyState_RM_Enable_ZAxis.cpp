@@ -23,11 +23,12 @@ void UCAnimNotifyState_RM_Enable_ZAxis::NotifyEnd(USkeletalMeshComponent * MeshC
 {
 	CheckNull(MeshComp);
 	
-	Super::NotifyEnd(MeshComp, Animation);
 
 	ACharacter* character = Cast<ACharacter>(MeshComp->GetOwner());
 
 	if (character)
 		character->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	
+	Super::NotifyEnd(MeshComp, Animation);
 }
 
