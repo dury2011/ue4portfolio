@@ -102,17 +102,13 @@ void ACProjectile::ShootProjectile(const FVector& InDirection)
 void ACProjectile::Hit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	CheckTrue(OtherActor == GetOwner());
-	
-	ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
-	
-	FActionDamageEvent damageDatas;
-	// CCharacterComponent에서 직접 가져와서 쓰면됨.
-	//damageDatas.DamageData = &BulletHitDatas[0];
 
-	FDamageEvent damageEvent;
+	if (OtherActor->ActorHasTag("Enemy") == GetOwner()->ActorHasTag("Enemy"))
+		return;
 
-	if (OtherActor == enemy)
-		OtherActor->TakeDamage(100.0f, damageEvent, GetOwner()->GetInstigatorController(), this);
+	float applyDamage = UKismetMathLibrary::RandomIntegerInRange(100.0f, 150.0f);
+
+	UGameplayStatics::ApplyDamage(OtherActor, 100.0f, GetOwner()->GetInstigatorController(), this, NULL);
 	
 	GLog->Log("ACProjectile::Hit()");
 
@@ -123,12 +119,12 @@ void ACProjectile::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 {
 	CheckTrue(OtherActor == GetOwner());
 
-	ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
+	if (OtherActor->ActorHasTag("Enemy") == GetOwner()->ActorHasTag("Enemy"))
+		return;
 
-	FDamageEvent damageEvent;
+	float applyDamage = UKismetMathLibrary::RandomIntegerInRange(100.0f, 150.0f);
 
-	if (OtherActor == enemy)
-		OtherActor->TakeDamage(100.0f, damageEvent, GetOwner()->GetInstigatorController(), this);
+	UGameplayStatics::ApplyDamage(OtherActor, applyDamage, GetOwner()->GetInstigatorController(), this, NULL);
 
 	GLog->Log("ACProjectile::BeginOverlap()");
 

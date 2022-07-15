@@ -20,6 +20,7 @@
 #include "Components/WidgetComponent.h"
 #include "Kismet/KismetTextLibrary.h"
 #include "Weapon/CWeapon.h"
+#include "GameplayTagContainer.h"
 
 //#define DEBUG_CENEMY
 
@@ -153,12 +154,8 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 	{
 		if (CurrentStateType == EEnemyStateType::Dead)
 			return 0.0f;
-
-		//TODO: 임시 나중에 Tag로 바꿀 예정 
-		if (EventInstigator != GetWorld()->GetFirstPlayerController())
-			return DamageAmount;
 	}
-
+				
 	// 구조체 값 할당 및 체력 빼기 
 	{
 		Damaged.DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
@@ -180,7 +177,8 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 		transform.SetLocation(GetActorLocation());
 
 		SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
-		LaunchCharacter(-direction * DeadDatas[0].Launch, true, false);
+		
+		LaunchCharacter(-direction * 50.0f, true, false);
 	}
 
 	// Widget 각종 효과
@@ -200,21 +198,20 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 
 void ACEnemy::Damage()
 {
-	for (int i = 0; i < DamageDatas.Num(); i++)
-		CheckFalse(DamageDatas[i].Montage);
-	
+	//for (int i = 0; i < DamageDatas.Num(); i++)
+		//CheckFalse(DamageDatas[i].Montage);
+	//
 	//CheckTrue(CurrentStateType == EEnemyStateType::Damage);
-
 	if (Hp > 0.0f)
 	{
 		//SetCurrentEnemyStateType(EEnemyStateType::Damage);
-		
-		if (DamageDatas[0].Effect)
-			DamageDatas[0].PlayEffect(GetWorld(), this);
-
-		ActivateDamageEffect();
-
+		//
+		//if (DamageDatas[0].Effect)
+		//	DamageDatas[0].PlayEffect(GetWorld(), this);
+		//
+		//
 		//DamageDatas[0].PlayMontage(this);
+		ActivateDamageEffect();
 	}
 }
 
@@ -411,7 +408,9 @@ void ACEnemy::SetCurrentEnemyStateType(EEnemyStateType InType)
 
 void ACEnemy::SkillDamage()
 {
-	Hp -= 100.0f;
+	float applyDamage = UKismetMathLibrary::RandomIntegerInRange(250, 300);
+	
+	Hp -= applyDamage;
 
 	// 피격 회전 
 	{
@@ -428,9 +427,16 @@ void ACEnemy::SkillDamage()
 		LaunchCharacter(-direction * 1.0f, true, false);
 	}
 
-	// Widget 각종 효과
+	//추가 피격 효과 
 	{
-		ShowHitNumber(100.0f, this->GetActorLocation());
+		// MEMO: 5번에 넣음 
+		if (DamageDatas[5].Effect)
+			DamageDatas[5].PlayEffect(GetWorld(), this);
+	}
+
+	// Widget 각종 효과
+	{	
+		ShowHitNumber(applyDamage, this->GetActorLocation());
 		ShowHealthBar();
 
 		Damaged.EventInstigator = Opponent->GetController();
@@ -440,12 +446,42 @@ void ACEnemy::SkillDamage()
 
 void ACEnemy::TakeDamage_OpponentUsingSkill()
 {
+	// MEMO: Player에게 Skill로 공격당하는 중이면
 	if (IsAttackBySkill)
 	{
+		if (CurrentStateType == EEnemyStateType::Dead)
+			return;
+		
 		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
 
 		if (playerInterface)
 		{
+			PlaySkillDamageSound();
+			
+			if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W1_S)
+			{	
+				SkillDamage();
+				
+				if (DamageDatas[0].Montage)
+					DamageDatas[0].PlayMontage(this);
+
+				if (DamageDatas[0].Effect)
+					DamageDatas[0].PlayEffect(GetWorld(), this);
+			}
+			else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W1_E)
+			{
+				
+				
+				SkillDamage();
+
+				if (DamageDatas[1].Montage)
+					DamageDatas[1].PlayMontage(this);
+
+				if (DamageDatas[1].Effect)
+					DamageDatas[1].PlayEffect(GetWorld(), this);
+
+				IsAttackBySkill = false;
+			}		
 			if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W2_S)
 			{		
 				SkillDamage();
@@ -477,6 +513,28 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 				IsLaunchBySkill = false;
 				IsAttackBySkill = false;
 			}
+			else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W3_S)
+			{
+				SkillDamage();
+				
+				if (DamageDatas[2].Montage)
+					DamageDatas[2].PlayMontage(this);
+								
+				if (DamageDatas[2].Effect)
+					DamageDatas[2].PlayEffect(GetWorld(), this);
+			}
+			else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W3_E)
+			{
+				SkillDamage();
+				
+				if (DamageDatas[1].Montage)
+					DamageDatas[1].PlayMontage(this);
+
+				if (DamageDatas[1].Effect)
+					DamageDatas[1].PlayEffect(GetWorld(), this);
+
+				IsAttackBySkill = false;
+			}
 			else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::WC_S)
 			{
 				SkillDamage();
@@ -499,7 +557,7 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 			{
 				SkillDamage();
 				
-				LaunchCharacter(FVector(0.0f, 0.0f, 500.0f), false, false);
+				//LaunchCharacter(FVector(0.0f, 0.0f, 500.0f), false, false);
 
 				if (DamageDatas[0].Montage)
 					DamageDatas[0].PlayMontage(this);
@@ -517,11 +575,6 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 				if (DamageDatas[1].Effect)
 					DamageDatas[1].PlayEffect(GetWorld(), this);
 			}
-
-			//if (Hp > 0.0f)
-			//{
-			//	//ActivateDamageEffect();
-			//}
 
 			if (Hp <= 0.0f)
 			{

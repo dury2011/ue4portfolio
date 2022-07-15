@@ -1,6 +1,7 @@
 #include "Notify/CAnimNotifyState_GhostTrail.h"
 #include "Global.h"
 #include "Effect/CGhostTrail.h"
+#include "GameFramework/Character.h"
 
 FString UCAnimNotifyState_GhostTrail::GetNotifyName_Implementation() const
 {
@@ -11,13 +12,20 @@ void UCAnimNotifyState_GhostTrail::NotifyBegin(USkeletalMeshComponent * MeshComp
 {
 	CheckNull(MeshComp);
 
-	ACharacter* character = Cast<ACharacter>(MeshComp->GetOwner());
+	Character = Cast<ACharacter>(MeshComp->GetOwner());
 
-	if (character)
+	if (Character)
 	{
-		GhostTrail = ACGhostTrail::SpawnGhostTrail(character, GhostTrailClass);
-		GhostTrail->SetOwner(Cast<AActor>(character));
-		GhostTrail->ToggleOn();
+		if (GhostTrailClass)
+		{
+			GhostTrail = ACGhostTrail::SpawnGhostTrail(Character, GhostTrailClass);
+			GhostTrail->SetOwner(Cast<AActor>(Character));
+			GhostTrail->ToggleOn();
+
+			Character->GetWorldTimerManager().SetTimer(SpawnTimer, this, &UCAnimNotifyState_GhostTrail::SpawnTrail, GhostTrailSpawnTime, true);
+		}
+		else
+			GLog->Log("Empty Ghost Trail Class!!");
 	}
 }
 
@@ -25,8 +33,25 @@ void UCAnimNotifyState_GhostTrail::NotifyEnd(USkeletalMeshComponent * MeshComp, 
 {
 	CheckNull(MeshComp);
 
-	ACharacter* character = Cast<ACharacter>(MeshComp->GetOwner());
+	if (Character)
+	{
+		if (GhostTrail)
+		{
+			GhostTrail->DeleteTrail();
+			Character->GetWorldTimerManager().ClearTimer(SpawnTimer);
+		}
+	}
+}
 
-	if (character)
-		GhostTrail->DeleteTrail();
+void UCAnimNotifyState_GhostTrail::SpawnTrail()
+{
+	if (Character)
+	{
+		if (GhostTrailClass)
+		{
+				GhostTrail = ACGhostTrail::SpawnGhostTrail(Character, GhostTrailClass);
+				GhostTrail->SetOwner(Character);
+				GhostTrail->ToggleOn();
+		}
+	}
 }

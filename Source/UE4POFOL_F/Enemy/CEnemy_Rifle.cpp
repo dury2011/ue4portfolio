@@ -48,11 +48,14 @@ void ACEnemy_Rifle::SpawnAndShootProjectile()
 {
 	ACProjectile* projectile = ACProjectile::SpawnProjectile(this, ProjectileClass[0], FName("Muzzle_Front"));
 	
+	FVector direction = UKismetMathLibrary::GetDirectionUnitVector(GetMesh()->GetSocketLocation(FName("Muzzle_Front")), GetOpponent()->GetActorLocation());
+	FRotator rotation = UKismetMathLibrary::GetDirectionUnitVector(GetMesh()->GetSocketLocation(FName("Muzzle_Front")), GetOpponent()->GetActorLocation()).Rotation();
+
 	if (projectile)
 	{
 		projectile->SetOwner(this);
-		projectile->SetActorRotation(GetActorRotation());
-		projectile->ShootProjectile(UKismetMathLibrary::GetDirectionUnitVector(GetMesh()->GetSocketLocation(FName("Muzzle_Front")), GetOpponent()->GetActorLocation()));
+		projectile->SetActorRotation(rotation);
+		projectile->ShootProjectile(direction);
 	}
 }
 

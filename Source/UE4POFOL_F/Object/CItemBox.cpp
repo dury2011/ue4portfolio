@@ -5,7 +5,7 @@
 
 ACItemBox::ACItemBox()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	SphereCollision = CreateDefaultSubobject<USphereComponent>("Sphere Collision");
 	RootComponent = SphereCollision;
 }

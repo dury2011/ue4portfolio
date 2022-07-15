@@ -38,7 +38,7 @@ ACBoss::ACBoss()
 	
 	RootComponent = GetCapsuleComponent();
 	
-	CHelpers::GetClass<ACWeapon>(&GroundCrackWeaponClass, "Blueprint'/Game/FORUE4POFOL/Weapon/BP_CWeapon_EarthCrack.BP_CWeapon_EarthCrack_C'");
+	CHelpers::GetClass<ACWeapon>(&GroundCrackWeaponClass, "Blueprint'/Game/FORUE4POFOL/Boss/Blueprint/BP_CWeapon_EarthCrack.BP_CWeapon_EarthCrack_C'");
 }
 
 void ACBoss::BeginPlay()

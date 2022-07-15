@@ -16,9 +16,6 @@ void UCAnimNotify_LaunchUp::Notify(USkeletalMeshComponent * MeshComp, UAnimSeque
 	ACharacter* character = Cast<ACharacter>(MeshComp->GetOwner());
 
 	if (character)
-	{
-		//UCSkillComponent* skillComponent = CHelpers::GetComponent<UCSkillComponent>(character);
-		//skillComponent->Airborne();
-	}
+		character->LaunchCharacter(FVector(0.0f, 0.0f, LaunchDistance), true, true);
 }
 

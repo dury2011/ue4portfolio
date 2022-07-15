@@ -30,12 +30,12 @@ ACPlayer::ACPlayer()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	BoxComponentSkill2 = CreateDefaultSubobject<UBoxComponent>("Box Skill2");
-	BoxComponentSkill2->SetupAttachment(RootComponent);
-	BoxComponentSkill3 = CreateDefaultSubobject<UBoxComponent>("Box Skill3");
-	BoxComponentSkill3->SetupAttachment(RootComponent);
-	SphereComponentCritical = CreateDefaultSubobject<USphereComponent>("Sphere Ciritical");
-	SphereComponentCritical->SetupAttachment(RootComponent);
+	BoxComponentSkill = CreateDefaultSubobject<UBoxComponent>("Box Collision For Skill");
+	BoxComponentSkill->SetupAttachment(RootComponent);
+	//BoxComponentSkill3 = CreateDefaultSubobject<UBoxComponent>("Box Skill3");
+	//BoxComponentSkill3->SetupAttachment(RootComponent);
+	//SphereComponentCritical = CreateDefaultSubobject<USphereComponent>("Sphere Ciritical");
+	//SphereComponentCritical->SetupAttachment(RootComponent);
 
 	{
 		USkeletalMesh* mesh;
@@ -170,14 +170,14 @@ void ACPlayer::BeginPlay()
 
 	GetComponents<UCapsuleComponent>(CapsuleCollisions);
 	
-	BoxComponentSkill2->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnBoxSkill2BeginOverlap);
-	BoxComponentSkill2->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnBoxSkill2EndOverlap);
+	BoxComponentSkill->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnBoxSkillBeginOverlap);
+	BoxComponentSkill->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnBoxSkillEndOverlap);
 
-	BoxComponentSkill3->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnBoxSkill3BeginOverlap);
-	BoxComponentSkill3->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnBoxSkill3EndOverlap);
-
-	SphereComponentCritical->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnSphereCriticalBeginOverlap);
-	SphereComponentCritical->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnSphereCriticalEndOverlap);
+	//BoxComponentSkill3->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnBoxSkill3BeginOverlap);
+	//BoxComponentSkill3->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnBoxSkill3EndOverlap);
+	//
+	//SphereComponentCritical->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnSphereCriticalBeginOverlap);
+	//SphereComponentCritical->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnSphereCriticalEndOverlap);
 	
 	for (UShapeComponent* collision : CapsuleCollisions)
 	{
@@ -247,7 +247,7 @@ void ACPlayer::OnMoveForward(float AxisValue)
 	//	return;
 	//}
 	CheckFalse(CharacterComponent->GetbCanMove());
-	CheckTrue(bAttacking);
+	//CheckTrue(bAttacking);
 
 	CharacterComponent->SetCurrentStateType(EStateType::Move);
 
@@ -268,7 +268,7 @@ void ACPlayer::OnMoveRight(float AxisValue)
 	//	return;
 	//}
 	CheckFalse(CharacterComponent->GetbCanMove());
-	CheckTrue(bAttacking);
+	//CheckTrue(bAttacking);
 
 	CharacterComponent->SetCurrentStateType(EStateType::Move);
 	
@@ -308,7 +308,7 @@ void ACPlayer::InZooming(float Infloat)
 void ACPlayer::OnJump()
 {
 	CheckFalse(CharacterComponent->GetbCanMove());
-	CheckTrue(bAttacking);
+	//CheckTrue(bAttacking);
 	CheckTrue(IsSpellTravel);
 	
 	CharacterComponent->SetCurrentStateType(EStateType::Move);
@@ -317,7 +317,7 @@ void ACPlayer::OnJump()
 void ACPlayer::OffJump()
 {
 	CheckFalse(CharacterComponent->GetbCanMove());
-	CheckTrue(bAttacking);
+	//CheckTrue(bAttacking);
 	CheckTrue(IsSpellTravel);
 	
 	CharacterComponent->SetCurrentStateType(EStateType::Idle);
@@ -421,6 +421,7 @@ void ACPlayer::OnAction()
 {
 	CheckTrue(CharacterComponent->GetIsWeaponUnarmedMode());
 	CheckTrue(bAiming);
+	CheckTrue(CharacterComponent->GetIsMontagePlaying());
 
 	CharacterComponent->SetCurrentStateType(EStateType::Attack);
 
@@ -471,14 +472,18 @@ void ACPlayer::OnAction()
 
 void ACPlayer::OnSkillOne()
 {
+	SpawnSkillEffect();
+	
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
 		CharacterComponent->SetCurrentStateType(EStateType::Attack);
 
 		if (CharacterComponent->GetCriticalDatasOnehand(0).Montage)
+		{
 			CharacterComponent->GetCriticalDatasOnehand(0).PlayMontage(this);
+		}
 
-		GetWorldTimerManager().SetTimer(WarriorSkillTimer, this, &ACPlayer::SpawnWarriorSkillOneProjectile, 0.3f, true);
+		//GetWorldTimerManager().SetTimer(WarriorSkillTimer, this, &ACPlayer::SpawnWarriorSkillOneProjectile, 0.3f, true);
 		
 		CharacterComponent->SetIsMontagePlaying(true);
 	}
@@ -505,10 +510,10 @@ void ACPlayer::OffSkillOne()
 {
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
-		if (CharacterComponent->GetCriticalDatasOnehand(1).Montage)
-			CharacterComponent->GetCriticalDatasOnehand(1).PlayMontage(this);
+		//if (CharacterComponent->GetCriticalDatasOnehand(1).Montage)
+		//	CharacterComponent->GetCriticalDatasOnehand(1).PlayMontage(this);
 
-		GetWorldTimerManager().ClearTimer(WarriorSkillTimer);
+		//GetWorldTimerManager().ClearTimer(WarriorSkillTimer);
 	}
 	else if (CharacterComponent->GetIsWeaponSpellMode())
 	{
@@ -536,6 +541,8 @@ void ACPlayer::OffSkillOne()
 
 void ACPlayer::OnSkillTwo()
 {
+	SpawnSkillEffect();
+	
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
 		SetPlayerActivateSkill(true);
@@ -561,8 +568,20 @@ void ACPlayer::OnSkillTwo()
 
 void ACPlayer::OnSkillThree()
 {
+	SpawnSkillEffect();
+	
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
+		SetPlayerActivateSkill(true);
+
+		CharacterComponent->SetCurrentStateType(EStateType::Attack);
+		CharacterComponent->SetIsMontagePlaying(true);
+
+		if (CharacterComponent->GetCriticalDatasOnehand(2).Montage)
+		{
+			//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
+			CharacterComponent->GetCriticalDatasOnehand(2).PlayMontage(this);
+		}
 	}
 	else if (CharacterComponent->GetIsWeaponSpellMode())
 	{
@@ -573,6 +592,8 @@ void ACPlayer::OnSkillThree()
 
 void ACPlayer::OnCritical()
 {
+	SpawnSkillEffect();
+	
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
 		CharacterComponent->SetCurrentStateType(EStateType::Attack);
@@ -798,8 +819,15 @@ void ACPlayer::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 {
 	ICInterface_Item* itemInterface = Cast<ICInterface_Item>(OtherActor);
 
-	if (itemInterface && (CharacterComponent->GetMaxHp() > CharacterComponent->GetCurrentHp()))
-		CharacterComponent->SetHp(itemInterface->ActivateItemAbility());
+	if (itemInterface)
+	{
+		if (itemInterface->GetCurrentItemType() == EItemType::Hp)
+			CharacterComponent->SetHp(itemInterface->ActivateItemAbility());
+		else if (itemInterface->GetCurrentItemType() == EItemType::Mp)
+			CharacterComponent->SetMp(itemInterface->ActivateItemAbility());
+		else if (itemInterface->GetCurrentItemType() == EItemType::Sp)
+			CharacterComponent->SetSp(itemInterface->ActivateItemAbility());	
+	}
 }
 
 void ACPlayer::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
@@ -807,27 +835,7 @@ void ACPlayer::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 
 }
 
-void ACPlayer::OnBoxSkill2BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	CheckTrue(OverlappedComponent == GetCapsuleComponent());
-
-	if (OtherActor)
-	{
-		ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
-
-		if (enemy)
-			enemy->SetIsAttackBySkill(true);
-	}
-
-}
-
-void ACPlayer::OnBoxSkill2EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	CheckTrue(OverlappedComponent == GetCapsuleComponent());
-
-}
-
-void ACPlayer::OnBoxSkill3BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ACPlayer::OnBoxSkillBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	CheckTrue(OverlappedComponent == GetCapsuleComponent());
 
@@ -840,21 +848,54 @@ void ACPlayer::OnBoxSkill3BeginOverlap(UPrimitiveComponent* OverlappedComponent,
 	}
 }
 
-void ACPlayer::OnBoxSkill3EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void ACPlayer::OnBoxSkillEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	CheckTrue(OverlappedComponent == GetCapsuleComponent());
 
+	if (OtherActor)
+	{
+		ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
+
+		if (enemy)
+			enemy->SetIsAttackBySkill(false);
+	}
 }
 
-void ACPlayer::OnSphereCriticalBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	CheckTrue(OverlappedComponent == GetCapsuleComponent());
-}
-
-void ACPlayer::OnSphereCriticalEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	CheckTrue(OverlappedComponent == GetCapsuleComponent());
-}
+//void ACPlayer::OnBoxSkill3BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+//{
+//	CheckTrue(OverlappedComponent == GetCapsuleComponent());
+//	//
+//	//if
+//	//(
+//	//	GetCurrentPlayerSkillType() == EPlayerSkillType::S3_S
+//	//	|| GetCurrentPlayerSkillType() == EPlayerSkillType::S3_E
+//	//	|| GetCurrentPlayerSkillType() == EPlayerSkillType::W3_S
+//	//	|| GetCurrentPlayerSkillType() == EPlayerSkillType::W3_E
+//	//)
+//	//if (OtherActor)
+//	//{
+//	//	ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
+//	//
+//	//	if (enemy)
+//	//		enemy->SetIsAttackBySkill(true);
+//	//}
+//}
+//
+//void ACPlayer::OnBoxSkill3EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+//{
+//	CheckTrue(OverlappedComponent == GetCapsuleComponent());
+//
+//}
+//
+//void ACPlayer::OnSphereCriticalBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+//{
+//	CheckTrue(OverlappedComponent == GetCapsuleComponent());
+//}
+//
+//void ACPlayer::OnSphereCriticalEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+//{
+//	CheckTrue(OverlappedComponent == GetCapsuleComponent());
+//}
 
 void ACPlayer::MontageEnded(UAnimMontage* InMontage, bool Ininterrupted)
 {
@@ -912,6 +953,8 @@ void ACPlayer::MontageEnded(UAnimMontage* InMontage, bool Ininterrupted)
 		//bAttacking = false;
 	//bCanCombo = false;
 	//Index = 0;
+
+	DestroySkillEffect();
 
 	CharacterComponent->SetIsMontagePlaying(false);
 }

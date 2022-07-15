@@ -206,6 +206,9 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 		void ActivateDamageEffect();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlaySkillDamageSound();
+
 	UFUNCTION()
 		void SetCurrentEnemyStateType(EEnemyStateType InType);
 

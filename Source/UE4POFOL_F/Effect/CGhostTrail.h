@@ -24,10 +24,10 @@ private:
 	class UMaterialInstanceConstant* Material;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Time")
-	float StartDelay = 0.1f;
+	float StartDelay = 0.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Time")
-	float Interval = 0.1f;
+	float ExistingTime = 0.3f;
 	
 public:	
 	ACGhostTrail();

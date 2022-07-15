@@ -30,21 +30,20 @@ void ACGhostTrail::BeginPlay()
 		
 	SetActorRotation(OwnerCharacter->GetActorRotation() + FRotator(0, -90, 0));
 	
-	FTimerHandle startTimerHandle;
-	
-	FTimerDelegate startDelegate = FTimerDelegate::CreateLambda([=]()
-	{
-		if (Poseable->IsVisible() == false)
-			Poseable->ToggleVisibility();
-
-		Poseable->CopyPoseFromSkeletalComponent(OwnerCharacter->GetMesh());
-	});
-	
-	GetWorld()->GetTimerManager().SetTimer(startTimerHandle, startDelegate, Interval, true, StartDelay);
+	//FTimerHandle startTimerHandle;
+	//
+	//FTimerDelegate startDelegate = FTimerDelegate::CreateLambda([=]()
+	//{
+	//	if (Poseable->IsVisible() == false)
+	//		Poseable->ToggleVisibility();
+	//
+	//	Poseable->CopyPoseFromSkeletalComponent(OwnerCharacter->GetMesh());
+	//});
+	//
+	//GetWorld()->GetTimerManager().SetTimer(startTimerHandle, startDelegate, Interval, true, StartDelay);
 
 	FTimerHandle destoryTimer;
-	
-	GetWorld()->GetTimerManager().SetTimer(destoryTimer, this, &ACGhostTrail::DeleteTrail, 1.0f, true);
+	GetWorld()->GetTimerManager().SetTimer(destoryTimer, this, &ACGhostTrail::DeleteTrail, ExistingTime, true);
 }
 
 ACGhostTrail* ACGhostTrail::SpawnGhostTrail(ACharacter* InSpawner, TSubclassOf<ACGhostTrail> InGhostTrailClass)
@@ -60,9 +59,6 @@ ACGhostTrail* ACGhostTrail::SpawnGhostTrail(ACharacter* InSpawner, TSubclassOf<A
 	transform.SetLocation(vector);
 
 	return InSpawner->GetWorld()->SpawnActor<ACGhostTrail>(InGhostTrailClass, transform, params);
-	// BUG: this->GetClass() 이 부분 혹시 터지면 확인하기 
-	// MEMO: 22.07.09 이 코드로 스폰이 됬었나 왜 뒀지? 잘못 한것 같은데 일단 수정함
-	//GetWorld()->SpawnActor<ACGhostTrail>(this->GetClass(), transform, params);
 }
 
 void ACGhostTrail::ToggleOn()
@@ -77,5 +73,6 @@ void ACGhostTrail::ToggleOff()
 
 void ACGhostTrail::DeleteTrail()
 {
-	Poseable->DestroyComponent();
+	if(Poseable)
+		Poseable->DestroyComponent();
 }

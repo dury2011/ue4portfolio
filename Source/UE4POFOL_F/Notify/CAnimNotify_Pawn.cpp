@@ -15,5 +15,5 @@ void UCAnimNotify_Pawn::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBa
 	ACharacter* character = Cast<ACharacter>(MeshComp->GetOwner());
 
 	if (!!character)
-		character->GetCapsuleComponent()->SetCollisionProfileName(FName("Pawn"));
+		character->GetCapsuleComponent()->SetCollisionProfileName(FName("Player"));
 }

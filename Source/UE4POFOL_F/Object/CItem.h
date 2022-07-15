@@ -12,12 +12,10 @@ class UE4POFOL_F_API ACItem : public AActor, public ICInterface_Item
 	
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Setting")
-	EItemType ItemType;
+	EItemType ItemType = EItemType::Max;
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	AActor* EatActor;
-
-	//FTransform Transform;
 
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -36,12 +34,7 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void SpawnDestroyEffect();
-
-	//UFUNCTION(BlueprintNativeEvent)
-	//FTransform UpdateDestroyEffect();
-	//FTransform UpdateDestroyEffect_Implementation();
 	
-
 private:
 	UFUNCTION()
 	void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

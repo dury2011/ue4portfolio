@@ -39,16 +39,34 @@ void UCCharacterComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 
 void UCCharacterComponent::SetHp(float InHp)
 {
+	float check = Hp;
+	check += InHp;
+
+	if (check >= MaxHp)
+		return;
+
 	Hp += InHp;
 }
 
 void UCCharacterComponent::SetMp(float InMp)
 {
+	float check = Mp;
+	check += InMp;
+	
+	if (check >= MaxMp)
+		return;
+	
 	Mp += InMp;
 }
 
 void UCCharacterComponent::SetSp(float InSp)
 {
+	float check = Sp;
+	check += InSp;
+	
+	if (check >= MaxSp)
+		return;
+	
 	Sp += InSp;
 }
 

@@ -47,13 +47,13 @@ public:
 
 	// for skill and critical
 	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
-	class UBoxComponent* BoxComponentSkill2;
+	class UBoxComponent* BoxComponentSkill;
 
-	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
-	class UBoxComponent* BoxComponentSkill3;
-	
-	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
-	class USphereComponent* SphereComponentCritical;
+	//UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
+	//class UBoxComponent* BoxComponentSkill3;
+	//
+	//UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
+	//class USphereComponent* SphereComponentCritical;
 
 	UPROPERTY(BlueprintReadOnly)
 	TArray<class UCapsuleComponent*> CapsuleCollisions; 
@@ -151,7 +151,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class UMatineeCameraShake> DamageCameraShakeClass;
 
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	EPlayerSkillType CurrentPlayerSkillType;
+
 	FTimerHandle ComboCountTimer;
 	FTimerHandle WarriorSkillTimer;
 	int32 Index = 0;
@@ -235,6 +237,13 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void PlaySpellPortalOffAimSound();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void SpawnSkillEffect();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void DestroySkillEffect();
+
+
 	void BeginNextAction();
 	void EndThisAction();
 
@@ -262,22 +271,22 @@ public:
 	void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
-	void OnBoxSkill2BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	void OnBoxSkillBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
-	void OnBoxSkill2EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	void OnBoxSkillEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 	
-	UFUNCTION()
-	void OnBoxSkill3BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-	void OnBoxSkill3EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-	UFUNCTION()
-	void OnSphereCriticalBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-	void OnSphereCriticalEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	//UFUNCTION()
+	//void OnBoxSkill3BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	//
+	//UFUNCTION()
+	//void OnBoxSkill3EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	//
+	//UFUNCTION()
+	//void OnSphereCriticalBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	//
+	//UFUNCTION()
+	//void OnSphereCriticalEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
 	void MontageEnded(UAnimMontage* InMontage, bool Ininterrupted);
