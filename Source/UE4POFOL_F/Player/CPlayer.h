@@ -26,6 +26,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerCollision);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnPlayerOverlap, class ACharacter*, InAttacker, class AActor*, InAttackCauser, class ACharacter*, InOtherCharacter);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerActiveBlock, bool, IsBlocked);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerSkillAttack);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerSpellFistAttack);
 
 UCLASS()
 class UE4POFOL_F_API ACPlayer : public ACharacter, public IGenericTeamAgentInterface, public ICInterface_PlayerState
@@ -52,8 +53,8 @@ public:
 	//UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
 	//class UBoxComponent* BoxComponentSkill3;
 	//
-	//UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
-	//class USphereComponent* SphereComponentCritical;
+	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
+	class USphereComponent* SphereComponentSpellFist;
 
 	UPROPERTY(BlueprintReadOnly)
 	TArray<class UCapsuleComponent*> CapsuleCollisions; 
@@ -65,6 +66,9 @@ public:
 	int32 ComboCount = 0;
 
 	UPROPERTY(BlueprintReadOnly)
+	bool bParkouring = false;
+
+	UPROPERTY(BlueprintReadOnly)
 	bool bPortalTeleporting = false;
 
 	UPROPERTY(BlueprintReadOnly)
@@ -73,6 +77,8 @@ public:
 	FOnPlayerActiveBlock OnPlayerActiveBlock;
 
 	FOnPlayerSkillAttack OnPlayerSkillAttack;
+
+	FOnPlayerSpellFistAttack OnPlayerSpellFistAttack;
 
 private:
 	struct FDamaged
@@ -147,12 +153,20 @@ private:
 	UPROPERTY()
 	TArray<AActor*> OutTargettingActorArr;
 
+	UPROPERTY()
+	TArray<AActor*> SpellFistedActors;
+
 	//TODO: 컴포넌트에 넣으면 핫 리로드 이슈 생길 수도 있어서 일단 임시로 Player 클래스에 직접 선언함
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class UMatineeCameraShake> DamageCameraShakeClass;
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	EPlayerSkillType CurrentPlayerSkillType;
+
+	//UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	EPlayerSpellFistType CurrentPlayerSpellFistType;
+
+	FRotator ParkourTargetRot = FRotator::ZeroRotator;
 
 	FTimerHandle ComboCountTimer;
 	FTimerHandle WarriorSkillTimer;
@@ -173,12 +187,40 @@ private:
 	bool bCanCombo = false;
 	bool IsActivateSkill = false;
 	bool IsSpellTravel = false;
+	bool IsMontagePlaying = false;
+
+	bool IsPressedOnOnehand = false;
+	bool IsPressedOnSpell = false;
+	bool IsPressedOnSpellFist = false;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class ACProjectile> SpellThrowProjectileClass;
 
 	UPROPERTY()
 	class ACProjectile* SpellThrowProjectile;
+
+protected:
+	// MEMO: 컴포넌트가 가끔 핫 리로드 문제가 생겨서 일단 여기다가 만들었음
+	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
+	TArray<FActionData> SpellFistEquipData;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
+	TArray<FActionData> SpellFistUnequipData;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
+	TArray<FActionData> SpellFistDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
+	TArray<FActionData> SpellFistSkillDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
+	TArray<FActionData> ParkourDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
+	TSubclassOf<class ACWeapon> SpellFistWeaponClass;
+
+	UPROPERTY()
+	class ACWeapon* SpellFistWeapon;
 
 public:
 	ACPlayer();
@@ -205,7 +247,20 @@ private:
 	void OffRun();
 	void OnSpellTravel();
 	void OnParkour();
+
+public:
+	void Notify_ParkourRotation();
+	void Notify_OnParkourFinish();
+
+private:
 	void OnAction();
+
+public:
+	void Notify_BeginNextAction();
+	void Notify_EndThisAction();
+	void Notify_OnSpellFistAttack();
+
+private:
 	void OnSkillOne();
 	void OffSkillOne();
 	void OnSkillTwo();
@@ -243,14 +298,10 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void DestroySkillEffect();
 
-
-	void BeginNextAction();
-	void EndThisAction();
-
 private:
 	void OnOnehand();
 	void OnSpell();
-	void OnOnehandSpell();
+	void OnSpellFist();
 	void OnShield();
 	void ShieldDefencing();
 	void OffShield();
@@ -282,11 +333,11 @@ public:
 	//UFUNCTION()
 	//void OnBoxSkill3EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 	//
-	//UFUNCTION()
-	//void OnSphereCriticalBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-	//
-	//UFUNCTION()
-	//void OnSphereCriticalEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	UFUNCTION()
+	void OnSphereSpellFistBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	
+	UFUNCTION()
+	void OnSphereSpellFistEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
 	void MontageEnded(UAnimMontage* InMontage, bool Ininterrupted);
@@ -315,8 +366,11 @@ public:
 	virtual float MaxMp() override;
 	virtual float MaxSp() override;
 	virtual EPlayerSkillType GetCurrentPlayerSkillType() override;
-	void SetCurrentPlayerSkillType(EPlayerSkillType InType); 
+	virtual EPlayerSpellFistType GetCurrentPlayerSpellFistType() override;
+	void Notify_SetCurrentPlayerSkillType(EPlayerSkillType InType); 
+	void Notify_SetCurrentPlayerSpellFistType(EPlayerSpellFistType InType);
 
+	// Enemy의 AIController에서 Player의 Skill 사용 여부에 따른 BT 실행 판단을 위한 함수임
 	virtual bool GetPlayerActivateSkill() override;
 	virtual void SetPlayerActivateSkill(bool InBool) override;
 	
@@ -327,4 +381,6 @@ public:
 	FORCEINLINE void SetIncreaseIndex() { Index++; }
 	FORCEINLINE bool GetIsSpellTravel() { return IsSpellTravel; }
 	FORCEINLINE void SetIsSpellTravel(bool InBool) { IsSpellTravel = InBool; }
+	FORCEINLINE bool GetIsParkouring() { return bParkouring; };
+	FORCEINLINE ACWeapon* GetSpellFistWeapon() { return SpellFistWeapon; }
 };

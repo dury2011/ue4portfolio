@@ -58,12 +58,6 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Animation")
 	bool IsSpellTravel;
 
-	//UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Weapon Type")
-	//EWeaponType ActiveWeaponType = EWeaponType::Max;
-
-	//UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Parkour Type")
-	//EParkourType ActiveParkourType = EParkourType::Max;
-
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Parkour")
 	bool bActivateIK = false;
 

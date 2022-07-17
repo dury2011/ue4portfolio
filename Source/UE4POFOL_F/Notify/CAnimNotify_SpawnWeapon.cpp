@@ -16,5 +16,8 @@ void UCAnimNotify_SpawnWeapon::Notify(USkeletalMeshComponent* MeshComp, UAnimSeq
 	ACharacter* character = Cast<ACharacter>(MeshComp->GetOwner());
 	
 	if (character)
-		ACWeapon::SpawnWeapon(character, WeaponClass, character->GetMesh()->GetSocketLocation(SpawnSocketName));
+	{
+		ACWeapon* weapon = ACWeapon::SpawnWeapon(character, WeaponClass, character->GetMesh()->GetSocketLocation(SpawnSocketName));
+		weapon->SetOwner(character);
+	}
 }

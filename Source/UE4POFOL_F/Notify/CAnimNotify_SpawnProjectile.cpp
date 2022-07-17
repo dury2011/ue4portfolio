@@ -23,7 +23,7 @@ void UCAnimNotify_SpawnProjectile::Notify(USkeletalMeshComponent* MeshComp, UAni
 		UCWidgetComponent* widgetComponent = CHelpers::GetComponent<UCWidgetComponent>(character);
 		
 		Projectile = ACProjectile::SpawnProjectile(character, ProjectileClass, SpawnSocketName);
-		Projectile->SetOwner(MeshComp->GetOwner());
+ 		Projectile->SetOwner(MeshComp->GetOwner());
 
 		if (cameraComponent)
 			Projectile->SetActorRotation(cameraComponent->GetComponentRotation());

@@ -8,8 +8,8 @@ UCLASS()
 class UE4POFOL_F_API UCBTTaskNode_StrafeBegin : public UBTTaskNode
 {
 	GENERATED_BODY()
+	
 private:
-
 	UPROPERTY(EditAnywhere, Category = "Setting")
 	float StrafingTime = 2.0f;
 	
@@ -17,7 +17,7 @@ private:
 	float ChangeDirectionTime = 1.0f;
 	
 	UPROPERTY()
-	ACEnemy* Enemy;
+	class ACEnemy* Enemy;
 	
 	FTimerHandle EndTimer;
 	FTimerHandle ChangeDirectionTimer;

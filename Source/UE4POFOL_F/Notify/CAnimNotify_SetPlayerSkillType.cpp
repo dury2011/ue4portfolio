@@ -14,5 +14,5 @@ void UCAnimNotify_SetPlayerSkillType::Notify(USkeletalMeshComponent* MeshComp, U
 	ACPlayer* player = Cast<ACPlayer>(MeshComp->GetOwner());
 
 	if (player)
-		player->SetCurrentPlayerSkillType(CurrentSkillType);
+		player->Notify_SetCurrentPlayerSkillType(CurrentSkillType);
 }

@@ -18,5 +18,5 @@ void UCAnimNotify_Begin_DoAction::Notify(USkeletalMeshComponent * MeshComp, UAni
 	ACPlayer* player = Cast<ACPlayer>(MeshComp->GetOwner());
 
 	if (player)
-		player->BeginNextAction();
+		player->Notify_BeginNextAction();
 }

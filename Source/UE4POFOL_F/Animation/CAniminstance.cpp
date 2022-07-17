@@ -68,6 +68,7 @@ void UCAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	if (player)
 		IsSpellTravel = player->GetIsSpellTravel();
+
 	
 	//if (UKismetMathLibrary::NearlyEqual_FloatFloat(Yaw, 175.0f, 0.1f))
 	//	bTurnBack = true;

@@ -20,16 +20,6 @@ void UCAnimNotifyState_Combo::NotifyBegin(USkeletalMeshComponent * MeshComp, UAn
 
 	if (player)
 		player->SetbCanCombo(true);
-
-
-	//UCWeaponComponent* weaponComponent = CHelpers::GetComponent<UCWeaponComponent>(MeshComp->GetOwner());
-	//if (!!weaponComponent)
-	//{
-		//UCDoAction_Combo* combo = Cast<UCDoAction_Combo>(weaponComponent->GetDoAction());
-	//
-		//if (!!combo)
-			//combo->Enable_Combo();
-	//}
 }
 
 void UCAnimNotifyState_Combo::NotifyEnd(USkeletalMeshComponent * MeshComp, UAnimSequenceBase * Animation)
@@ -43,15 +33,6 @@ void UCAnimNotifyState_Combo::NotifyEnd(USkeletalMeshComponent * MeshComp, UAnim
 
 	if (player)
 		player->SetbCanCombo(false);
-
-	//UCWeaponComponent* weaponComponent = CHelpers::GetComponent<UCWeaponComponent>(MeshComp->GetOwner());
-	//if (!!weaponComponent)
-	//{
-		//UCDoAction_Combo* combo = Cast<UCDoAction_Combo>(weaponComponent->GetDoAction());
-	//
-		//if (!!combo)
-			//combo->Disable_Combo();
-	//}
 }
 
 

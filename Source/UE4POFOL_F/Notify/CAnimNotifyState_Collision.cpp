@@ -6,6 +6,7 @@
 #include "Boss/CDataAsset_Boss.h"
 #include "Enemy/CEnemy.h"
 #include "Component/CCharacterComponent.h"
+#include "Player/CPlayer.h"
 
 FString UCAnimNotifyState_Collision::GetNotifyName_Implementation() const
 {

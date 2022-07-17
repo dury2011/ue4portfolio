@@ -15,7 +15,7 @@ enum class EStateType : uint8
 UENUM(BlueprintType)
 enum class EWeaponType : uint8
 {
-	Unarmed, Onehand, Spell, Max
+	Unarmed, Onehand, Spell, SpellFist, Max
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FStateTypeChange, EStateType, CurrentType, EStateType, PreviousType);
@@ -221,6 +221,7 @@ public:
 	FORCEINLINE bool GetIsWeaponUnarmedMode() { return CurrentWeaponType == EWeaponType::Unarmed; }
 	FORCEINLINE bool GetIsWeaponOnehandMode() { return CurrentWeaponType == EWeaponType::Onehand; }
 	FORCEINLINE bool GetIsWeaponSpellMode() { return CurrentWeaponType == EWeaponType::Spell; }
+	FORCEINLINE bool GetIsWeaponSpellFistMode() { return CurrentWeaponType == EWeaponType::SpellFist; }
 
 	FORCEINLINE bool GetbCanMove() { return bCanMove; }
 	FORCEINLINE void SetbCanMove(bool Inbool) { bCanMove = Inbool; }

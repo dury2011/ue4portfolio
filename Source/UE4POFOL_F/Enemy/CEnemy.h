@@ -67,6 +67,9 @@ protected:
 		TArray<FDamageData> DamageDatas;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	TArray<FDamageData> SpellFistDamageDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
 		TArray<FDamageData> DeadDatas;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
@@ -132,6 +135,7 @@ private:
 	bool IsLaunchBySkill = false;
 	bool IsAttackBySkill = false;
 	bool IsDeadBySkill = false;
+	bool IsAttackBySpellFist = false;
 
 	FVector StrafeDirection = FVector::ZeroVector;
 	EEnemyStateType CurrentStateType = EEnemyStateType::Max;
@@ -170,7 +174,6 @@ public:
 private:
 	void Damage();
 	void Dead();
-	void OpponentSkillState();
 
 public:
 	void BeginStrafing();
@@ -209,6 +212,9 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void PlaySkillDamageSound();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayDamageSound();
+
 	UFUNCTION()
 		void SetCurrentEnemyStateType(EEnemyStateType InType);
 
@@ -218,8 +224,17 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 		void ShowHitNumber(int32 InDamage, FVector InHitLocation);
 
+private:
+	void ExecSkillDamageData(int32 InIndex);
+
+public:
 	UFUNCTION()
-		void TakeDamage_OpponentUsingSkill();
+	void TakeDamage_OpponentUsingSkill();
+
+	UFUNCTION()
+	void TakeDamage_OpponentSpellFistAttack();
+
+	void TakeDamage_OpponentSkillWeapon();
 
 	static void SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass);
 	void DestroyEnemy();
@@ -251,5 +266,6 @@ public:
 	FORCEINLINE ACWeapon* GetWeapon(int32 InIndex) { if (Weapons[InIndex]) return Weapons[InIndex]; else return nullptr; }
 	FORCEINLINE bool GetCanStrafing() { return CanStrafing; }
 	FORCEINLINE void SetIsAttackBySkill(bool InBool) { IsAttackBySkill = InBool; }
+	FORCEINLINE void SetIsAttackBySpellFist(bool InBool) { IsAttackBySpellFist = InBool; }
 	//FORCEINLINE bool GetIsAttacking() { return IsAttacking; }
 };
