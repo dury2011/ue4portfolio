@@ -141,6 +141,27 @@ void ACEnemy::Tick(float DeltaTime)
 		SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y, Opponent->GetActorLocation().Z));
 	}
 
+	/* MEMO: Player의 Enemy피격 콜리전 범위안에 들어오면 이 클래스의 IsAttackBySkill이 true가 되고
+	 * 노티파이에의해 델리게이트에 바인드 된 함수인 TakeDamage_~함수가 호출된다.
+	 * 하지만 Player가 스킬 사용 도중 콜리전 범위 밖으로 Enemy가 나가면 IsAttackBySkill이 false가 되어 
+	 * 피격 도중 적용된 피격 머티리얼이 공격 끝을 전달받지 못해 계속 적용 된 채로 남있게 되어 아래 해결책을 작성함 
+	 */
+	if (IsNowAttackBySF1)
+	{
+		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
+
+		if (playerInterface)
+		{
+			if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF1_E)
+			{
+				DeactivateDamageIceEffect();
+				CustomTimeDilation = 1.0f;
+
+				IsNowAttackBySF1 = false;
+			}
+		}
+	}
+	
 	UpdateHitNumbers();
 
 #ifdef DEBUG_CENEMY
@@ -516,7 +537,7 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 		}
 		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::WC_S)
 		{
-			IsAttackBySkill = true;
+			//IsAttackBySkill = true;
 
 			SkillDamage();
 			ExecSkillDamageData(1);
@@ -551,16 +572,21 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 		}
 		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF1_S)
 		{
-			//SkillDamage();
+			IsNowAttackBySF1 = true;
 
-			//ExecSkillDamageData(0);
-			//IsAttackBySkill = false;
+			ActivateDamageIceEffect();	
+			SkillDamage();
+			// MEMO: 특별 DamageData 적용
+			ExecSkillDamageData(3);
 		}
 		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF1_E)
 		{
+			DeactivateDamageIceEffect();	
 			SkillDamage();
+			// MEMO: 특별 DamageData 적용
+			ExecSkillDamageData(4);
 
-			ExecSkillDamageData(1);
+			IsNowAttackBySF1 = false;
 			IsAttackBySkill = false;
 		}
 		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF2_S)
@@ -754,7 +780,7 @@ void ACEnemy::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrim
 }
 
 void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool Interrupted)
-{
+{	
 	//// MEMO: Enemy의 몽타주가 재생 후 정상적으로 종료될 경우 노드가 성공으로 끝나야함
 	//if (CurrentStateType == EEnemyStateType::Dead)
 	//{
@@ -809,6 +835,7 @@ void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool Interrupted)
 
 		return;
 	}
+
 }
 
 void ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass)

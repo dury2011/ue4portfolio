@@ -131,11 +131,12 @@ private:
 
 	UPROPERTY()
 		TArray<class ACWeapon*> Weapons;
-
+	
 	bool IsLaunchBySkill = false;
 	bool IsAttackBySkill = false;
 	bool IsDeadBySkill = false;
 	bool IsAttackBySpellFist = false;
+	bool IsNowAttackBySF1 = false;
 
 	FVector StrafeDirection = FVector::ZeroVector;
 	EEnemyStateType CurrentStateType = EEnemyStateType::Max;
@@ -210,6 +211,12 @@ protected:
 		void ActivateDamageEffect();
 
 	UFUNCTION(BlueprintImplementableEvent)
+	void ActivateDamageIceEffect();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void DeactivateDamageIceEffect();
+
+	UFUNCTION(BlueprintImplementableEvent)
 	void PlaySkillDamageSound();
 
 	UFUNCTION(BlueprintImplementableEvent)
@@ -254,7 +261,7 @@ protected:
 		void OnMontageEnded(UAnimMontage* InMontage, bool InInterrupted);
 
 public:
-	void MontageEnded();
+	//void MontageEnded();
 	void OnStateTypeChange(EEnemyStateType InCurrentStateType);
 
 	//FORCEINLINE bool GetbDamage() { return bDamage; }
