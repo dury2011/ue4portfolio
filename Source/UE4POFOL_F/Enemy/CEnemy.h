@@ -131,12 +131,17 @@ private:
 
 	UPROPERTY()
 		TArray<class ACWeapon*> Weapons;
-	
+
+
 	bool IsLaunchBySkill = false;
 	bool IsAttackBySkill = false;
 	bool IsDeadBySkill = false;
 	bool IsAttackBySpellFist = false;
-	bool IsNowAttackBySF1 = false;
+	bool IsSkillStopHit = false;
+	bool IsAttackBySkillWeapon = false;
+	bool IsBoundUp = false;
+	
+	FVector CurrentLoc = FVector::ZeroVector;
 
 	FVector StrafeDirection = FVector::ZeroVector;
 	EEnemyStateType CurrentStateType = EEnemyStateType::Max;
@@ -144,6 +149,7 @@ private:
 	FTimerHandle HealthBarTimer;
 	FTimerHandle StopTimer;
 	FTimerHandle StrafeTimer;
+	FTimerHandle BoundUpTimer;
 
 	EEnemyStrafingType CurrentStrafingType = EEnemyStrafingType::Max;
 	EEnemyStrafingType PreviousEnemyStrafingType = EEnemyStrafingType::Max;
@@ -165,6 +171,9 @@ protected:
 
 public:
 	virtual void Tick(float DeltaTime) override;
+
+	//UFUNCTION()
+	//void CallDelegateBind();
 
 public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
@@ -225,14 +234,14 @@ protected:
 	UFUNCTION()
 		void SetCurrentEnemyStateType(EEnemyStateType InType);
 
-	void SkillDamage();
+	void DamageBySkillAndActivateEffect();
 
 public:
 	UFUNCTION(BlueprintImplementableEvent)
 		void ShowHitNumber(int32 InDamage, FVector InHitLocation);
 
 private:
-	void ExecSkillDamageData(int32 InIndex);
+	void SkillDamageData(int32 InIndex);
 
 public:
 	UFUNCTION()
@@ -241,7 +250,15 @@ public:
 	UFUNCTION()
 	void TakeDamage_OpponentSpellFistAttack();
 
-	void TakeDamage_OpponentSkillWeapon();
+	UFUNCTION()
+	void BoundUpBySkill();
+
+//private:
+//	void SF2_E_TakeDamage();
+//
+//public:
+//	UFUNCTION()
+//	void TakeDamage_OpponentSkillWeapon();
 
 	static void SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass);
 	void DestroyEnemy();
@@ -274,5 +291,6 @@ public:
 	FORCEINLINE bool GetCanStrafing() { return CanStrafing; }
 	FORCEINLINE void SetIsAttackBySkill(bool InBool) { IsAttackBySkill = InBool; }
 	FORCEINLINE void SetIsAttackBySpellFist(bool InBool) { IsAttackBySpellFist = InBool; }
+	FORCEINLINE void SetIsAttackBySkillWeapon(bool InBool) { IsAttackBySkillWeapon = InBool; }
 	//FORCEINLINE bool GetIsAttacking() { return IsAttacking; }
 };

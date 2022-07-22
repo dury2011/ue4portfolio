@@ -27,6 +27,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnPlayerOverlap, class ACharacte
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerActiveBlock, bool, IsBlocked);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerSkillAttack);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerSpellFistAttack);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerSkillLaunch);
 
 UCLASS()
 class UE4POFOL_F_API ACPlayer : public ACharacter, public IGenericTeamAgentInterface, public ICInterface_PlayerState
@@ -79,6 +80,8 @@ public:
 	FOnPlayerSkillAttack OnPlayerSkillAttack;
 
 	FOnPlayerSpellFistAttack OnPlayerSpellFistAttack;
+
+	FOnPlayerSkillLaunch OnPlayerSkillLaunch;
 
 private:
 	struct FDamaged
@@ -199,6 +202,18 @@ private:
 	UPROPERTY()
 	class ACProjectile* SpellThrowProjectile;
 
+	//UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
+	//TSubclassOf<class ACWeapon> Spell_FistSkill1WeaponClass;
+
+	//UPROPERTY()
+	//class ACWeapon* Spell_FistSkill1Weapon;
+
+	//UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
+	//TSubclassOf<class ACWeapon> Spell_FistSkill2WeaponClass;
+
+	//UPROPERTY()
+	//class ACWeapon* Spell_FistSkill2Weapon;
+
 protected:
 	// MEMO: 컴포넌트가 가끔 핫 리로드 문제가 생겨서 일단 여기다가 만들었음
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
@@ -268,7 +283,8 @@ private:
 	void OnCritical();
 
 public:
-	void OnSkillAttack();
+	void Notify_OnSkillAttack();
+	void Notify_OnSkillLaunch();
 	void SpawnWarriorSkillOneProjectile();
 	void SpawnSpellMeteorWeapon();
 	void SpawnGhostTrail();

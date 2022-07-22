@@ -579,7 +579,6 @@ void ACPlayer::OnSkillOne()
 {
 	CheckTrue(IsMontagePlaying);
 	
-	SpawnSkillEffect();
 	SetPlayerActivateSkill(true);
 
 	if (CharacterComponent->GetIsWeaponOnehandMode())
@@ -664,11 +663,11 @@ void ACPlayer::OnSkillTwo()
 {
 	CheckTrue(IsMontagePlaying);
 	
-	SpawnSkillEffect();
+	
+	SetPlayerActivateSkill(true);
 	
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
-		SetPlayerActivateSkill(true);
 		
 		CharacterComponent->SetCurrentStateType(EStateType::Attack);
 		//CharacterComponent->SetIsMontagePlaying(true);
@@ -689,17 +688,24 @@ void ACPlayer::OnSkillTwo()
 		if(CharacterComponent->GetCriticalDatasSpell(1).Montage)
 			CharacterComponent->GetCriticalDatasSpell(1).PlayMontage(this);
 	}
+	else if (CharacterComponent->GetIsWeaponSpellFistMode())
+	{
+		CharacterComponent->SetCurrentStateType(EStateType::Attack);
+		IsMontagePlaying = true;
+
+		if (SpellFistSkillDatas[1].Montage)
+			SpellFistSkillDatas[1].PlayMontage(this);
+	}
 }
 
 void ACPlayer::OnSkillThree()
 {
 	CheckTrue(IsMontagePlaying);
 	
-	SpawnSkillEffect();
+	SetPlayerActivateSkill(true);
 	
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
-		SetPlayerActivateSkill(true);
 
 		CharacterComponent->SetCurrentStateType(EStateType::Attack);
 		//CharacterComponent->SetIsMontagePlaying(true);
@@ -720,7 +726,7 @@ void ACPlayer::OnSkillThree()
 
 void ACPlayer::OnCritical()
 {
-	SpawnSkillEffect();
+	//SpawnSkillEffect();
 	
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
@@ -735,10 +741,16 @@ void ACPlayer::OnCritical()
 	}
 }
 
-void ACPlayer::OnSkillAttack()
+void ACPlayer::Notify_OnSkillAttack()
 {
 	if (OnPlayerSkillAttack.IsBound())
 		OnPlayerSkillAttack.Broadcast();
+}
+
+void ACPlayer::Notify_OnSkillLaunch()
+{
+	if (OnPlayerSkillLaunch.IsBound())
+		OnPlayerSkillLaunch.Broadcast();
 }
 
 void ACPlayer::SpawnWarriorSkillOneProjectile()

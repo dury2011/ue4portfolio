@@ -21,6 +21,7 @@
 #include "Kismet/KismetTextLibrary.h"
 #include "Weapon/CWeapon.h"
 #include "GameplayTagContainer.h"
+#include "Components/SphereComponent.h"
 
 //#define DEBUG_CENEMY
 
@@ -92,6 +93,7 @@ void ACEnemy::BeginPlay()
 	{
 		Cast<ACPlayer>(Opponent)->OnPlayerSkillAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentUsingSkill);
 		Cast<ACPlayer>(Opponent)->OnPlayerSpellFistAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentSpellFistAttack);
+		Cast<ACPlayer>(Opponent)->OnPlayerSkillLaunch.AddDynamic(this, &ACEnemy::BoundUpBySkill);
 	}
 
 	// HealthBar 위젯 Hidden 설정
@@ -141,27 +143,46 @@ void ACEnemy::Tick(float DeltaTime)
 		SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y, Opponent->GetActorLocation().Z));
 	}
 
-	/* MEMO: Player의 Enemy피격 콜리전 범위안에 들어오면 이 클래스의 IsAttackBySkill이 true가 되고
-	 * 노티파이에의해 델리게이트에 바인드 된 함수인 TakeDamage_~함수가 호출된다.
-	 * 하지만 Player가 스킬 사용 도중 콜리전 범위 밖으로 Enemy가 나가면 IsAttackBySkill이 false가 되어 
-	 * 피격 도중 적용된 피격 머티리얼이 공격 끝을 전달받지 못해 계속 적용 된 채로 남있게 되어 아래 해결책을 작성함 
-	 */
-	if (IsNowAttackBySF1)
+	///* MEMO: Player의 Enemy피격 콜리전 범위안에 들어오면 이 클래스의 IsAttackBySkill이 true가 되고
+	// * 노티파이에의해 델리게이트에 바인드 된 함수인 TakeDamage_~함수가 호출된다.
+	// * 하지만 Player가 스킬 사용 도중 콜리전 범위 밖으로 Enemy가 나가면 IsAttackBySkill이 false가 되어 
+	// * 피격 도중 적용된 피격 머티리얼이 공격 끝을 전달받지 못해 계속 적용 된 채로 남있게 되어 아래 해결책을 작성함 
+	// */
+	// Player Skill이 StopHit공격일 경우
+	if (IsSkillStopHit && IsAttackBySkill)
 	{
 		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
 
 		if (playerInterface)
 		{
-			if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF1_E)
+			if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::FinalHit)
 			{
 				DeactivateDamageIceEffect();
 				CustomTimeDilation = 1.0f;
 
-				IsNowAttackBySF1 = false;
+				IsSkillStopHit = false;
 			}
 		}
 	}
-	
+
+	// Player Skill이 BoundUp공격일 경우
+	// Player Skill Weapon의 Tag는 "SFWeapon"으로 지정할 것
+	// Player Skill Weapon에서 Follow할 SphereCollision의 Tag는 "Sphere_Following"으로 지정할 것
+	if (IsBoundUp && IsAttackBySkill)
+	{
+		TArray<AActor*> outWeaponArr;
+		TArray<UActorComponent*> outSphereArr;
+		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("SFWeapon"), outWeaponArr);
+
+		for (int i = 0; i < outWeaponArr.Num(); i++)
+			if (outWeaponArr[i])
+				outSphereArr = Cast<ACWeapon>(outWeaponArr[i])->GetComponentsByTag(USphereComponent::StaticClass(), FName("Sphere_Following"));
+		
+		for (int i = 0; i < outSphereArr.Num(); i++)
+			if (outSphereArr[i])
+				SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y, Cast<USceneComponent>(outSphereArr[i])->GetComponentLocation().Z));
+	}
+
 	UpdateHitNumbers();
 
 #ifdef DEBUG_CENEMY
@@ -169,6 +190,7 @@ void ACEnemy::Tick(float DeltaTime)
 	DrawDebugSphere(GetWorld(), WorldAttackPoint2, 25.f, 12, FColor::Red, false);
 #endif DEBUG_CENEMY
 }
+
 
 float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
@@ -187,20 +209,26 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 		Hp -= Damaged.DamageAmount;
 	}
 	
-	// 스킬 사용 중 스폰되는 무기에 의한 특수 데미지의 경우 이 함수 빠져나와서 따로 만든 데미지 함수로 분기
-	{
-		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
-
-		if (playerInterface)
-		{
-			if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF1_S)
-			{
-				TakeDamage_OpponentSkillWeapon();
-
-				return 0.0f;
-			}
-		}
-	}
+	//// 스킬 사용 중 스폰되는 무기에 의한 특수 데미지의 경우 이 함수 빠져나와서 따로 만든 데미지 함수로 분기
+	//{
+		//ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
+		//
+		//if (playerInterface)
+		//{
+		//	if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF1_S)
+		//	{
+		//		TakeDamage_OpponentSkillWeapon();
+		//
+		//		return 0.0f;
+		//	}
+		//	else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF2_E)
+		//	{
+		//		TakeDamage_OpponentSkillWeapon();
+		//
+		//		return 0.0f;
+		//	}
+		//}
+	//}
 
 	Dead();
 	// Enemy 피격시 회전과 넉백 설정
@@ -428,7 +456,7 @@ void ACEnemy::SetCurrentEnemyStateType(EEnemyStateType InType)
 		OnEnemyStateTypeChanged.Broadcast(PreviousStateType, CurrentStateType);
 }
 
-void ACEnemy::SkillDamage()
+void ACEnemy::DamageBySkillAndActivateEffect()
 {
 	bActivateRotateToOpponent = false;
 	
@@ -459,19 +487,16 @@ void ACEnemy::SkillDamage()
 		// MEMO: 더 추가한 Damage Effect를 5번째 배열 원소에 넣어 둠
 		if (DamageDatas[5].Effect)
 			DamageDatas[5].PlayEffect(GetWorld(), this);
-	}
 
-	// Widget 각종 효과
-	{	
 		ShowHitNumber(applyDamage, this->GetActorLocation());
 		ShowHealthBar();
 
-		Damaged.EventInstigator = Opponent->GetController();
-		ShakeCamera(Damaged);
+		//Damaged.EventInstigator = Opponent->GetController();
+		//ShakeCamera(Damaged);
 	}
 }
 
-void ACEnemy::ExecSkillDamageData(int32 InIndex)
+void ACEnemy::SkillDamageData(int32 InIndex)
 {
 	if (DamageDatas[InIndex].Montage)
 		DamageDatas[InIndex].PlayMontage(this);
@@ -489,117 +514,218 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 	// MEMO: Player에게 Skill로 공격당하는 중이면
 	if (IsAttackBySkill && playerInterface)
 	{
-		// MEMO: 사실 EPlayerSkillType은 스킬 시작과 끝만 정하면되는데 Effect 때문에 더 분화하였음
-		if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W1_S)
-		{	
-			SkillDamage();
-			ExecSkillDamageData(0);
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W1_E)
+		//// MEMO: 사실 EPlayerSkillType은 스킬 시작과 끝만 정하면되는데 Effect 때문에 더 분화하였음
+		//if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W1_S)
+		//{	
+		//	SkillDamage();
+		//	ExecSkillDamageData(0);
+		//}
+		//else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W1_E)
+		//{
+		//	SkillDamage();
+		//	ExecSkillDamageData(1);
+		//
+		//	IsAttackBySkill = false;
+		//}		
+		//if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W2_S)
+		//{		
+		//	IsLaunchBySkill = true;
+		//	
+		//	SkillDamage();
+		//	ExecSkillDamageData(0);
+		//	
+		//	FVector thisLocation = GetActorLocation();
+		//	FVector opponentLocation = Opponent->GetActorLocation();
+		//
+		//	SetActorLocation(FVector(thisLocation.X, thisLocation.Y, opponentLocation.Z));
+		//	
+		//}
+		//else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W2_E)
+		//{
+		//	SkillDamage();		
+		//	ExecSkillDamageData(1);
+		//
+		//	IsLaunchBySkill = false;
+		//	IsAttackBySkill = false;
+		//}
+		//else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W3_S)
+		//{
+		//	SkillDamage();
+		//	ExecSkillDamageData(0);
+		//}
+		//else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W3_E)
+		//{
+		//	SkillDamage();
+		//	ExecSkillDamageData(1);
+		//
+		//	IsAttackBySkill = false;
+		//}
+		//else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::WC_S)
+		//{
+		//	//IsAttackBySkill = true;
+		//
+		//	SkillDamage();
+		//	ExecSkillDamageData(1);
+		//}
+		//else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::WC_E)
+		//{
+		//	IsAttackBySkill = false;
+		//}
+		//else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::S1_S)
+		//{
+		//	SkillDamage();
+		//	ExecSkillDamageData(0);
+		//}
+		//else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::S1_E)
+		//{
+		//	SkillDamage();
+		//	ExecSkillDamageData(1);
+		//
+		//	IsAttackBySkill = false;
+		//}
+		//else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::S3_S)
+		//{
+		//	SkillDamage();
+		//	ExecSkillDamageData(0);
+		//}
+		//else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::S3_E)
+		//{
+		//	SkillDamage();
+		//	ExecSkillDamageData(1);
+		//
+		//	IsAttackBySkill = false;
+		//}
+		//else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF1_S)
+		//{
+		//	IsNowAttackBySF1 = true;
+		//
+		//	ActivateDamageIceEffect();	
+		//	SkillDamage();
+		//
+		//	if (SpellFistDamageDatas[0].Montage)
+		//		SpellFistDamageDatas[0].PlayMontage(this);
+		//
+		//	if (SpellFistDamageDatas[0].Effect)
+		//		SpellFistDamageDatas[0].PlayEffect(GetWorld(), this);
+		//	// MEMO: 특별 DamageData 적용
+		//	//ExecSkillDamageData(3);
+		//}
+		//else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF1_E)
+		//{
+		//	DeactivateDamageIceEffect();	
+		//	SkillDamage();
+		//	// MEMO: 특별 DamageData 적용
+		//	//ExecSkillDamageData(4);
+		//	if (SpellFistDamageDatas[1].Montage)
+		//		SpellFistDamageDatas[1].PlayMontage(this);
+		//
+		//	if (SpellFistDamageDatas[1].Effect)
+		//		SpellFistDamageDatas[1].PlayEffect(GetWorld(), this);
+		//
+		//	IsNowAttackBySF1 = false;
+		//	IsAttackBySkill = false;
+		//}
+		//else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF2_S)
+		//{
+		//	IsLaunchBySkill = true;
+		//
+		//	SkillDamage();
+		//	//ExecSkillDamageData(0);
+		//
+		//	if (SpellFistDamageDatas[2].Montage)
+		//		SpellFistDamageDatas[2].PlayMontage(this);
+		//
+		//	if (SpellFistDamageDatas[2].Effect)
+		//		SpellFistDamageDatas[2].PlayEffect(GetWorld(), this);
+		//
+		//	FVector thisLocation = GetActorLocation();
+		//	FVector opponentLocation = Opponent->GetActorLocation();
+		//
+		//	SetActorLocation(FVector(thisLocation.X, thisLocation.Y, opponentLocation.Z));
+		//}
+		//else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF2_E)
+		//{
+		//	SkillDamage();
+		//	//ExecSkillDamageData(1);
+		//
+		//	if (SpellFistDamageDatas[3].Montage)
+		//		SpellFistDamageDatas[3].PlayMontage(this);
+		//
+		//	if (SpellFistDamageDatas[3].Effect)
+		//		SpellFistDamageDatas[3].PlayEffect(GetWorld(), this);
+		//
+		//	IsLaunchBySkill = false;
+		//	IsAttackBySkill = false;
+		//}
+		//else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF3_S)
+		//{
+		//}
+		//else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF3_E)
+		//{
+		//}
+		if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::NormalHit)
 		{
-			SkillDamage();
-			ExecSkillDamageData(1);
+			DamageBySkillAndActivateEffect();
+			SkillDamageData(0);
+		}
+		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::BoundUpHit)
+		{
+			
+			DamageBySkillAndActivateEffect();
+			SkillDamageData(1);
 
-			IsAttackBySkill = false;
-		}		
-		if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W2_S)
-		{		
+			CheckTrue(IsBoundUp);
+			
+			IsBoundUp = true;
+			
+			GetWorldTimerManager().SetTimer(BoundUpTimer, this, &ACEnemy::TakeDamage_OpponentUsingSkill, 0.1f, true);
+		}
+		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::AirborneHit)
+		{
 			IsLaunchBySkill = true;
+
+			DamageBySkillAndActivateEffect();
+			SkillDamageData(2);
+
+			if (Opponent)
+			{
+				FVector targetLoc = Opponent->GetActorLocation();
+
+				SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y, targetLoc.Z));
+			}
+		}
+		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::StopHit)
+		{
+			IsSkillStopHit = true;
 			
-			SkillDamage();
-			ExecSkillDamageData(0);
+			ActivateDamageIceEffect();
+			DamageBySkillAndActivateEffect();
+			SkillDamageData(3);
+		}
+		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::FinalHit)
+		{
+			DamageBySkillAndActivateEffect();
+			SkillDamageData(4);
 			
-			FVector thisLocation = GetActorLocation();
-			FVector opponentLocation = Opponent->GetActorLocation();
-
-			SetActorLocation(FVector(thisLocation.X, thisLocation.Y, opponentLocation.Z));
-			
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W2_E)
-		{
-			SkillDamage();		
-			ExecSkillDamageData(1);
-
-			IsLaunchBySkill = false;
 			IsAttackBySkill = false;
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W3_S)
-		{
-			SkillDamage();
-			ExecSkillDamageData(0);
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::W3_E)
-		{
-			SkillDamage();
-			ExecSkillDamageData(1);
 
-			IsAttackBySkill = false;
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::WC_S)
-		{
-			//IsAttackBySkill = true;
+			if (IsLaunchBySkill)
+				IsLaunchBySkill = false;
 
-			SkillDamage();
-			ExecSkillDamageData(1);
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::WC_E)
-		{
-			IsAttackBySkill = false;
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::S1_S)
-		{
-			SkillDamage();
-			ExecSkillDamageData(0);
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::S1_E)
-		{
-			SkillDamage();
-			ExecSkillDamageData(1);
+			if (IsSkillStopHit)
+			{
+				DeactivateDamageIceEffect();
+				CustomTimeDilation = 1.0f;
+				
+				IsSkillStopHit = false;
+			}
 
-			IsAttackBySkill = false;
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::S3_S)
-		{
-			SkillDamage();
-			ExecSkillDamageData(0);
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::S3_E)
-		{
-			SkillDamage();
-			ExecSkillDamageData(1);
+			if (IsBoundUp)
+			{
+				GetWorldTimerManager().ClearTimer(BoundUpTimer);
 
-			IsAttackBySkill = false;
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF1_S)
-		{
-			IsNowAttackBySF1 = true;
-
-			ActivateDamageIceEffect();	
-			SkillDamage();
-			// MEMO: 특별 DamageData 적용
-			ExecSkillDamageData(3);
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF1_E)
-		{
-			DeactivateDamageIceEffect();	
-			SkillDamage();
-			// MEMO: 특별 DamageData 적용
-			ExecSkillDamageData(4);
-
-			IsNowAttackBySF1 = false;
-			IsAttackBySkill = false;
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF2_S)
-		{
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF2_E)
-		{
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF3_S)
-		{
-		}
-		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF3_E)
-		{
+				IsBoundUp = false;
+			}
 		}
 
 		if (Hp <= 0.0f)
@@ -697,63 +823,87 @@ void ACEnemy::TakeDamage_OpponentSpellFistAttack()
 	}
 }
 
-void ACEnemy::TakeDamage_OpponentSkillWeapon()
+void ACEnemy::BoundUpBySkill()
 {
-	ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
-
-	if (playerInterface)
-	{
-		if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF1_S)
-		{
-			// 피격 회전 
-			{
-				FVector start = GetActorLocation();
-				FVector target = Opponent->GetActorLocation();
-
-				FVector direction = target - start;
-				direction.Normalize();
-
-				FTransform transform;
-				transform.SetLocation(GetActorLocation());
-
-				SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
-				LaunchCharacter(-direction * 1.0f, true, false);
-			}
-
-			// 피격 효과 
-			{
-				PlayDamageSound();
-
-				// MEMO: 더 추가한 Damage Effect를 5번째 배열 원소에 넣어 둠
-				//if (DamageDatas[5].Effect)
-					//DamageDatas[5].PlayEffect(GetWorld(), this);
-			}
-			
-			ExecSkillDamageData(0);
-
-			// Widget 각종 효과
-			{
-				ShowHealthBar();
-
-				Damaged.EventInstigator = Opponent->GetController();
-				ShakeCamera(Damaged);
-			}
-
-			if (Hp <= 0.0f)
-			{
-				SetCurrentEnemyStateType(EEnemyStateType::Dead);
-
-				IsDeadBySkill = true;
-
-				for (int i = 0; i < Weapons.Num(); i++)
-				{
-					if (Weapons[i])
-						Weapons[i]->DestroyWeapon();
-				}
-			}
-		}
-	}
+	//IsBoundUp = true;
+	
+	//LaunchCharacter(FVector(0.0f, 0.0f, 1000.0f), true, true);
 }
+
+//void ACEnemy::SF2_E_TakeDamage()
+//{
+//	if (SpellFistDamageDatas[4].Montage)
+//		SpellFistDamageDatas[4].PlayMontage(this);
+//
+//	if (SpellFistDamageDatas[4].Effect)
+//		SpellFistDamageDatas[4].PlayEffect(GetWorld(), this);
+//}
+//
+//void ACEnemy::TakeDamage_OpponentSkillWeapon()
+//{
+//	if (IsAttackBySkillWeapon)
+//	{
+//		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
+//
+//		if (playerInterface)
+//		{
+//			// 피격 회전 
+//			{
+//			FVector start = GetActorLocation();
+//			FVector target = Opponent->GetActorLocation();
+//
+//			FVector direction = target - start;
+//			direction.Normalize();
+//
+//			FTransform transform;
+//			transform.SetLocation(GetActorLocation());
+//
+//			SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
+//			LaunchCharacter(-direction * 1.0f, true, false);
+//		}
+//			// 피격 효과 
+//			{
+//			PlayDamageSound();
+//
+//			ShowHealthBar();
+//			
+//			Damaged.EventInstigator = Opponent->GetController();
+//			ShakeCamera(Damaged);
+//			// MEMO: 더 추가한 Damage Effect를 5번째 배열 원소에 넣어 둠
+//			//if (DamageDatas[5].Effect)
+//				//DamageDatas[5].PlayEffect(GetWorld(), this);
+//		}
+//
+//			// Hp 0 이하
+//			if (Hp <= 0.0f)
+//		{
+//			SetCurrentEnemyStateType(EEnemyStateType::Dead);
+//
+//			IsDeadBySkill = true;
+//
+//			for (int i = 0; i < Weapons.Num(); i++)
+//			{
+//				if (Weapons[i])
+//					Weapons[i]->DestroyWeapon();
+//			}
+//		}
+//
+//			if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF1_S)
+//			{
+//				SkillDamage();
+//				ExecSkillDamageData(0);
+//
+//				IsAttackBySkillWeapon = false;
+//			}
+//			else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::SF2_E)
+//			{
+//				FTimerHandle timer;
+//				
+//				GetWorldTimerManager().SetTimer(timer, this, &ACEnemy::SF2_E_TakeDamage, true);
+//			}
+//		}
+//	}
+//}
 
 void ACEnemy::OnStateTypeChange(EEnemyStateType InCurrentStateType)
 {

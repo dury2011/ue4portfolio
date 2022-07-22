@@ -121,19 +121,38 @@ void ACWeapon::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	CheckTrue(IsOverlapped);
 	
 	GLog->Log("ACWeapon::OnBeginOverlap");
-	//UCCharacterComponent* OverlappedActorCharacterComponent = Cast<UCCharacterComponent>(OtherActor->GetComponentByClass(UCCharacterComponent::StaticClass()));
-	//
-	//if (OverlappedActorCharacterComponent)
-	//{
-		//OverlappedActorCharacterComponent->GetDamageData(0).PlayMontage(Cast<ACharacter>(OtherActor));
-		// BUG: Apply Damage 여기 확인하기 
-	//}
+
+
 	IsOverlapped = true;
 
 	float percentage = UKismetMathLibrary::RandomFloatInRange(0.0f, 100.0f);
 	float randomDeviation = UKismetMathLibrary::RandomIntegerInRange(0,RandomDeviation);
 	int32 pureDamage = PureDamage;
 	int32 criticalDamage = CriticalDamage;
+	
+	/* MEMO: Skill Weapon에 Enemy가 Begin Overlap된 경우
+	////* enemy에서 Skill Weapon에 콜리전 됬다고 알려주기
+	////* enemy에서 적절한 함수 호출되도록 하기 */
+	//if (OtherActor->ActorHasTag("Enemy"))
+	//{
+	//	ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
+	//
+	//	if (enemy)
+	//	{
+	//		/* MEMO: Notify에서 Weapon의 Class를 설정하면 안되는 이유! 
+	//		 * enemy에서 직접 Skill Weapon을 Spawn하여 그 객체를 통해 바인드를 해야됨 
+	//		 */
+	//		enemy->SetIsAttackBySkillWeapon(true);
+	//		enemy->CallDelegateBind();
+	//
+	//		// MEMO: OnBeginOverlap은 오버렙 시 최초 한 번만 호출되므로 이렇게 Broadcast 하면된다.
+	//		if (OnSkillWeaponBeginOverlap.IsBound())
+	//			OnSkillWeaponBeginOverlap.Broadcast();
+	//
+	//		//if(enemy->GetIsAttackBySkillWeapon())
+	//	}
+	//}
+
 	int32 applyDamage = ApplyDamage;
 	
 	if ((percentage / 100) <= CriticalPercentage)
@@ -144,18 +163,19 @@ void ACWeapon::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	else
 		applyDamage = pureDamage + randomDeviation;
 	
+	UGameplayStatics::ApplyDamage(OtherActor, applyDamage, OwnerCharacter->GetController(), this, NULL);
+	
 	//if (OwnerCharacter && (OwnerCharacter->GetController() == GetWorld()->GetFirstPlayerController()))
 	//{
 	//	OwnerCharacter->CustomTimeDilation = 10e-5f;
-
+	//
 	//	GetWorldTimerManager().SetTimer(StopTimer, this, &ACWeapon::RecoverDilation, StopTime, true);
 	//}
-
+	//
 	/* TODO: 2번 째 인수 float BaseDamage는 0.0f 이하이면 함수 몸체에서 도입에서 if 문으로 걸러져서 몸체 전체가 작동하지 않음 */
-	UGameplayStatics::ApplyDamage(OtherActor, applyDamage, OwnerCharacter->GetController(), this, NULL);
-
+	//
 	//GLog->Log("ACWeapon::WeaponBeginOverlap()");
-	
+	//
 	//if (OtherActor->ActorHasTag(FName("Enemy_BossFriend")))
 	//	return;
 	//

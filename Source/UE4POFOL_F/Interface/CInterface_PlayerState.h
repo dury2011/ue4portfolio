@@ -7,7 +7,7 @@
 UENUM(BlueprintType)
 enum class EPlayerSkillType : uint8
 {
-	W1_S, W1_E, W2_S, W2_E, W3_S, W3_E, WC_S, WC_E, S1_S, S1_E, S2_S, S2_E, S3_S, S3_E, SC_S, SC_E, SF1_S, SF1_E, SF2_S, SF2_E, SF3_S, SF3_E, Max
+	/*W1_S, W1_E, W2_S, W2_E, W3_S, W3_E, WC_S, WC_E, S1_S, S1_E, S2_S, S2_E, S3_S, S3_E, SC_S, SC_E, SF1_S, SF1_E, SF2_S, SF2_E, SF3_S, SF3_E,*/ NormalHit, BoundUpHit, AirborneHit, StopHit, FinalHit, Max
 };
 
 UENUM(BlueprintType)

@@ -14,5 +14,5 @@ void UCAnimNotify_SkillAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSeq
 	ACPlayer* player = Cast<ACPlayer>(MeshComp->GetOwner());
 
 	if (player)
-		player->OnSkillAttack();
+		player->Notify_OnSkillAttack();
 }
