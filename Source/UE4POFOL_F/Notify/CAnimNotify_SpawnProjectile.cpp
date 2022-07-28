@@ -23,17 +23,29 @@ void UCAnimNotify_SpawnProjectile::Notify(USkeletalMeshComponent* MeshComp, UAni
 		UCWidgetComponent* widgetComponent = CHelpers::GetComponent<UCWidgetComponent>(character);
 		
 		Projectile = ACProjectile::SpawnProjectile(character, ProjectileClass, SpawnSocketName);
- 		Projectile->SetOwner(MeshComp->GetOwner());
 
-		if (cameraComponent)
-			Projectile->SetActorRotation(cameraComponent->GetComponentRotation());
-
-		if (widgetComponent)
+		if (Projectile)
 		{
-			if (widgetComponent->GetHitResult().GetActor())
-				Projectile->ShootProjectile(UKismetMathLibrary::GetDirectionUnitVector(character->GetMesh()->GetSocketLocation(SpawnSocketName), widgetComponent->GetHitResult().ImpactPoint));
-			else
-				Projectile->ShootProjectile(cameraComponent->GetForwardVector());
+ 			Projectile->SetOwner(character);
+
+			if (cameraComponent)
+				Projectile->SetActorRotation(cameraComponent->GetComponentRotation());
+
+			if (CanActivateShoot)
+			{
+				if (!ShootSpawnedLocationFoward)
+				{
+					if (widgetComponent)
+					{
+						if (widgetComponent->GetHitResult().GetActor())
+							Projectile->ShootProjectile(UKismetMathLibrary::GetDirectionUnitVector(character->GetMesh()->GetSocketLocation(SpawnSocketName), widgetComponent->GetHitResult().ImpactPoint));
+						else
+							Projectile->ShootProjectile(cameraComponent->GetForwardVector());
+					}
+				}
+				else if (ShootSpawnedLocationFoward)
+					Projectile->ShootProjectile(character->GetMesh()->GetSocketRotation(SpawnSocketName).Vector() * ShootSpeed);
+			}
 		}
 	}
 }

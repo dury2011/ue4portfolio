@@ -41,54 +41,52 @@ public:
 
 	FOnEnemyParkourEnded OnEnemyParkourEnded;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
-		bool CanLaucnhEnemy = false;
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
+	//bool CanLaucnhEnemy = false;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
-		float Hp = 1000.0f;
+	float Hp = 1000.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
-		float MaxHp = 1000.0f;
+	float MaxHp = 1000.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
-		float Mp = 1000.0f;
+	float Mp = 1000.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
-		float MaxMp = 1000.0f;
+	float MaxMp = 1000.0f;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
-		float RotationSpeed = 3.0f;
+	float RotationSpeed = 3.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-		TArray<FActionData> ActionDatas;
+	TArray<FActionData> ActionDatas;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-		TArray<FDamageData> DamageDatas;
+	TArray<FDamageData> SkillDamageDatas;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	TArray<FDamageData> SpellFistDamageDatas;
+	TArray<FDamageData> NormalDamageDatas;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-		TArray<FDamageData> DeadDatas;
+	TArray<FDamageData> DeadDatas;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-		TArray<FActionData> DodgeDatas;
+	TArray<FActionData> DodgeDatas;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-		TArray<TSubclassOf<class ACWeapon>> WeaponClass;
+	TArray<TSubclassOf<class ACWeapon>> WeaponClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-		TArray<TSubclassOf<class ACWeapon>> EffectWeaponClass;
+	TArray<TSubclassOf<class ACWeapon>> EffectWeaponClass;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	TArray<TSubclassOf<class ACProjectile>> ProjectileClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-		TArray<TSubclassOf<class ACProjectile>> ProjectileClass;
+	TSubclassOf<class UMatineeCameraShake> DamageCameraShakeClass;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-		TSubclassOf<class UMatineeCameraShake> DamageCameraShakeClass;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-		TSubclassOf<class UAnimInstance> AnimBlueprint;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
 		class UWidgetComponent* HealthBarWidgetComponent;
@@ -104,42 +102,45 @@ protected:
 	bool CanStrafing = false;
 	bool IsLaunching = false;
 
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
-		FName EffectWeaponSpawnSocketName;
-
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
-		int32 EffectWeaponIndex;
+	//UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
+	//	FName EffectWeaponSpawnSocketName;
+	//
+	//UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
+	//	int32 EffectWeaponIndex;
 
 private:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
-		float HealthBarDisplayTime = 1.5f;
+	float HealthBarDisplayTime = 1.5f;
 
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
-		float HitNumberDestroyTime = 1.0f;
+	float HitNumberDestroyTime = 1.0f;
 
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
-		TMap<UUserWidget*, FVector> HitNumbers;
+	TMap<UUserWidget*, FVector> HitNumbers;
 
 	UPROPERTY()
-		TArray<class UCapsuleComponent*> CapsuleCollisions;
+	TArray<class UCapsuleComponent*> CapsuleCollisions;
 
 	UPROPERTY()
-		class UBlackboardComponent* Blackboard;
+	class UBlackboardComponent* Blackboard;
 
 	UPROPERTY()
-		class ACharacter* Opponent;
+	class ACharacter* Opponent;
 
 	UPROPERTY()
-		TArray<class ACWeapon*> Weapons;
+	TArray<class ACWeapon*> Weapons;
 
-
+	//bool Once_IsAttackBySkillWeapon = false;
+	//bool IsAttackBySkillWeapon = false;
+	bool IsAttackByPlayer = false;
+	bool IsAttackBySkillWeapon = false;
 	bool IsLaunchBySkill = false;
-	bool IsAttackBySkill = false;
 	bool IsDeadBySkill = false;
 	bool IsAttackBySpellFist = false;
 	bool IsSkillStopHit = false;
-	bool IsAttackBySkillWeapon = false;
-	bool IsBoundUp = false;
+	bool IsBoundUpBySkill = false;
+
+	int32 SkillWeaponAttackCount = 0;
 	
 	FVector CurrentLoc = FVector::ZeroVector;
 
@@ -150,6 +151,7 @@ private:
 	FTimerHandle StopTimer;
 	FTimerHandle StrafeTimer;
 	FTimerHandle BoundUpTimer;
+	FTimerHandle SkillWeaponTimer;
 
 	EEnemyStrafingType CurrentStrafingType = EEnemyStrafingType::Max;
 	EEnemyStrafingType PreviousEnemyStrafingType = EEnemyStrafingType::Max;
@@ -182,8 +184,8 @@ public:
 	virtual void OnAttack();
 
 private:
-	void Damage();
-	void Dead();
+	void CheckDamage();
+	void CheckDead();
 
 public:
 	void BeginStrafing();
@@ -197,100 +199,83 @@ private:
 
 protected:
 	UFUNCTION(BlueprintCallable)
-		void StoreHitNumber(UUserWidget* InHitNumber, FVector InLocation);
+	void StoreHitNumber(UUserWidget* InHitNumber, FVector InLocation);
 
 	UFUNCTION()
-		void DestroyHitNumber(UUserWidget* InHitNumber);
-
+	void UpdateHitNumbers();
+	
 	UFUNCTION()
-		void UpdateHitNumbers();
+	void DestroyHitNumber(UUserWidget* InHitNumber);
 
-	//UFUNCTION(BlueprintNativeEvent)
-	void ShowHealthBar();
-	//void ShowHealthBar_Implementation();
-
-	//UFUNCTION(BlueprintNativeEvent)
+	void ShowHealthBar();			
 	void HideHealthBar();
-	//void HideHealthBar_Implementation();
-
+	
 	UFUNCTION(BlueprintImplementableEvent)
-		void ActivateDeadEffect();
-
-	UFUNCTION(BlueprintImplementableEvent)
-		void ActivateDamageEffect();
+	void ActivateDamageEffect();
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ActivateDamageIceEffect();
-
+	
 	UFUNCTION(BlueprintImplementableEvent)
 	void DeactivateDamageIceEffect();
-
+	
 	UFUNCTION(BlueprintImplementableEvent)
-	void PlaySkillDamageSound();
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void PlayDamageSound();
+	void ActivateDeadEffect();
 
 	UFUNCTION()
-		void SetCurrentEnemyStateType(EEnemyStateType InType);
-
-	void DamageBySkillAndActivateEffect();
-
+	void SetCurrentEnemyStateType(EEnemyStateType InType);
+	
 public:
 	UFUNCTION(BlueprintImplementableEvent)
-		void ShowHitNumber(int32 InDamage, FVector InHitLocation);
+	void ShowHitNumber(int32 InDamage, FVector InHitLocation);
 
 private:
-	void SkillDamageData(int32 InIndex);
+	void GetNormalDamageData(int32 InIndex);
+	void GetSkillDamageData(int32 InIndex);
 
 public:
+	UFUNCTION()
+	void TakeDamage_OpponentNormalAttack();
+	
 	UFUNCTION()
 	void TakeDamage_OpponentUsingSkill();
 
 	UFUNCTION()
-	void TakeDamage_OpponentSpellFistAttack();
+	void TakeDamage_OpponentUsingSkillWeapon();
 
-	UFUNCTION()
-	void BoundUpBySkill();
-
+private:
+	void DamagedByOpponentNormal_SkillAndFx(float InLaunchSpeed = 1.0f);
+	void DamagedByOpponentSkillWeaponAndFx();
 //private:
-//	void SF2_E_TakeDamage();
-//
-//public:
-//	UFUNCTION()
-//	void TakeDamage_OpponentSkillWeapon();
-
+	//void SkillWeaponDamage();
+	
+public:
 	static void SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass);
 	void DestroyEnemy();
-	void SpawnEnemyEffectWeapon();
+	//void SpawnEnemyEffectWeapon();
 
 protected:
 	UFUNCTION()
-		virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
-		virtual void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	virtual void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
-		virtual void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	virtual void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 	UFUNCTION()
-		void OnMontageEnded(UAnimMontage* InMontage, bool InInterrupted);
+	virtual void OnMontageEnded(UAnimMontage* InMontage, bool InInterrupted);
 
 public:
-	//void MontageEnded();
 	void OnStateTypeChange(EEnemyStateType InCurrentStateType);
 
-	//FORCEINLINE bool GetbDamage() { return bDamage; }
-	//FORCEINLINE void SetbMontageIsPlaying(bool InBool) { bMontageIsPlaying = InBool; }
-	//FORCEINLINE bool GetbMontageIsPlaying() { return bMontageIsPlaying; }
 	FORCEINLINE ACharacter* GetOpponent() { return Opponent; }
-	//FORCEINLINE void SetCurrentEnemyStateType(EEnemyStateType InType) { CurrentStateType = InType; }
 	FORCEINLINE EEnemyStateType GetCurrentEnemyStateType() { return CurrentStateType; }
 	FORCEINLINE ACWeapon* GetWeapon(int32 InIndex) { if (Weapons[InIndex]) return Weapons[InIndex]; else return nullptr; }
 	FORCEINLINE bool GetCanStrafing() { return CanStrafing; }
-	FORCEINLINE void SetIsAttackBySkill(bool InBool) { IsAttackBySkill = InBool; }
-	FORCEINLINE void SetIsAttackBySpellFist(bool InBool) { IsAttackBySpellFist = InBool; }
+	FORCEINLINE void SetIsAttackByPlayer(bool InBool) { IsAttackByPlayer = InBool; }
 	FORCEINLINE void SetIsAttackBySkillWeapon(bool InBool) { IsAttackBySkillWeapon = InBool; }
-	//FORCEINLINE bool GetIsAttacking() { return IsAttacking; }
+	FORCEINLINE void SetIsAttackBySpellFist(bool InBool) { IsAttackBySpellFist = InBool; }
+	FORCEINLINE float GetDistanceToOpponent() { return DistanceToOpponent; }
 };

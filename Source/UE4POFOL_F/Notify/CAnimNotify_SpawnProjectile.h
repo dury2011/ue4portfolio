@@ -16,9 +16,19 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Setting")
 	FName SpawnSocketName;
 
+	/* Activate Projectile Shoot */
+	UPROPERTY(EditAnywhere, Category = "Setting")
+	bool CanActivateShoot = true;
+
+	UPROPERTY(EditAnywhere, Category = "Setting")
+	bool ShootSpawnedLocationFoward = false;
+
+	UPROPERTY(EditAnywhere, Category = "Setting")
+	float ShootSpeed = 5000.0f;
+
 	UPROPERTY()
 	class ACProjectile* Projectile;
-	
+
 private:
 	FString GetNotifyName_Implementation() const override;
 

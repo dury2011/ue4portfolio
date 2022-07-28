@@ -11,6 +11,12 @@ enum class EPlayerSkillType : uint8
 };
 
 UENUM(BlueprintType)
+enum class EPlayerNormalAttackType : uint8
+{
+	NormalAttack, BoundUpAttack, FinalAttack, Max
+};
+
+UENUM(BlueprintType)
 enum class EPlayerSpellFistType : uint8
 {
 	SF_S, SF_E, Max
@@ -35,8 +41,13 @@ public:
 	virtual float MaxMp() { return 0.0f; };
 	virtual float MaxSp() { return 0.0f; };
 
+	virtual EPlayerNormalAttackType GetCurrentPlayerNormalAttackType() { return EPlayerNormalAttackType::Max; }
 	virtual EPlayerSkillType GetCurrentPlayerSkillType() { return  EPlayerSkillType::Max; };
 	virtual EPlayerSpellFistType GetCurrentPlayerSpellFistType() { return EPlayerSpellFistType::Max; };
+
 	virtual bool GetPlayerActivateSkill() { return false; }
 	virtual void SetPlayerActivateSkill(bool InBool) { };
+
+	virtual bool GetPlayerIsAttackByBoss() { return false; }
+	virtual void SetPlayerIsAttackByBoss(bool InBool) { };
 };

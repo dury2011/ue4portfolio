@@ -31,6 +31,7 @@ ACProjectile* ACProjectile::SpawnProjectile(ACharacter* InSpawner, TSubclassOf<c
 {
 	FActorSpawnParameters params;
 	params.Owner = InSpawner;
+	params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 	//params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 	//
 	//ACProjectile* projectile = InSpawner->GetWorld()->SpawnActor<ACProjectile>
@@ -112,12 +113,18 @@ void ACProjectile::Hit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UP
 	
 	GLog->Log("ACProjectile::Hit()");
 
-	DestroyProjectile();
+	//DestroyProjectile();
 }
 
 void ACProjectile::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	CheckTrue(OtherActor == GetOwner());
+
+	//if (IsHoming)
+	//{
+	//	if(Homing_HitCount)
+
+	//}
 
 	if (OtherActor->ActorHasTag("Enemy") == GetOwner()->ActorHasTag("Enemy"))
 		return;
@@ -129,7 +136,7 @@ void ACProjectile::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 	GLog->Log("ACProjectile::BeginOverlap()");
 
 	
-	DestroyProjectile();
+	//DestroyProjectile();
 }
 
 void ACProjectile::DestroyProjectile()

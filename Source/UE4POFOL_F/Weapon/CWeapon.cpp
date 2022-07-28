@@ -38,6 +38,7 @@ void ACWeapon::BeginPlay()
 		collision->OnComponentHit.AddDynamic(this, &ACWeapon::OnHit);	
 	}
 	
+	//Spawned = true;
 	Super::BeginPlay();
 }
 
@@ -119,9 +120,24 @@ void ACWeapon::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	CheckTrue(OwnerCharacter->GetCapsuleComponent() == OverlappedComponent);
 	CheckTrue(OwnerCharacter->GetClass() == OtherActor->GetClass());
 	CheckTrue(IsOverlapped);
-	
-	GLog->Log("ACWeapon::OnBeginOverlap");
 
+	if (IsSkillWeapon)
+	{
+		if (OtherActor)
+		{
+			ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
+
+			if (enemy)
+			{
+				enemy->SetIsAttackBySkillWeapon(true);
+				enemy->TakeDamage_OpponentUsingSkillWeapon();
+			}
+
+			return;
+		}
+	}
+	
+	GLog->Log("ACWeapon::OnBeginOverlap_SkillWeapon");
 
 	IsOverlapped = true;
 
@@ -231,6 +247,20 @@ void ACWeapon::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 	
 	IsOverlapped = false;
 
+	if (IsSkillWeapon)
+	{
+		if (OtherActor)
+		{
+			ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
+
+			enemy->SetIsAttackBySkillWeapon(false);
+
+			GLog->Log("ACWeapon::OnEndOverlap_SkillWeapon()");
+
+			return;
+		}
+	}
+
 	GLog->Log("ACWeapon::OnEndOverlap()");
 
 	//// MEMO: 보스는 StateComponent가 없다.
@@ -268,7 +298,6 @@ void ACWeapon::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPri
 	CheckNull(OtherActor);
 	CheckNull(OtherComp);
 	
-	
 	//DestroyWeapon();
 
 	//if (OnWeaponHit.IsBound())
@@ -284,3 +313,11 @@ void ACWeapon::RecoverDilation()
 		GetWorldTimerManager().ClearTimer(StopTimer);
 	}
 }
+
+//void ACWeapon::Destroyed()
+//{
+//	if (Enemy)
+//		Enemy->SetIsAttackBySkillWeapon(false);
+//	
+//	Super::Destroyed();
+//}

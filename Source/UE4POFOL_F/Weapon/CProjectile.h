@@ -13,7 +13,6 @@ class UE4POFOL_F_API ACProjectile : public AActor
 {
 	GENERATED_BODY()
 
-public:
 	//UPROPERTY(EditDefaultsOnly, Category = "Hit Actor Montage")
 	//TArray<FDamageData> BulletHitDatas;
 
@@ -24,12 +23,14 @@ private:
 	UPROPERTY(VisibleDefaultsOnly)
 	class UStaticMeshComponent* Mesh;
 
-	UPROPERTY(VisibleDefaultsOnly)
-	class UProjectileMovementComponent* ProjectileComponent;
+	//int32 Homing_HitCount = 0;
 
 public:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly)
 	class USphereComponent* Sphere;
+	
+	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
+	class UProjectileMovementComponent* ProjectileComponent;
 
 	//UPROPERTY(BlueprintReadWrite)
 	//bool bBeginOverlapped = false;
@@ -37,6 +38,9 @@ public:
 	//UPROPERTY(BlueprintReadWrite)
 	//bool bHitted = false;
 
+public:
+	//UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Setting")
+	//bool IsHoming = false;
 
 
 public:
@@ -49,6 +53,7 @@ public:
 	static ACProjectile* SpawnProjectile(ACharacter* InSpawner, TSubclassOf<class ACProjectile> InProjectileClass, FName InSpawnSocketName);
 	static ACProjectile* SpawnProjectile(ACharacter* InSpawner, TSubclassOf<class ACProjectile> InProjectileClass, FVector InSpawnLocation);
 
+	UFUNCTION(BlueprintCallable)
 	void ShootProjectile(const FVector& InDirection);
 
 	void DestroyProjectile();

@@ -22,7 +22,6 @@ ACEnemy_Rifle::ACEnemy_Rifle()
 		GetMesh()->SetupAttachment(GetCapsuleComponent());
 		GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -90.0f));
 		GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
-		GetMesh()->SetAnimInstanceClass(AnimBlueprint);
 	}
 }
 

@@ -8,7 +8,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FWeaponOverlap, class ACharacter*, InAttacker, class AActor*, InAttackCauser, class ACharacter*, InOtherCharacter);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FWeaponCollision);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FiveParams(FWeaponHit, class UPrimitiveComponent*, HitComponent, class AActor*, OtherActor, class UPrimitiveComponent*, OtherComp, FVector, NormalImpulse, const FHitResult&, Hit);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSkillWeaponBeginOverlap);
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSkillWeaponBeginOverlap);
 
 UCLASS()
 class UE4POFOL_F_API ACWeapon : public AActor
@@ -22,8 +22,8 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FWeaponOverlap OnWeaponEndOverlap;
 
-	UPROPERTY(BlueprintAssignable)
-	FSkillWeaponBeginOverlap OnSkillWeaponBeginOverlap;
+	//UPROPERTY(BlueprintAssignable)
+	//FSkillWeaponBeginOverlap OnSkillWeaponBeginOverlap;
 
 	//UPROPERTY(BlueprintAssignable)
 	//FWeaponOverlap OnWeaponBeginOverlapForCritical;
@@ -58,6 +58,8 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FWeaponHit OnWeaponHit;
 
+	//bool Spawned = false;
+
 private:
 	UPROPERTY(VisibleDefaultsOnly)
 	class USceneComponent* Root;
@@ -77,6 +79,11 @@ private:
 
 	UPROPERTY(VisibleDefaultsOnly, Category = "Weapon Setting")
 	int32 ApplyDamage = 0.0;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Setting")
+	bool IsSkillWeapon = false;
+
+	//class ACEnemy* Enemy;
 
 	FTimerHandle ComboCountTimer;
 	FTimerHandle StopTimer;
@@ -141,4 +148,6 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnUnequip();
+
+	//virtual void Destroyed() override;
 };

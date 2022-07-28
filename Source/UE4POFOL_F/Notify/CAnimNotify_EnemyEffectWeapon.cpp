@@ -14,6 +14,6 @@ void UCAnimNotify_EnemyEffectWeapon::Notify(USkeletalMeshComponent* MeshComp, UA
 
 	ACEnemy* enemy = Cast<ACEnemy>(MeshComp->GetOwner());
 
-	if (enemy)
-		enemy->SpawnEnemyEffectWeapon();
+	//if (enemy)
+		//enemy->SpawnEnemyEffectWeapon();
 }

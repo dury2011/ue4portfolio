@@ -25,6 +25,7 @@
 #include "Object/CCrosshair_SpellThrow.h"
 #include "Components/SphereComponent.h"
 #include "Interface/CInterface_Item.h"
+#include "Enemy/CEnemy_Boss.h"
 
 ACPlayer::ACPlayer()
 {
@@ -164,8 +165,8 @@ void ACPlayer::BeginPlay()
 
 	GetComponents<UCapsuleComponent>(CapsuleCollisions);
 	
-	BoxComponentSkill->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnBoxSkillBeginOverlap);
-	BoxComponentSkill->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnBoxSkillEndOverlap);
+	BoxComponentSkill->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnAttackBoxBeginOverlap);
+	BoxComponentSkill->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnAttackBoxEndOverlap);
 
 	//BoxComponentSkill3->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnBoxSkill3BeginOverlap);
 	//BoxComponentSkill3->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnBoxSkill3EndOverlap);
@@ -209,22 +210,7 @@ void ACPlayer::Tick(float DeltaTime)
 	if (bParkouring)
 		SetActorRotation(UKismetMathLibrary::RInterpTo(GetActorRotation(), ParkourTargetRot, GetWorld()->GetDeltaSeconds(), 10.0f));
 	
-	//if (CanSpellFistAttack)
-	//{
-	//	for (int i = 0; i < SpellFistedActors.Num(); i++)
-	//	{
-	//		if(UKismetMathLibrary::Distance2D(FVector2D(GetActorLocation()), FVector2D(SpellFistedActors[i]->GetActorLocation())) >= 200.0f)
-	//			CanSpellFistAttack = false;
-	//	}
-	//}
-	//else if (!CanSpellFistAttack)
-	//{
-	//	for (int i = 0; i < SpellFistedActors.Num(); i++)
-	//	{
-	//		if (UKismetMathLibrary::Distance2D(FVector2D(GetActorLocation()), FVector2D(SpellFistedActors[i]->GetActorLocation())) <= 200.0f)
-	//			CanSpellFistAttack = true;
-	//	}
-	//}
+
 
 #ifdef LOG_PLAYER
 	PlayerLog();
@@ -257,6 +243,27 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Pressed, this, &ACPlayer::OnJump);
 	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Released, this, &ACPlayer::OffJump);
 	PlayerInputComponent->BindAction("Critical", EInputEvent::IE_Pressed, this, &ACPlayer::OnCritical);
+}
+
+void ACPlayer::EnableBind()
+{
+	TArray<AActor*> outActorArr;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACEnemy_Boss::StaticClass(), outActorArr);
+
+	for (int i = 0; i < outActorArr.Num(); i++)
+		Boss = dynamic_cast<ACEnemy_Boss*>(outActorArr[i]);
+
+	if (Boss)
+		Boss->OnBossAttack.AddDynamic(this, &ACPlayer::TakeDamage_AttackByBoss);
+}
+
+void ACPlayer::GetDamageData(int32 InIndex)
+{
+	if (DamageDatas[InIndex].Montage)
+		DamageDatas[InIndex].PlayMontage(this);
+	
+	if (DamageDatas[InIndex].Effect)
+		DamageDatas[InIndex].PlayEffect(GetWorld(), this);
 }
  
 void ACPlayer::OnMoveForward(float AxisValue)
@@ -360,8 +367,8 @@ void ACPlayer::OnAim()
 		PortalCrosshair->SetOwner(this);
 		PortalCrosshair->SetActorRotation(CameraComponent->GetComponentRotation());
 
-		bUseControllerRotationYaw = true;
-		GetCharacterMovement()->bOrientRotationToMovement = false;
+		//bUseControllerRotationYaw = true;
+		//GetCharacterMovement()->bOrientRotationToMovement = false;
 		
 		SpringArmComponent->TargetArmLength = 95.0f;
 		SpringArmComponent->SocketOffset = FVector(0, 30, 10);
@@ -380,8 +387,8 @@ void ACPlayer::OffAim()
 
 		WidgetComponent->SetbCrosshairVisible(true);
 
-		bUseControllerRotationYaw = false;
-		GetCharacterMovement()->bOrientRotationToMovement = true;
+		//bUseControllerRotationYaw = false;
+		//GetCharacterMovement()->bOrientRotationToMovement = true;
 
 		Timeline.ReverseFromEnd();
 		
@@ -474,6 +481,9 @@ void ACPlayer::OnAction()
 	CheckTrue(IsMontagePlaying);
 
 	CharacterComponent->SetCurrentStateType(EStateType::Attack);
+
+	// MEMO: 이 Setter는 Normal Attack과 Skill Attack 둘 다 사용 (취소) Enemy Strafing 구현하면 좀 더 자연스러워 질 듯함
+	//SetPlayerActivateSkill(true);
 
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
@@ -580,6 +590,7 @@ void ACPlayer::OnSkillOne()
 	CheckTrue(IsMontagePlaying);
 	
 	SetPlayerActivateSkill(true);
+	IsMontagePlaying = true;
 
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{	
@@ -719,8 +730,17 @@ void ACPlayer::OnSkillThree()
 	}
 	else if (CharacterComponent->GetIsWeaponSpellMode())
 	{
+		IsMontagePlaying = true;
+		
 		if (CharacterComponent->GetCriticalDatasSpell(2).Montage)
 			CharacterComponent->GetCriticalDatasSpell(2).PlayMontage(this);
+	}
+	else if (CharacterComponent->GetIsWeaponSpellFistMode())
+	{
+		IsMontagePlaying = true;
+		
+		if (SpellFistSkillDatas[2].Montage)
+			SpellFistSkillDatas[2].PlayMontage(this);
 	}
 }
 
@@ -746,6 +766,18 @@ void ACPlayer::Notify_OnSkillAttack()
 	if (OnPlayerSkillAttack.IsBound())
 		OnPlayerSkillAttack.Broadcast();
 }
+
+void ACPlayer::Notify_OnNormalAttack()
+{
+	if (OnPlayerNormalAttack.IsBound())
+		OnPlayerNormalAttack.Broadcast();
+}
+
+//void ACPlayer::Notify_OnSkillWeaponAttack()
+//{
+	//if (OnPlayerSkillLaunch.IsBound())
+		//OnPlayerSkillLaunch.Broadcast();
+//}
 
 void ACPlayer::Notify_OnSkillLaunch()
 {
@@ -773,7 +805,9 @@ void ACPlayer::SpawnWarriorSkillOneProjectile()
 void ACPlayer::SpawnSpellMeteorWeapon()
 {
 	SpellMeteorWeapon = ACWeapon::SpawnWeapon(this, SpellMeteorClass, Cast<ACCrosshair_SpellThrow>(Crosshair_SpellMeteor)->GetImpactPoint());
-	SpellMeteorWeapon->SetOwner(this);
+	
+	if(SpellMeteorWeapon)
+		SpellMeteorWeapon->SetOwner(this);		
 }
 
 void ACPlayer::SetPlayerPortalLocation()
@@ -991,6 +1025,34 @@ float ACPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& Damage
 	return Damaged.DamageAmount;
 }
 
+void ACPlayer::TakeDamage_AttackByBoss(EBossAttackType InType)
+{
+	if (IsAttackByBoss)
+	{
+		CharacterComponent->SetCurrentStateType(EStateType::Damage);
+		
+		SpawnCameraEffect();
+		ShakeCamera();
+
+		if (InType == EBossAttackType::NormalAttack)
+		{
+			
+		}
+		else if (InType == EBossAttackType::BoundUpAttack)
+		{
+			GetDamageData(1);
+		}
+		else if (InType == EBossAttackType::GroggyAttack)
+		{
+			GetDamageData(2);
+		}
+		else if (InType == EBossAttackType::FinalAttack)
+		{
+			GetDamageData(3);
+		}
+	}
+}
+
 void ACPlayer::OnCollision()
 {
 	for (UShapeComponent* collision : CapsuleCollisions)
@@ -1023,7 +1085,7 @@ void ACPlayer::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 
 }
 
-void ACPlayer::OnBoxSkillBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ACPlayer::OnAttackBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	CheckTrue(OverlappedComponent == GetCapsuleComponent());
 
@@ -1032,11 +1094,14 @@ void ACPlayer::OnBoxSkillBeginOverlap(UPrimitiveComponent* OverlappedComponent, 
 		ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
 
 		if (enemy)
-			enemy->SetIsAttackBySkill(true);
+		{
+			enemy->SetIsAttackByPlayer(true);
+
+		}
 	}
 }
 
-void ACPlayer::OnBoxSkillEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void ACPlayer::OnAttackBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	CheckTrue(OverlappedComponent == GetCapsuleComponent());
 
@@ -1045,7 +1110,9 @@ void ACPlayer::OnBoxSkillEndOverlap(UPrimitiveComponent* OverlappedComponent, AA
 		ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
 
 		if (enemy)
-			enemy->SetIsAttackBySkill(false);
+		{
+			enemy->SetIsAttackByPlayer(false);
+		}
 	}
 }
 
@@ -1370,6 +1437,11 @@ float ACPlayer::MaxSp()
 	return CharacterComponent->GetMaxSp();
 }
 
+EPlayerNormalAttackType ACPlayer::GetCurrentPlayerNormalAttackType()
+{
+	return CurrentPlayerNormalAttackType;
+}
+
 EPlayerSkillType ACPlayer::GetCurrentPlayerSkillType()
 {
 	return CurrentPlayerSkillType;
@@ -1378,6 +1450,21 @@ EPlayerSkillType ACPlayer::GetCurrentPlayerSkillType()
 EPlayerSpellFistType ACPlayer::GetCurrentPlayerSpellFistType()
 {
 	return CurrentPlayerSpellFistType;
+}
+
+bool ACPlayer::GetPlayerIsAttackByBoss()
+{
+	return IsAttackByBoss;
+}
+
+void ACPlayer::SetPlayerIsAttackByBoss(bool InBool)
+{
+	IsAttackByBoss = InBool;
+}
+
+void ACPlayer::Notify_SetCurrentPlayerNormalAttackType(EPlayerNormalAttackType InType)
+{
+	CurrentPlayerNormalAttackType = InType;
 }
 
 void ACPlayer::Notify_SetCurrentPlayerSkillType(EPlayerSkillType InType)

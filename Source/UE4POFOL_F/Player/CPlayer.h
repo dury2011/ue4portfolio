@@ -12,6 +12,7 @@
 #include "Weapon/CWeaponStructure.h"
 #include "Components/TimelineComponent.h"
 #include "Interface/CInterface_PlayerState.h"
+#include "Enemy/CEnemy_Boss.h"
 #include "CPlayer.generated.h"
 
 
@@ -25,6 +26,7 @@ enum class ECameraEffectType : uint8
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerCollision);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnPlayerOverlap, class ACharacter*, InAttacker, class AActor*, InAttackCauser, class ACharacter*, InOtherCharacter);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerActiveBlock, bool, IsBlocked);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerNormalAttack);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerSkillAttack);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerSpellFistAttack);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerSkillLaunch);
@@ -77,11 +79,16 @@ public:
 	
 	FOnPlayerActiveBlock OnPlayerActiveBlock;
 
+	FOnPlayerNormalAttack OnPlayerNormalAttack;
+
 	FOnPlayerSkillAttack OnPlayerSkillAttack;
 
+	// MEMO: 추후 FOnPlayerNormalAttack으로 통합 예정 
 	FOnPlayerSpellFistAttack OnPlayerSpellFistAttack;
 
 	FOnPlayerSkillLaunch OnPlayerSkillLaunch;
+
+	//FOnPlayerSkillWeaponAttack OnPlayerSkillWeaponAttack;
 
 private:
 	struct FDamaged
@@ -164,12 +171,18 @@ private:
 	TSubclassOf<class UMatineeCameraShake> DamageCameraShakeClass;
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	EPlayerNormalAttackType CurrentPlayerNormalAttackType;
+
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	EPlayerSkillType CurrentPlayerSkillType;
 
 	//UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	EPlayerSpellFistType CurrentPlayerSpellFistType;
 
 	FRotator ParkourTargetRot = FRotator::ZeroRotator;
+
+	UPROPERTY()
+	class ACEnemy_Boss* Boss;
 
 	FTimerHandle ComboCountTimer;
 	FTimerHandle WarriorSkillTimer;
@@ -195,6 +208,8 @@ private:
 	bool IsPressedOnOnehand = false;
 	bool IsPressedOnSpell = false;
 	bool IsPressedOnSpellFist = false;
+
+	bool IsAttackByBoss = false;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class ACProjectile> SpellThrowProjectileClass;
@@ -216,6 +231,9 @@ private:
 
 protected:
 	// MEMO: 컴포넌트가 가끔 핫 리로드 문제가 생겨서 일단 여기다가 만들었음
+	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
+	TArray<FDamageData> DamageDatas;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TArray<FActionData> SpellFistEquipData;
 
@@ -246,8 +264,10 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	void EnableBind();
 
 private:
+	void GetDamageData(int32 InIndex);
 	void OnMoveForward(float AxisValue);
 	void OnMoveRight(float AxisValue);
 	void OnVerticalLook(float AxisValue);
@@ -273,6 +293,10 @@ private:
 public:
 	void Notify_BeginNextAction();
 	void Notify_EndThisAction();
+	void Notify_OnSkillAttack();
+	void Notify_OnNormalAttack();
+	//void Notify_OnSkillWeaponAttack();
+	void Notify_OnSkillLaunch();
 	void Notify_OnSpellFistAttack();
 
 private:
@@ -283,8 +307,6 @@ private:
 	void OnCritical();
 
 public:
-	void Notify_OnSkillAttack();
-	void Notify_OnSkillLaunch();
 	void SpawnWarriorSkillOneProjectile();
 	void SpawnSpellMeteorWeapon();
 	void SpawnGhostTrail();
@@ -324,6 +346,9 @@ private:
 
 public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	
+	UFUNCTION()
+	void TakeDamage_AttackByBoss(EBossAttackType InType);
 
 	UFUNCTION()
 	void OnCollision();
@@ -338,10 +363,10 @@ public:
 	void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
-	void OnBoxSkillBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	void OnAttackBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
-	void OnBoxSkillEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	void OnAttackBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 	
 	//UFUNCTION()
 	//void OnBoxSkill3BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -381,12 +406,18 @@ public:
 	virtual float MaxHp() override;
 	virtual float MaxMp() override;
 	virtual float MaxSp() override;
+	virtual EPlayerNormalAttackType GetCurrentPlayerNormalAttackType() override;
 	virtual EPlayerSkillType GetCurrentPlayerSkillType() override;
 	virtual EPlayerSpellFistType GetCurrentPlayerSpellFistType() override;
+	virtual bool GetPlayerIsAttackByBoss() override;
+	virtual void SetPlayerIsAttackByBoss(bool InBool) override;
+	
+	// Notify 관련
+	void Notify_SetCurrentPlayerNormalAttackType(EPlayerNormalAttackType InType);
 	void Notify_SetCurrentPlayerSkillType(EPlayerSkillType InType); 
 	void Notify_SetCurrentPlayerSpellFistType(EPlayerSpellFistType InType);
 
-	// Enemy의 AIController에서 Player의 Skill 사용 여부에 따른 BT 실행 판단을 위한 함수임
+	// Enemy의 AIController에서 Player의 Skill 사용 여부에 따른 BT 실행 판단을 위한 함수
 	virtual bool GetPlayerActivateSkill() override;
 	virtual void SetPlayerActivateSkill(bool InBool) override;
 	

@@ -15,7 +15,6 @@ ACEnemy_Buff_Red::ACEnemy_Buff_Red()
 		GetMesh()->SetupAttachment(GetCapsuleComponent());
 		GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -90.0f));
 		GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
-		GetMesh()->SetAnimInstanceClass(AnimBlueprint);
 	}
 
 	bActivateRotateToOpponent = false;
