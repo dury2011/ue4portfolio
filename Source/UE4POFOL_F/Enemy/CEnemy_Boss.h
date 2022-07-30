@@ -33,7 +33,23 @@ private:
 	EBossAttackType CurrentBossAttackType;
 
 	bool CanBind = true;
-	
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	TArray<FActionData> NormalAttackDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	TArray<FActionData> RangeAttackDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	TArray<FActionData> SpecialAttackDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	TArray<FActionData> NormalSpecialAttackDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	TArray<FActionData> RangeSpecialAttackDatas;
+
 private:
 	ACEnemy_Boss();
 

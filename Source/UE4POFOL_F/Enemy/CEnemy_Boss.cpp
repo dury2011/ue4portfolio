@@ -62,21 +62,41 @@ void ACEnemy_Boss::OnAttack()
 
 	if (GetDistanceTo(GetOpponent()) <= NormalAttackRange)
 	{
-		int32 select = UKismetMathLibrary::RandomIntegerInRange(0, 4);
+		if (Hp / MaxHp * 100 <= 0.5f)
+		{
+			int32 selectS = UKismetMathLibrary::RandomIntegerInRange(0, 2);
 
-		if (ActionDatas[select].Montage)
-			ActionDatas[select].PlayMontage(this);
+			if (NormalSpecialAttackDatas[selectS].Montage)
+				NormalSpecialAttackDatas[selectS].PlayMontage(this);
+
+			return;
+		}
+		
+		int32 select = UKismetMathLibrary::RandomIntegerInRange(0, 2);
+
+		if (NormalAttackDatas[select].Montage)
+			NormalAttackDatas[select].PlayMontage(this);
 	}
 	if(GetDistanceTo(GetOpponent()) > NormalAttackRange)
 	{
 		
-		int32 select = UKismetMathLibrary::RandomIntegerInRange(5, 8);
+		if (Hp / MaxHp * 100 <= 0.5f)
+		{
+			int32 selectS = UKismetMathLibrary::RandomIntegerInRange(0, 2);
+
+			if (RangeSpecialAttackDatas[selectS].Montage)
+				RangeSpecialAttackDatas[selectS].PlayMontage(this);
+
+			return;
+		}
+
+		int32 select = UKismetMathLibrary::RandomIntegerInRange(0, 2);
 		
-		if (select == 6)
+		if (select == 5)
 			bActivateRotateToOpponent = false;
 
-		if (ActionDatas[7].Montage)
-			ActionDatas[7].PlayMontage(this);
+		if (RangeAttackDatas[select].Montage)
+			RangeAttackDatas[select].PlayMontage(this);
 	}
 }
 

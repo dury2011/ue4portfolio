@@ -411,12 +411,12 @@ void ACPlayer::OffAim()
 
 void ACPlayer::OnRun()
 {
-	GetCharacterMovement()->MaxWalkSpeed = 600.0;
+	GetCharacterMovement()->MaxWalkSpeed = 900.0;
 }
 
 void ACPlayer::OffRun()
 {
-	GetCharacterMovement()->MaxWalkSpeed = 350.0;
+	GetCharacterMovement()->MaxWalkSpeed = 600.0;
 }
 
 void ACPlayer::OnSpellTravel()
@@ -514,7 +514,11 @@ void ACPlayer::OnAction()
 			 * 아마도 시간 복잡도? 뭐 그런 문제 때문에 이 부분에 들어오면 안됬는데 들어와버렸던 것 같다.
 			 * 1번 째 공격도 가끔씩 클릭 할 때마다 다시 시작하는 것으로 인해 확신하여 수정하였다. */
 			bAttacking = true;
-			CharacterComponent->GetActionDatasOnehand(Index).PlayMontage(this);
+
+			if (!IsAttackingBoss)
+				CharacterComponent->GetActionDatasOnehand(Index).PlayMontage(this);
+			else if (IsAttackingBoss)
+				WarriorNormalAttackBossDatas[Index].PlayMontage(this);
 			GLog->Log("ACPlayer::OnAction() OnehandAttack");
 		}
 
@@ -1318,7 +1322,12 @@ void ACPlayer::MontageEnded(UAnimMontage* InMontage, bool Ininterrupted)
 
 	DestroySkillEffect();
 
-	//CharacterComponent->SetIsMontagePlaying(false);
+	if (Index == 3 && bAttacking)
+		bAttacking = false;
+
+	if (Ininterrupted)
+		bAttacking = false;
+
 	IsMontagePlaying = false;
 }
 

@@ -210,6 +210,7 @@ private:
 	bool IsPressedOnSpellFist = false;
 
 	bool IsAttackByBoss = false;
+	bool IsAttackingBoss = false;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class ACProjectile> SpellThrowProjectileClass;
@@ -233,7 +234,10 @@ protected:
 	// MEMO: 컴포넌트가 가끔 핫 리로드 문제가 생겨서 일단 여기다가 만들었음
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TArray<FDamageData> DamageDatas;
-	
+
+	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
+	TArray<FActionData>WarriorNormalAttackBossDatas;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TArray<FActionData> SpellFistEquipData;
 

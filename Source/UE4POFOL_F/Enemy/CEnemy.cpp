@@ -215,7 +215,8 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 
 		SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
 		
-		LaunchCharacter(-direction * 1000.0f, true, false);
+		if(ActivateDamageLaunch)
+			LaunchCharacter(-direction * 1000.0f, true, false);
 	}
 	
 	// DeadCheck
@@ -298,7 +299,9 @@ void ACEnemy::TakeDamage_OpponentNormalAttack()
 			transform.SetLocation(GetActorLocation());
 
 			SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
-			LaunchCharacter(-direction * 1000.0f, true, false);
+			
+			if(ActivateDamageLaunch)
+				LaunchCharacter(-direction * 1000.0f, true, false);
 		}
 
 		// 피격 에님 몽타주, 이펙트 재생
@@ -515,7 +518,9 @@ void ACEnemy::DamagedByOpponentNormal_SkillAndFx(float InLaunchSpeed)
 		transform.SetLocation(GetActorLocation());
 
 		SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
-		LaunchCharacter(-direction * InLaunchSpeed, true, false);
+		
+		if(ActivateDamageLaunch)
+			LaunchCharacter(-direction * InLaunchSpeed, true, false);
 	}
 
 	// 피격 효과 
@@ -641,8 +646,8 @@ void ACEnemy::OnAttack()
 {
 	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
 
-	for (int i = 0; i < ActionDatas.Num(); i++)
-		CheckFalse(ActionDatas[i].Montage);
+	//for (int i = 0; i < ActionDatas.Num(); i++)
+	//	CheckFalse(ActionDatas[i].Montage);
 
 	CheckTrue(CurrentStateType == EEnemyStateType::Attack);
 	SetCurrentEnemyStateType(EEnemyStateType::Attack);

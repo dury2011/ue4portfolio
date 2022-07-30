@@ -115,6 +115,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
 	float HitNumberDestroyTime = 1.0f;
 
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
+	bool ActivateDamageLaunch = true;
+	
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
 	TMap<UUserWidget*, FVector> HitNumbers;
 
