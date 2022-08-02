@@ -43,6 +43,8 @@ void UCAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	if (IKComponent)
 		FeetData = IKComponent->GetFeetData();
 
+	//FwdSpeed = UKismetMathLibrary::Dot_VectorVector(OwnerCharacter->GetVelocity(), OwnerCharacter->GetActorForwardVector());
+	//RSpeed = UKismetMathLibrary::Dot_VectorVector(OwnerCharacter->GetVelocity(), OwnerCharacter->GetActorRightVector());
 	Speed = OwnerCharacter->GetVelocity().Size2D();
 	bInAir = OwnerCharacter->GetMovementComponent()->IsFalling();
 	Pitch = UKismetMathLibrary::NormalizedDeltaRotator(OwnerCharacter->GetBaseAimRotation(), OwnerCharacter->GetActorRotation()).Pitch;
@@ -67,7 +69,11 @@ void UCAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	ACPlayer* player = Cast<ACPlayer>(OwnerCharacter);
 
 	if (player)
+	{
 		IsSpellTravel = player->GetIsSpellTravel();
+		IsParkouring = player->GetIsParkouring();
+	}
+
 
 	
 	//if (UKismetMathLibrary::NearlyEqual_FloatFloat(Yaw, 175.0f, 0.1f))

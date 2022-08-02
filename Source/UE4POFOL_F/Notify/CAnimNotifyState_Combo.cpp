@@ -19,7 +19,7 @@ void UCAnimNotifyState_Combo::NotifyBegin(USkeletalMeshComponent * MeshComp, UAn
 	ACPlayer* player = Cast<ACPlayer>(MeshComp->GetOwner());
 
 	if (player)
-		player->SetbCanCombo(true);
+		player->Notify_SetbCanCombo(true);
 }
 
 void UCAnimNotifyState_Combo::NotifyEnd(USkeletalMeshComponent * MeshComp, UAnimSequenceBase * Animation)
@@ -32,7 +32,7 @@ void UCAnimNotifyState_Combo::NotifyEnd(USkeletalMeshComponent * MeshComp, UAnim
 	ACPlayer* player = Cast<ACPlayer>(MeshComp->GetOwner());
 
 	if (player)
-		player->SetbCanCombo(false);
+		player->Notify_SetbCanCombo(false);
 }
 
 

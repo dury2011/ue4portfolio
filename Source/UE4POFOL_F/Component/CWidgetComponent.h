@@ -21,9 +21,6 @@ private:
 
 	UPROPERTY()
 	class UMaterialInstanceDynamic* DynamicMaterial;
-
-	UPROPERTY()
-	class UPoseableMeshComponent* Poseable;
 	
 	class ICInterface_PlayerState* PlayerInterface;
 
@@ -63,18 +60,23 @@ public:
 
 	FORCEINLINE FHitResult GetHitResult() { return HitResult; }
 
-	
-	void CheckWarnningText();
+	//UFUNCTION(BlueprintCallable)
+	//float GetCurrentHpPercentage();
 
-	UFUNCTION(BlueprintImplementableEvent)
-	void WarnningText_LowMp();
+	//UFUNCTION(BlueprintCallable)
+	//float GetCurrentMpPercentage();
 
-	UFUNCTION(BlueprintImplementableEvent)
-	void WarnningText_LowHp();
+	//void CheckWarnningText();
 
-	UFUNCTION(BlueprintImplementableEvent)
-	void WarnningText_CannotUseSkill_LowMp();
+	//UFUNCTION(BlueprintImplementableEvent)
+	//void WarnningText_LowMp();
 
-	UFUNCTION(BlueprintImplementableEvent)
-	void WarnningText_CannotUseSkill_CoolTime();
+	//UFUNCTION(BlueprintImplementableEvent)
+	//void WarnningText_LowHp();
+
+	//UFUNCTION(BlueprintImplementableEvent)
+	//void WarnningText_CannotUseSkill_LowMp();
+
+	//UFUNCTION(BlueprintImplementableEvent)
+	//void WarnningText_CannotUseSkill_CoolTime();
 };

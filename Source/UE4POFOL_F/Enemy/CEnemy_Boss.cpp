@@ -62,7 +62,7 @@ void ACEnemy_Boss::OnAttack()
 
 	if (GetDistanceTo(GetOpponent()) <= NormalAttackRange)
 	{
-		if (Hp / MaxHp * 100 <= 0.5f)
+		if (Hp / MaxHp <= 0.5f)
 		{
 			int32 selectS = UKismetMathLibrary::RandomIntegerInRange(0, 2);
 
@@ -80,7 +80,7 @@ void ACEnemy_Boss::OnAttack()
 	if(GetDistanceTo(GetOpponent()) > NormalAttackRange)
 	{
 		
-		if (Hp / MaxHp * 100 <= 0.5f)
+		if (Hp / MaxHp <= 0.5f)
 		{
 			int32 selectS = UKismetMathLibrary::RandomIntegerInRange(0, 2);
 

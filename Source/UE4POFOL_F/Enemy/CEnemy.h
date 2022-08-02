@@ -97,6 +97,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
 		float ChangeStrafingTypeInterval = 2.0f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	bool IsBoss = false;
+
 	bool bMontageIsPlaying = false;
 	bool bActivateRotateToOpponent = true;
 	bool CanStrafing = false;
@@ -144,6 +147,7 @@ private:
 	bool IsBoundUpBySkill = false;
 
 	int32 SkillWeaponAttackCount = 0;
+	static int32 SpawnCount;
 	
 	FVector CurrentLoc = FVector::ZeroVector;
 
@@ -253,7 +257,10 @@ private:
 	//void SkillWeaponDamage();
 	
 public:
-	static void SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass);
+	static ACEnemy* SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass);
+	static ACEnemy* SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass, FName InSpawnSocketName);
+	static ACEnemy* SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass, FTransform InSpawnTransform);
+
 	void DestroyEnemy();
 	//void SpawnEnemyEffectWeapon();
 
@@ -281,4 +288,6 @@ public:
 	FORCEINLINE void SetIsAttackBySkillWeapon(bool InBool) { IsAttackBySkillWeapon = InBool; }
 	FORCEINLINE void SetIsAttackBySpellFist(bool InBool) { IsAttackBySpellFist = InBool; }
 	FORCEINLINE float GetDistanceToOpponent() { return DistanceToOpponent; }
+	FORCEINLINE void SetSpawnCount() { ++SpawnCount; }
+	FORCEINLINE int32 GetSpawnCount() { return SpawnCount; }
 };

@@ -124,6 +124,9 @@ private:
 	UPROPERTY()
 	class ACGhostTrail* GhostTrail;
 
+	FTimerHandle UpdateSpTimer;
+	FTimerHandle UpdateMpTimer;
+
 	bool IsMontagePlaying = false;
 	bool bCanMove = true;
 	bool bFixedCamera = true;
@@ -153,6 +156,10 @@ private:
 	void ChangeStateType(EStateType InType);
 
 	void ChangeWeaponType(EWeaponType InType);
+
+	void UpdateSp();
+
+	void UpdateMp();
 
 public:
 	FORCEINLINE FName GetEquipSocketName(EWeaponType InType) { return EquipSocketName[(int32) InType]; }
@@ -228,7 +235,4 @@ public:
 
 	FORCEINLINE bool GetbFixedCamera() { return bFixedCamera; }
 	FORCEINLINE void SetbFixedCamera(bool Inbool) { bFixedCamera = Inbool; }
-
-
-
 };

@@ -50,4 +50,6 @@ public:
 
 	virtual bool GetPlayerIsAttackByBoss() { return false; }
 	virtual void SetPlayerIsAttackByBoss(bool InBool) { };
+
+	virtual void SetPlayerIsInBossStage(bool InBool) { };
 };

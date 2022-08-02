@@ -22,6 +22,8 @@
 #include "GameplayTagContainer.h"
 #include "Components/SphereComponent.h"
 
+int32 ACEnemy::SpawnCount = 0;
+
 ACEnemy::ACEnemy()
 	:HealthBarDisplayTime(2.f)
 {
@@ -133,9 +135,15 @@ void ACEnemy::Tick(float DeltaTime)
 	}
 
 	// Player에게 공격을 받는 중(받을 수 있는 상태)이고 스킬에 의해 공중으로 띄워진 상태인 경우만 코드 실행
-	if (IsAttackByPlayer && IsLaunchBySkill)
+	if (IsAttackByPlayer && IsLaunchBySkill && !IsBoss)
 	{
 		SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y, Opponent->GetActorLocation().Z));
+	}
+
+	// Boss는 scale이 크므로 에어본 공격 적용 안함 하지만 에어본이 안되면 Player 공격 범위에 벗어나므로 강제로 true로 설정
+	if (!IsAttackByPlayer && IsLaunchBySkill && IsBoss)
+	{
+		IsAttackByPlayer = true;
 	}
 
 	/* MEMO: Player의 Enemy피격 콜리전 범위안에 들어오면 이 클래스의 IsAttackBySkill이 true가 되고
@@ -144,7 +152,7 @@ void ACEnemy::Tick(float DeltaTime)
 	 * 피격 도중 적용된 피격 머티리얼이 공격 끝을 전달받지 못해 계속 적용 된 채로 남있게 되어 아래 해결책을 작성함 
 	 */
 	// Player Skill이 StopHit공격일 경우만 코드 실행
-	if (IsSkillStopHit && IsAttackByPlayer)
+	if (IsSkillStopHit && IsAttackByPlayer && !IsBoss)
 	{
 		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
 
@@ -164,7 +172,7 @@ void ACEnemy::Tick(float DeltaTime)
 	* Player Skill Weapon에서 Follow할 SphereCollision의 Tag는 "Sphere_Following"으로 지정할 것
 	*/
 	// Player Skill이 BoundUp공격일 경우만 코드 실행
-	if (IsBoundUpBySkill && IsAttackByPlayer)
+	if (IsBoundUpBySkill && IsAttackByPlayer && !IsBoss)
 	{
 		TArray<AActor*> outWeaponArr;
 		TArray<UActorComponent*> outSphereArr;
@@ -368,7 +376,7 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 			DamagedByOpponentNormal_SkillAndFx();
 			GetSkillDamageData(2);
 
-			if (Opponent)
+			if (Opponent && !IsBoss)
 			{
 				FVector targetLoc = Opponent->GetActorLocation();
 
@@ -877,28 +885,75 @@ void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool Interrupted)
 
 		return;
 	}
-
 }
 
-void ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass)
+ACEnemy* ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass)
 {
 	if (InSpawnEnemyClass)
 	{
 		FActorSpawnParameters params;
 		params.Owner = InSpawner;
-		
-		InSpawner->GetWorld()->SpawnActor<ACEnemy>
-		(
-			InSpawnEnemyClass,
-			InSpawner->GetActorTransform(),
-			params
-		);
+
+		return InSpawner->GetWorld()->SpawnActor<ACEnemy>
+			(
+				InSpawnEnemyClass,
+				InSpawner->GetActorTransform(),
+				params
+			);
 	}
+	else return nullptr;
+}
+
+ACEnemy* ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass, FName InSpawnSocketName)
+{
+	if (InSpawnEnemyClass)
+	{
+		FActorSpawnParameters params;
+		params.Owner = InSpawner;
+
+		ACharacter* character = Cast<ACharacter>(InSpawner);
+
+		if (character)
+		{
+			return InSpawner->GetWorld()->SpawnActor<ACEnemy>
+				(
+					InSpawnEnemyClass,
+					character->GetMesh()->GetSocketTransform(InSpawnSocketName),
+					params
+				);
+		}
+		else return nullptr;
+	}
+	else return nullptr;
+}
+
+ACEnemy* ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass, FTransform InSpawnTransform)
+{
+	if (InSpawnEnemyClass)
+	{
+		FActorSpawnParameters params;
+		params.Owner = InSpawner;
+
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		return InSpawner->GetWorld()->SpawnActor<ACEnemy>
+			(
+				InSpawnEnemyClass,
+				InSpawnTransform,
+				params
+			);
+	}
+	else return nullptr;
 }
 
 void ACEnemy::DestroyEnemy()
 {
 	Destroy();
+
+	SpawnCount -= 1;
+
+	if (SpawnCount <= 0)
+		SpawnCount = 0;
 }
 
 //void ACEnemy::SpawnEnemyEffectWeapon()

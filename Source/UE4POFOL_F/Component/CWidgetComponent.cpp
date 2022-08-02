@@ -6,7 +6,6 @@
 #include "Player/CPlayer.h"
 #include "Materials/MaterialInstanceConstant.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "Components/PoseableMeshComponent.h"
 
 UCWidgetComponent::UCWidgetComponent()
 {
@@ -117,29 +116,39 @@ bool UCWidgetComponent::CanCrosshairWidgetColorChange()
 	return false;
 }
 
-void UCWidgetComponent::CheckWarnningText()
-{
-	if (PlayerInterface)
-	{
-		if ((CurrentHp / MaxHp <= 0.3f) && !IsEventCalled)
-		{
-			WarnningText_LowHp();
+//void UCWidgetComponent::CheckWarnningText()
+//{
+//	if (PlayerInterface)
+//	{
+//		if ((CurrentHp / MaxHp <= 0.3f) && !IsEventCalled)
+//		{
+//			WarnningText_LowHp();
+//
+//			IsEventCalled = true;
+//		}
+//		else if ((CurrentHp / MaxHp > 0.3f) && IsEventCalled)
+//		{
+//			IsEventCalled = false;
+//		}
+//		if ((CurrentMp / MaxMp <= 0.3f) && !IsEventCalled)
+//		{
+//			WarnningText_LowMp();
+//
+//			IsEventCalled = true;
+//		}
+//		else if ((CurrentMp / MaxMp > 0.3f) && IsEventCalled)
+//		{
+//			IsEventCalled = false;
+//		}
+//	}
+//}
 
-			IsEventCalled = true;
-		}
-		else if ((CurrentHp / MaxHp > 0.3f) && IsEventCalled)
-		{
-			IsEventCalled = false;
-		}
-		if ((CurrentMp / MaxMp <= 0.3f) && !IsEventCalled)
-		{
-			WarnningText_LowMp();
-
-			IsEventCalled = true;
-		}
-		else if ((CurrentMp / MaxMp > 0.3f) && IsEventCalled)
-		{
-			IsEventCalled = false;
-		}
-	}
-}
+//float UCWidgetComponent::GetCurrentHpPercentage()
+//{
+//	return CurrentHp / MaxHp;
+//}
+//
+//float UCWidgetComponent::GetCurrentMpPercentage()
+//{
+//	return CurrentMp / MaxMp;
+//}

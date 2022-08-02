@@ -1,5 +1,6 @@
 #include "Object/CTriggerVolume_LevelChange.h"
 #include "Global.h"
+#include "Interface/CInterface_PlayerState.h"
 
 ACTriggerVolume_LevelChange::ACTriggerVolume_LevelChange()
 {
@@ -20,4 +21,9 @@ void ACTriggerVolume_LevelChange::OnEndOverlap(class AActor* OverlappedActor, cl
 
 	if (OtherActor->ActorHasTag(FName("Player")))
 		SetbCanTrigger(false);
+
+	ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(OtherActor);
+
+	if (playerInterface)
+		playerInterface->SetPlayerIsInBossStage(true);
 }

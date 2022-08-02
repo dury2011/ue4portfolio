@@ -43,6 +43,12 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character Movement")
 	float ClimbRightSpeed;
 
+	//UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character Movement")
+	//float FwdSpeed;
+
+	//UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character Movement")
+	//float RSpeed;
+
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Animation")
 	bool bRifleEquipped;
 
@@ -57,6 +63,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Animation")
 	bool IsSpellTravel;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Animation")
+	bool IsParkouring;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Parkour")
 	bool bActivateIK = false;
