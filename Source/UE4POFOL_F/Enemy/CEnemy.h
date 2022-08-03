@@ -24,6 +24,7 @@ DECLARE_MULTICAST_DELEGATE(FOnEnemyMontageEnded);
 DECLARE_MULTICAST_DELEGATE(FOnEnemyAttackEnded);
 DECLARE_MULTICAST_DELEGATE(FOnEnemyParkourEnded);
 DECLARE_MULTICAST_DELEGATE(FOnEnemyMontageInterrupted);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyDied);
 
 UCLASS()
 class UE4POFOL_F_API ACEnemy : public ACharacter, public IGenericTeamAgentInterface
@@ -40,6 +41,9 @@ public:
 	FOnEnemyMontageInterrupted OnEnemyMontageInterrupted;
 
 	FOnEnemyParkourEnded OnEnemyParkourEnded;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnEnemyDied OnEnemyDied;
 
 	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
 	//bool CanLaucnhEnemy = false;
@@ -104,6 +108,7 @@ protected:
 	bool bActivateRotateToOpponent = true;
 	bool CanStrafing = false;
 	bool IsLaunching = false;
+	
 
 	//UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
 	//	FName EffectWeaponSpawnSocketName;
@@ -261,6 +266,7 @@ public:
 	static ACEnemy* SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass, FName InSpawnSocketName);
 	static ACEnemy* SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass, FTransform InSpawnTransform);
 
+	UFUNCTION(BlueprintCallable)
 	void DestroyEnemy();
 	//void SpawnEnemyEffectWeapon();
 

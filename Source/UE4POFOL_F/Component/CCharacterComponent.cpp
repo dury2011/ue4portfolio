@@ -9,7 +9,7 @@
 
 UCCharacterComponent::UCCharacterComponent()
 {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
 }
 
 void UCCharacterComponent::BeginPlay()
@@ -35,13 +35,17 @@ void UCCharacterComponent::BeginPlay()
 
 
 		OwnerCharacter->GetWorldTimerManager().SetTimer(UpdateSpTimer, this, &UCCharacterComponent::UpdateSp, 1.0f, true, 2.0f);
-		OwnerCharacter->GetWorldTimerManager().SetTimer(UpdateMpTimer, this, &UCCharacterComponent::UpdateMp, 1.0f, true, 1.0f);
+		//OwnerCharacter->GetWorldTimerManager().SetTimer(UpdateMpTimer, this, &UCCharacterComponent::UpdateMp, 1.0f, true, 1.0f);
 	}
 }
 
 void UCCharacterComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	Hp = GetCurrentHp();
+	Mp = GetCurrentMp();
+	Sp = GetCurrentSp();
 }
 
 void UCCharacterComponent::SetHp(float InHp)

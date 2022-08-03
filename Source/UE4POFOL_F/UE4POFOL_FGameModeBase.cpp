@@ -5,6 +5,7 @@
 AUE4POFOL_FGameModeBase::AUE4POFOL_FGameModeBase()
 {
 	CHelpers::GetClass<APawn>(&DefaultPawnClass, "Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CPlayer.BP_CPlayer_C'");
+	CHelpers::GetClass<AGameStateBase>(&GameStateClass, "Blueprint'/Game/FORUE4POFOL/BP_CGameStateBase.BP_CGameStateBase_C'");
 }
 
 void AUE4POFOL_FGameModeBase::StartPlay()

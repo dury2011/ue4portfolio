@@ -948,12 +948,18 @@ ACEnemy* ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnem
 
 void ACEnemy::DestroyEnemy()
 {
+	if (IsBoss)
+	{
+		SpawnCount -= 1;
+
+		if (SpawnCount <= 0)
+			SpawnCount = 0;
+	}
+
+	if (OnEnemyDied.IsBound())
+		OnEnemyDied.Broadcast();
+	
 	Destroy();
-
-	SpawnCount -= 1;
-
-	if (SpawnCount <= 0)
-		SpawnCount = 0;
 }
 
 //void ACEnemy::SpawnEnemyEffectWeapon()
