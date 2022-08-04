@@ -272,6 +272,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class ACWeapon> SpellFistWeaponClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
+	TArray<FActionData> ShieldDatas;
+
 	UPROPERTY()
 	class ACWeapon* SpellFistWeapon;
 
@@ -293,6 +296,7 @@ public:
 	void SpawnSpellMeteorWeapon();
 	void SpawnGhostTrail();
 	void SetPlayerPortalLocation();
+	void ShieldDefencing(ACEnemy* InAttacker);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ActivateCoolTimeSkillOne();
@@ -329,6 +333,15 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ActivateDamageEffect();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ActivateShieldEquipEffect();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ActivateShieldUnequipEffect();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ActivateShieldDefenceEffect();
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
@@ -385,6 +398,7 @@ public:
 	virtual bool GetPlayerIsAttackByBoss() override;
 	virtual void SetPlayerIsAttackByBoss(bool InBool) override;
 	virtual void SetPlayerIsInBossStage(bool InBool) override;
+	virtual bool GetPlayerUsingShield() override;
 
 	// Notify ฐüทร
 	void Notify_SetCurrentPlayerNormalAttackType(EPlayerNormalAttackType InType);
@@ -433,7 +447,6 @@ private:
 	void OnSpell();
 	void OnSpellFist();
 	void OnShield();
-	void ShieldDefencing();
 	void OffShield();
 	void OnControllerRotationYaw_Debug();
 	FVector CalculateMeshSocketToVectorLocation(FName InSocketName, FVector InDirectionTo);

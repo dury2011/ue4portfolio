@@ -47,6 +47,8 @@ void ACAIController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
+
+
 	if (Enemy)
 	{
 		//if (Enemy->GetOpponent())
@@ -55,13 +57,13 @@ void ACAIController::Tick(float DeltaTime)
 		Blackboard->SetValueAsEnum("State", (uint8)Enemy->GetCurrentEnemyStateType());
 		Blackboard->SetValueAsObject("Player", Enemy->GetOpponent());
 
-		if (Enemy->GetCurrentEnemyStateType() == EEnemyStateType::Dead)
-		{
-			BrainComponent->StopLogic(FString("Enemy Died"));
-			SetActorTickEnabled(false);
+		//if (Enemy->GetCurrentEnemyStateType() == EEnemyStateType::Dead)
+		//{
+		//	BrainComponent->StopLogic(FString("Enemy Died"));
+		//	SetActorTickEnabled(false);
 
-			return;
-		}
+		//	return;
+		//}
 
 		if (Enemy->GetOpponent())
 		{
@@ -92,6 +94,8 @@ void ACAIController::OnPossess(APawn* InPawn)
 	
 	//GetWorld()->GetTimerManager().SetTimer(Timer, this, &ACAIController::OnRepeatTimer, 2.0f, true);
 	Enemy = Cast<ACEnemy>(InPawn);
+
+	Enemy->OnEnemyDiedStopAI.AddDynamic(this, &ACAIController::StopEnemyAI);
 
 	if (BehaviorTree)
 	{	
@@ -177,4 +181,10 @@ void ACAIController::OnRepeatTimer()
 	//{
 	//	UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, nextLocation.Location);
 	//}
+}
+
+void ACAIController::StopEnemyAI()
+{
+	BrainComponent->StopLogic(FString("Enemy Died"));
+	SetActorTickEnabled(false);
 }

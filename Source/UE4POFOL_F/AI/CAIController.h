@@ -47,4 +47,7 @@ private:
 	//void OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors);
 
 	void OnRepeatTimer();
+
+	UFUNCTION()
+	void StopEnemyAI();
 };

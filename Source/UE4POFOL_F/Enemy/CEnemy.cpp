@@ -110,6 +110,41 @@ void ACEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
+	// Hp가 0.0 보다 작거나 같을 경우
+	if (Hp <= 0.0f && IsOnce_HpZeroed)
+	{
+		IsOnce_HpZeroed = false;
+		
+		if (OnEnemyDiedStopAI.IsBound())
+		{
+			GetComponents<UCapsuleComponent>(CapsuleCollisions);
+
+			for (UShapeComponent* collision : CapsuleCollisions)
+			{
+				collision->SetCollisionProfileName(FName("Died"));
+			}
+			
+			OnEnemyDiedStopAI.Broadcast();
+
+			SetCurrentEnemyStateType(EEnemyStateType::Dead);
+
+			for (int i = 0; i < Weapons.Num(); i++)
+			{
+				if (Weapons[i])
+					Weapons[i]->DestroyWeapon();
+			}
+
+			if (DeadDatas[0].Montage)
+			{
+				DeadDatas[0].PlayMontage(this);
+
+				ActivateDeadEffect();
+			}
+
+			return;
+		}
+	}
+
 	// 상대(Player)가 존재하고 상대를 향하여 Yaw회전이 가능한 경우만 코드 실행
 	if (Opponent && bActivateRotateToOpponent)
 	{
@@ -252,15 +287,18 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 	}
 
 	// Damage Check
+	if (Hp > 0.0f)
 	{
 		CheckDamage();
 	}
-
+	
 	return Damaged.DamageAmount;
 }
 
 void ACEnemy::TakeDamage_OpponentNormalAttack()
 {
+	CheckFalse(IsOnce_HpZeroed);
+	
 	ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
 	
 	if (playerInterface && IsAttackByPlayer)
@@ -313,6 +351,7 @@ void ACEnemy::TakeDamage_OpponentNormalAttack()
 		}
 
 		// 피격 에님 몽타주, 이펙트 재생
+		if (Hp > 0.0f)
 		{
 			ActivateDamageEffect();
 
@@ -330,6 +369,8 @@ void ACEnemy::TakeDamage_OpponentNormalAttack()
 
 void ACEnemy::TakeDamage_OpponentUsingSkill()
 {
+	CheckFalse(IsOnce_HpZeroed);
+	
 	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
 	
 	ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
@@ -421,6 +462,8 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 
 void ACEnemy::TakeDamage_OpponentUsingSkillWeapon()
 {
+	CheckFalse(IsOnce_HpZeroed);
+	
 	if (IsAttackBySkillWeapon)
 	{
 		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
@@ -485,6 +528,32 @@ void ACEnemy::TakeDamage_OpponentUsingSkillWeapon()
 			}
 		}
 	}
+}
+
+void ACEnemy::BlockedByShield()
+{
+	// 블록 회전 
+	{
+		FVector start = GetActorLocation();
+		FVector target = Opponent->GetActorLocation();
+
+		FVector direction = target - start;
+		direction.Normalize();
+
+		FTransform transform;
+		transform.SetLocation(GetActorLocation());
+
+		SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
+
+		if (ActivateDamageLaunch)
+			LaunchCharacter(-direction * 500.0f, true, false);
+	}
+
+	if (BlockedDatas[0].Montage)
+		BlockedDatas[0].PlayMontage(this);
+
+	if (BlockedDatas[0].Effect)
+		BlockedDatas[0].PlayEffect(GetWorld(), this);
 }
 
 void ACEnemy::GetNormalDamageData(int32 InIndex)

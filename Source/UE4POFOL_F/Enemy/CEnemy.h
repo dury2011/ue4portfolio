@@ -25,6 +25,7 @@ DECLARE_MULTICAST_DELEGATE(FOnEnemyAttackEnded);
 DECLARE_MULTICAST_DELEGATE(FOnEnemyParkourEnded);
 DECLARE_MULTICAST_DELEGATE(FOnEnemyMontageInterrupted);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyDied);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyDiedStopAI);
 
 UCLASS()
 class UE4POFOL_F_API ACEnemy : public ACharacter, public IGenericTeamAgentInterface
@@ -44,6 +45,8 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnEnemyDied OnEnemyDied;
+
+	FOnEnemyDiedStopAI OnEnemyDiedStopAI;
 
 	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy Setting")
 	//bool CanLaucnhEnemy = false;
@@ -72,6 +75,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
 	TArray<FDamageData> NormalDamageDatas;
+
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
+	TArray<FDamageData> BlockedDatas;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
 	TArray<FDamageData> DeadDatas;
@@ -108,6 +114,8 @@ protected:
 	bool bActivateRotateToOpponent = true;
 	bool CanStrafing = false;
 	bool IsLaunching = false;
+
+	bool IsOnce_HpZeroed = true;
 	
 
 	//UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
@@ -255,6 +263,9 @@ public:
 	UFUNCTION()
 	void TakeDamage_OpponentUsingSkillWeapon();
 
+	UFUNCTION()
+	void BlockedByShield();
+
 private:
 	void DamagedByOpponentNormal_SkillAndFx(float InLaunchSpeed = 1.0f);
 	void DamagedByOpponentSkillWeaponAndFx();
@@ -296,4 +307,5 @@ public:
 	FORCEINLINE float GetDistanceToOpponent() { return DistanceToOpponent; }
 	FORCEINLINE void SetSpawnCount() { ++SpawnCount; }
 	FORCEINLINE int32 GetSpawnCount() { return SpawnCount; }
+	FORCEINLINE bool GetIsAttackByPlayer() { return IsAttackByPlayer; }
 };

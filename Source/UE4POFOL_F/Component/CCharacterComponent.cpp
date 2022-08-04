@@ -30,9 +30,13 @@ void UCCharacterComponent::BeginPlay()
 		for (int i = 0; i < (int32)EWeaponType::Max; i++)
 		{
 			if (NormalWeaponClasses[i])
+			{
 				NormalWeapon[i] = OwnerCharacter->GetWorld()->SpawnActor<ACWeapon>(NormalWeaponClasses[i], params);
+				
+				if (NormalWeapon[i])
+					NormalWeapon[i]->SetOwner(OwnerCharacter);
+			}
 		}
-
 
 		OwnerCharacter->GetWorldTimerManager().SetTimer(UpdateSpTimer, this, &UCCharacterComponent::UpdateSp, 1.0f, true, 2.0f);
 		//OwnerCharacter->GetWorldTimerManager().SetTimer(UpdateMpTimer, this, &UCCharacterComponent::UpdateMp, 1.0f, true, 1.0f);

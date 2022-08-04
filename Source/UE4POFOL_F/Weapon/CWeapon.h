@@ -83,6 +83,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Setting")
 	bool IsSkillWeapon = false;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Setting")
+	bool IsShield = false;
+
 	//class ACEnemy* Enemy;
 
 	FTimerHandle ComboCountTimer;

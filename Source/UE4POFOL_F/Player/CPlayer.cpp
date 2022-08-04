@@ -246,6 +246,8 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("Action", EInputEvent::IE_Pressed, this, &ACPlayer::OnAction);
 	PlayerInputComponent->BindAction("Aim", EInputEvent::IE_Pressed, this, &ACPlayer::OnAim);
 	PlayerInputComponent->BindAction("Aim", EInputEvent::IE_Released, this, &ACPlayer::OffAim);
+	PlayerInputComponent->BindAction("OnShield", EInputEvent::IE_Pressed, this, &ACPlayer::OnShield);
+	PlayerInputComponent->BindAction("OnShield", EInputEvent::IE_Released, this, &ACPlayer::OffShield);
 	PlayerInputComponent->BindAction("Parkour", EInputEvent::IE_Pressed, this, &ACPlayer::OnParkour);
 	PlayerInputComponent->BindAction("Parkour", EInputEvent::IE_Released, this, &ACPlayer::OffParkour);
 	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Pressed, this, &ACPlayer::OnJump);
@@ -1017,28 +1019,47 @@ void ACPlayer::OnSpellFist()
 
 void ACPlayer::OnShield()
 {
-	//SpringArmComponent->TargetArmLength = 250.0f;
-	//
-	//GLog->Log("On Shield");
+	CheckFalse(CharacterComponent->GetIsWeaponOnehandMode());
+
+	ActivateShieldEquipEffect();
+	CharacterComponent->SetCurrentWeaponType(EWeaponType::Shield);
+	
+	
+	//// Shield 장착 에님 몽타주
+	//if (ShieldDatas[0].Montage)
+	//	ShieldDatas[0].PlayMontage(this);
+
+	GLog->Log("ACPlayer::On Shield()");
 }
 
-void ACPlayer::ShieldDefencing()
+// MEMO: 지역 변수가 포인터로 들어오는데 왜 되지?
+void ACPlayer::ShieldDefencing(ACEnemy* InAttacker)
 {
-	////PlayAnimMontage(BlockAnimMontage, 0.8f);
-	//
-	//if (OnPlayerActiveBlock.IsBound())
-	//{
-	//	OnPlayerActiveBlock.Broadcast(true);
-	//	
-	//	LaunchCharacter(GetActorForwardVector() * -1000.0f, false, false);
-	//
-	//	GLog->Log("My(Player) ShieldDefencing Successed!");
-	//}
+	FVector target = InAttacker->GetActorLocation();
+
+	FVector start = GetActorLocation();
+	FVector direction = target - start;
+	direction.Normalize();
+
+	FTransform transform;
+	transform.SetLocation(GetActorLocation());
+
+	SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
+	LaunchCharacter(-direction * 500.0f, true, false);
+	
+	ActivateShieldDefenceEffect();
+
+	if (ShieldDatas[0].Montage)
+		ShieldDatas[0].PlayMontage(this);
 }
 
 void ACPlayer::OffShield()
 {
-	SpringArmComponent->TargetArmLength = 350.0f;
+	CheckFalse(CharacterComponent->GetIsWeaponShieldMode());
+
+	//SpringArmComponent->TargetArmLength = 350.0f;
+	ActivateShieldUnequipEffect();
+	CharacterComponent->SetCurrentWeaponType(EWeaponType::Onehand);
 
 	GLog->Log("Off Shield");
 }
@@ -1549,6 +1570,11 @@ void ACPlayer::SetPlayerActivateSkill(bool InBool)
 void ACPlayer::SetPlayerIsInBossStage(bool InBool)
 {
 	IsAttackingBoss = InBool;
+}
+
+bool ACPlayer::GetPlayerUsingShield()
+{
+	return CharacterComponent->GetIsWeaponShieldMode();
 }
 
 bool ACPlayer::OnActionChecker()

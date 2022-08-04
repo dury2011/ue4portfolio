@@ -52,4 +52,5 @@ public:
 	virtual void SetPlayerIsAttackByBoss(bool InBool) { };
 
 	virtual void SetPlayerIsInBossStage(bool InBool) { };
+	virtual bool GetPlayerUsingShield() { return false; }
 };

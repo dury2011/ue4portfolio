@@ -2,8 +2,6 @@
 #include "Global.h"
 //#include "Component/CWeaponComponent.h"
 #include "Weapon/CWeapon.h"
-#include "Component/CBossComponent.h"
-#include "Boss/CDataAsset_Boss.h"
 #include "Enemy/CEnemy.h"
 #include "Component/CCharacterComponent.h"
 #include "Player/CPlayer.h"
@@ -20,16 +18,9 @@ void UCAnimNotifyState_Collision::NotifyBegin(USkeletalMeshComponent * MeshComp,
 	CheckNull(MeshComp);
 	CheckNull(MeshComp->GetOwner());
 
-	UCBossComponent* bossComponent = CHelpers::GetComponent<UCBossComponent>(MeshComp->GetOwner());
 	UCCharacterComponent* characterComponent = CHelpers::GetComponent<UCCharacterComponent>(MeshComp->GetOwner());
 
-	if (bossComponent)
-	{
-		bossComponent->GetDataAsset()->GetWeapon()->OnCollision();
-
-		return;
-	}
-	else if (characterComponent)
+	if (characterComponent)
 	{
 		if(characterComponent->GetNormalWeapon(EWeaponType::Onehand))
 			characterComponent->GetNormalWeapon(EWeaponType::Onehand)->OnCollision();
@@ -56,16 +47,9 @@ void UCAnimNotifyState_Collision::NotifyEnd(USkeletalMeshComponent * MeshComp, U
 	CheckNull(MeshComp);
 	CheckNull(MeshComp->GetOwner());
 
-	UCBossComponent* bossComponent = CHelpers::GetComponent<UCBossComponent>(MeshComp->GetOwner());
 	UCCharacterComponent* characterComponent = CHelpers::GetComponent<UCCharacterComponent>(MeshComp->GetOwner());
-	
-	if (bossComponent)
-	{
-		bossComponent->GetDataAsset()->GetWeapon()->OffCollision();
 
-		return;
-	}
-	else if (characterComponent)
+	if (characterComponent)
 	{
 		if (characterComponent->GetNormalWeapon(EWeaponType::Onehand))
 			characterComponent->GetNormalWeapon(EWeaponType::Onehand)->OffCollision();

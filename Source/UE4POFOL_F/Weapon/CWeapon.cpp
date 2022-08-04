@@ -9,6 +9,8 @@
 #include "Enemy/CEnemy.h"
 #include "GenericTeamAgentInterface.h"
 #include "Component/CCharacterComponent.h"
+#include "Interface/CInterface_PlayerState.h"
+#include "Player/CPlayer.h"
 
 ACWeapon::ACWeapon()
 {
@@ -121,6 +123,29 @@ void ACWeapon::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	CheckTrue(OwnerCharacter->GetClass() == OtherActor->GetClass());
 	CheckTrue(IsOverlapped);
 
+	// Shield시 BeginOverlap의 주체는 Enemy임
+	if (!IsShield)
+	{
+		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(OtherActor);
+
+		if (playerInterface && playerInterface->GetPlayerUsingShield())
+		{
+			ACEnemy* enemy = Cast<ACEnemy>(OwnerCharacter);
+
+			if (enemy && enemy->GetIsAttackByPlayer())
+			{
+				enemy->BlockedByShield();
+
+				ACPlayer* player = Cast<ACPlayer>(OtherActor);
+
+				if (player)
+					player->ShieldDefencing(enemy);
+				
+				return;
+			}
+		}
+	}
+
 	if (IsSkillWeapon)
 	{
 		if (OtherActor)
@@ -131,9 +156,9 @@ void ACWeapon::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 			{
 				enemy->SetIsAttackBySkillWeapon(true);
 				enemy->TakeDamage_OpponentUsingSkillWeapon();
+				
+				return;
 			}
-
-			return;
 		}
 	}
 	
@@ -293,11 +318,15 @@ void ACWeapon::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 }
 
 void ACWeapon::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
-{
+{	
 	CheckNull(HitComponent);
 	CheckNull(OtherActor);
 	CheckNull(OtherComp);
-	
+	CheckTrue(OwnerCharacter == OtherActor);
+	CheckTrue(OwnerCharacter->GetCapsuleComponent() == HitComponent);
+
+
+
 	//DestroyWeapon();
 
 	//if (OnWeaponHit.IsBound())
