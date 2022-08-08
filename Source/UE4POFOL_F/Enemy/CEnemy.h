@@ -67,6 +67,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
 	float RotationSpeed = 3.0f;
 
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Enemy Setting")
+	bool InMission2 = false;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
 	TArray<FActionData> ActionDatas;
 

@@ -13,7 +13,7 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "Enemy/CEnemy.h"
 #include "Component/CCharacterComponent.h"
-
+#include "Player/CCannon.h"
 
 ACAIController::ACAIController()
 {
@@ -41,29 +41,17 @@ void ACAIController::BeginPlay()
 	Super::BeginPlay();
 
 	//Perception->OnPerceptionUpdated.AddDynamic(this, &ACAIController::OnPerceptionUpdated);
+
 }
 
 void ACAIController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
-
-
 	if (Enemy)
 	{
-		//if (Enemy->GetOpponent())
-		//	Blackboard->SetValueAsObject("Player", Enemy->GetOpponent());
-	
 		Blackboard->SetValueAsEnum("State", (uint8)Enemy->GetCurrentEnemyStateType());
 		Blackboard->SetValueAsObject("Player", Enemy->GetOpponent());
-
-		//if (Enemy->GetCurrentEnemyStateType() == EEnemyStateType::Dead)
-		//{
-		//	BrainComponent->StopLogic(FString("Enemy Died"));
-		//	SetActorTickEnabled(false);
-
-		//	return;
-		//}
 
 		if (Enemy->GetOpponent())
 		{

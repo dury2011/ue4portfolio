@@ -1,12 +1,10 @@
-/* MEMO: CBullet.h 코드 배치 정리 완료 */
+/* MEMO: CBullet.h 코드 배치 정리 완료 22.08 */
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Weapon/CWeaponStructure.h"
 #include "CProjectile.generated.h"
-
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_FiveParams(FProjectileHit, UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 UCLASS()
 class UE4POFOL_F_API ACProjectile : public AActor
@@ -18,12 +16,6 @@ class UE4POFOL_F_API ACProjectile : public AActor
 
 	//UPROPERTY(BlueprintAssignable)
 	//FProjectileHit OnProjectileHit;
-
-private:
-	UPROPERTY(VisibleDefaultsOnly)
-	class UStaticMeshComponent* Mesh;
-
-	//int32 Homing_HitCount = 0;
 
 public:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly)
@@ -38,18 +30,28 @@ public:
 	//UPROPERTY(BlueprintReadWrite)
 	//bool bHitted = false;
 
-public:
+private:
+	UPROPERTY(VisibleDefaultsOnly)
+	class UStaticMeshComponent* Mesh;
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon Setting")
+	int32 AttackDamage = 100;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon Setting")
+	int32 AttackDamageDeviation = 50;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon Setting")
+	bool IsCannonRangedProjectile = false;
+
 	//UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Setting")
 	//bool IsHoming = false;
 
+	//int32 Homing_HitCount = 0;
 
 public:
 	ACProjectile();
 
-protected:
-	virtual void BeginPlay() override;
-
-public:
 	static ACProjectile* SpawnProjectile(ACharacter* InSpawner, TSubclassOf<class ACProjectile> InProjectileClass, FName InSpawnSocketName);
 	static ACProjectile* SpawnProjectile(ACharacter* InSpawner, TSubclassOf<class ACProjectile> InProjectileClass, FVector InSpawnLocation);
 
@@ -64,5 +66,9 @@ private:
 
 	UFUNCTION()
 	void BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+protected:
+	virtual void BeginPlay() override;
+
 
 };

@@ -76,6 +76,30 @@ void ACEnemy_Rifle::GetMoveToLocation(FVector& OutLocation)
 		OutLocation = TriggerVolumeSpanwer->GetActorLocation();
 }
 
+void ACEnemy_Rifle::TakeDamageAction_CannonRangedProjectile(float InDamage)
+{
+	Hp -= InDamage;
+
+	// Enemy Projectile 피격시 회전과 넉백 설정
+	{
+		FVector start = GetActorLocation();
+		FVector target = GetOpponent()->GetActorLocation();
+
+		FVector direction = target - start;
+		direction.Normalize();
+
+		FTransform transform;
+		transform.SetLocation(GetActorLocation());
+
+		SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
+
+		if (ActivateDamageLaunch)
+			LaunchCharacter(-direction * 2000.0f, true, false);
+
+		// 몽타주
+	}
+}
+
 void ACEnemy_Rifle::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	Super::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);

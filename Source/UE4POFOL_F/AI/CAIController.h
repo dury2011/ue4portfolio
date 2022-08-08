@@ -20,6 +20,10 @@ class UE4POFOL_F_API ACAIController : public AAIController
 	//class UBlackboardData* Blackboard;
 //private:
 	//FTimerHandle Timer;
+public:
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "AIController Setting")
+	class UBehaviorTree* BehaviorTree;
+
 private:	
 	UPROPERTY()
 	class ACPlayer* Player;
@@ -27,11 +31,14 @@ private:
 	UPROPERTY()
 	class ACEnemy* Enemy;
 
+	UPROPERTY()
+	class ACCannon* Cannon;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "AIController Setting")
+	bool InMission2 = false;
+
 	bool IsSkillActivate = false;
 
-public:
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "AIController Setting")
-	class UBehaviorTree* BehaviorTree;
 
 public:
 	ACAIController();

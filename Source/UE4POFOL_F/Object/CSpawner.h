@@ -13,6 +13,9 @@ class UE4POFOL_F_API ACSpawner : public AActor
 public:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly)
 	class UStaticMeshComponent* StaticMeshSphere;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Spawner Setting")
+	class UWidgetComponent* HealthBarWidgetComponent;
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Spawner Setting")
 	float Hp = 15000.0f;
@@ -35,8 +38,8 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Spawner Setting")
 	TSubclassOf<class ACEnemy> EnemySpecialClass;
 	
-	UPROPERTY(VisibleDefaultsOnly)
-	class UStaticMeshComponent* StaticMeshSpawner;
+	//UPROPERTY(VisibleDefaultsOnly)
+	//class UStaticMeshComponent* StaticMeshSpawner;
 
 	UPROPERTY(VisibleDefaultsOnly)
 	class UCapsuleComponent* CapsuleCollision;
@@ -46,15 +49,30 @@ private:
 	
 	int32 SpawnedEnemy = 0;
 
+	FTimerHandle HealthBarTimer;
 	FTimerHandle SpawnerTimer;
 
 	FHitResult HitResult;
+
+	TMap<UUserWidget*, FVector> HitNumbers;
 
 public:
 	ACSpawner();
 
 protected:
 	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable)
+	void StoreHitNumber(UUserWidget* InHitNumber, FVector InLocation);
+
+	UFUNCTION()
+	void UpdateHitNumbers();
+
+	UFUNCTION()
+	void DestroyHitNumber(UUserWidget* InHitNumber);
+
+	void ShowHealthBar();
+	void HideHealthBar();
 
 public:
 	virtual void Tick(float DeltaTime) override;
@@ -81,4 +99,7 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "CSpawner")
 	void EnemySpawnParticleEffect();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowHitNumber(int32 InDamage, FVector InHitLocation);
 };

@@ -1,4 +1,4 @@
-/* MEMO: CBullet.cpp 코드 배치 정리 완료 */
+/* MEMO: CBullet.cpp 코드 배치 정리 완료 22.08 */
 #include "Weapon/CProjectile.h"
 #include "Global.h"
 #include "Components/StaticMeshComponent.h"
@@ -10,21 +10,15 @@
 #include "Camera/CameraComponent.h"
 #include "Player/CPlayer.h"
 #include "Component/CWidgetComponent.h"
+#include "Enemy/CEnemy_Rifle.h"
 
+// public: //////////////////////////////////////////////////////////////////////
 ACProjectile::ACProjectile()
 {
 	Sphere = CreateDefaultSubobject<USphereComponent>("Sphere");
 	RootComponent = Sphere;
 	CHelpers::CreateComponent(this, &Mesh, "Mesh", Sphere);
 	CHelpers::CreateActorComponent(this, &ProjectileComponent, "Projectile");
-}
-
-void ACProjectile::BeginPlay()
-{
-	Super::BeginPlay();
-
-	Sphere->OnComponentHit.AddDynamic(this, &ACProjectile::Hit);
-	Sphere->OnComponentBeginOverlap.AddDynamic(this, &ACProjectile::BeginOverlap);
 }
 
 ACProjectile* ACProjectile::SpawnProjectile(ACharacter* InSpawner, TSubclassOf<class ACProjectile> InProjectileClass, FName InSpawnSocketName)
@@ -94,49 +88,9 @@ ACProjectile* ACProjectile::SpawnProjectile(ACharacter* InSpawner, TSubclassOf<c
 		);
 }
 
-
 void ACProjectile::ShootProjectile(const FVector& InDirection)
 {
 	ProjectileComponent->Velocity = InDirection * ProjectileComponent->InitialSpeed;
-}
-
-void ACProjectile::Hit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
-{
-	CheckTrue(OtherActor == GetOwner());
-
-	if (OtherActor->ActorHasTag("Enemy") == GetOwner()->ActorHasTag("Enemy"))
-		return;
-
-	float applyDamage = UKismetMathLibrary::RandomIntegerInRange(100.0f, 150.0f);
-
-	UGameplayStatics::ApplyDamage(OtherActor, 100.0f, GetOwner()->GetInstigatorController(), this, NULL);
-	
-	GLog->Log("ACProjectile::Hit()");
-
-	//DestroyProjectile();
-}
-
-void ACProjectile::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	CheckTrue(OtherActor == GetOwner());
-
-	//if (IsHoming)
-	//{
-	//	if(Homing_HitCount)
-
-	//}
-
-	if (OtherActor->ActorHasTag("Enemy") == GetOwner()->ActorHasTag("Enemy"))
-		return;
-
-	float applyDamage = UKismetMathLibrary::RandomIntegerInRange(100.0f, 150.0f);
-
-	UGameplayStatics::ApplyDamage(OtherActor, applyDamage, GetOwner()->GetInstigatorController(), this, NULL);
-
-	GLog->Log("ACProjectile::BeginOverlap()");
-
-	
-	//DestroyProjectile();
 }
 
 void ACProjectile::DestroyProjectile()
@@ -144,4 +98,55 @@ void ACProjectile::DestroyProjectile()
 	Destroy();
 }
 
+// private: //////////////////////////////////////////////////////////////////////
+void ACProjectile::Hit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	// MEMO: Hit 사용 안함
+	//CheckTrue(OtherActor == GetOwner());
+	//
+	//if (OtherActor->ActorHasTag("Enemy") == GetOwner()->ActorHasTag("Enemy"))
+	//	return;
+	//
+	//float applyDamage = UKismetMathLibrary::RandomIntegerInRange(100.0f, 150.0f);
+	//
+	//UGameplayStatics::ApplyDamage(OtherActor, 100.0f, GetOwner()->GetInstigatorController(), this, NULL);
+	//
+	//GLog->Log("ACProjectile::Hit()");
+	//
+	////DestroyProjectile();
+}
 
+void ACProjectile::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	GLog->Log("ACProjectile::BeginOverlap()");
+	CheckTrue(OtherActor == GetOwner());
+
+	float applyDamage = AttackDamage + UKismetMathLibrary::RandomIntegerInRange(0, AttackDamageDeviation);
+	
+	if (IsCannonRangedProjectile && OtherActor->ActorHasTag("Enemy"))
+	{
+		ACEnemy_Rifle* enemyRifle = Cast<ACEnemy_Rifle>(OtherActor);
+
+		if (enemyRifle)
+			enemyRifle->TakeDamageAction_CannonRangedProjectile(applyDamage);
+
+		return;
+	}
+
+	if (OtherActor->ActorHasTag("Enemy") && GetOwner()->ActorHasTag("Player"))
+	{
+
+		UGameplayStatics::ApplyDamage(OtherActor, applyDamage, GetOwner()->GetInstigatorController(), this, NULL);
+
+		GLog->Log("ACProjectile::BeginOverlap()");
+	}
+}
+
+// protected: //////////////////////////////////////////////////////////////////////
+void ACProjectile::BeginPlay()
+{
+	Super::BeginPlay();
+
+	Sphere->OnComponentHit.AddDynamic(this, &ACProjectile::Hit);
+	Sphere->OnComponentBeginOverlap.AddDynamic(this, &ACProjectile::BeginOverlap);
+}

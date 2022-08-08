@@ -18,26 +18,6 @@ class UE4POFOL_F_API ACCannon : public ACharacter
 {
 	GENERATED_BODY()
 
-private:
-	//UPROPERTY(EditDefaultsOnly, Category = "Setting Cannon")
-	//FActionData FireData;
-
-	UPROPERTY()
-	class ACTriggerVolume_Cannon* TriggerVolume;
-
-	UPROPERTY()
-	class ACPlayer* Player;
-
-	UPROPERTY()
-	class AController* PlayerController;
-	
-	ECannonStateType CurrentCannonType = ECannonStateType::Max;
-	ECannonStateType PreviousCannonType = ECannonStateType::Max;
-
-	float Yaw;
-	float Pitch;
-	float Roll;
-
 public:
 	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
 	class UCWidgetComponent* WidgetComponent;
@@ -54,45 +34,102 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	TArray<class UCapsuleComponent*> CapsuleCollisions;
 
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Setting Cannon")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Cannon Setting")
 	TSubclassOf<class ACProjectile> CannonProjectileClass;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Cannon Setting")
+	TSubclassOf<class ACProjectile> CannonProjectileRangedClass;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Cannon Setting")
+	TSubclassOf<class ACProjectile> HomingProjectileClass;
 
 	UPROPERTY(BlueprintReadOnly)
 	class ACProjectile* CannonProjectile;
 
 	UPROPERTY(BlueprintAssignable)
 	FOnCannonStateTypeChange OnCannonStateTypeChange;
-	
-public:
-	ACCannon();
 
-protected:
-	virtual void BeginPlay() override;
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon Setting")
+	float CriticalFireInterval = 0.2f;
 
-public:	
-	virtual void Tick(float DeltaTime) override;
-
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	void SpawnCannonProjectile();
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void Fire();
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void ActivateCannonUtil();
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void DeactivateCannonUtil();
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon Setting")
+	float CriticalHomingProjFireInterval = 1.5f;
 
 private:
-	UFUNCTION()
-	void PossessCannon(class AActor* InOverlappedTriggerVolume, class AActor* InOtherActor);
-	void UnpossessCannon();
-	void OnFire();
+	//UPROPERTY(EditDefaultsOnly, Category = "Setting Cannon")
+	//FActionData FireData;
+
+	UPROPERTY()
+	class ACTriggerVolume_Cannon* TriggerVolume;
+
+	UPROPERTY()
+	class ACPlayer* Player;
+
+	UPROPERTY()
+	class AController* PlayerController;
+
+	UPROPERTY()
+	ACProjectile* RangedProjectile;
+	
+	ECannonStateType CurrentCannonType = ECannonStateType::Max;
+	ECannonStateType PreviousCannonType = ECannonStateType::Max;
+
+	float Yaw;
+	float Pitch;
+	float Roll;
+
+	int32 RangedAvailCounter = 0;
+	int32 CriticalAvailCounter = 0;
+	FTimerHandle FireTimer;
+	FTimerHandle HomingTimer;
+	FTimerHandle RangedTimer;
+	FTimerHandle CriticalFinishTimer;
+	bool CanOnCriticalFire = false;
+	bool ClickedOnFire = false;
+
+
+protected:
+
+
+public:
+	ACCannon();
+	virtual void Tick(float DeltaTime) override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	void OnFireNormalProjectile();
+	
+	UFUNCTION(BlueprintImplementableEvent)
+	void ActivateNormalFireEffect();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ActivateFireCriticalEffect();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ActivatePossessCannonEffect();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void DeactivatePossessCannonEffect();
+
+private:
 	void OnVerticalLook(float AxisValue);
 	void OnHorizontalLook(float AxisValue);
-
+	
+	void OnFire();
+	void OffFire();
+	
+	void FunctionBindForTimer_OnFireNormal();
+	void SetCanCriticalFireTrue();
+	void OnFireHomingProjectile();
+	void SpawnRangedProjectile();
+	void ShootRangedProjectile();
+	void CannonStateTypeChange(ECannonStateType InType);
+	void RangedAvailChecker();
+	void CriticalAvailChecker();
+	
+	UFUNCTION()
+	void PossessCannon(class AActor* InOverlappedTriggerVolume, class AActor* InOtherActor);
+	
+	void UnpossessCannon();
+	
 	UFUNCTION()
 	void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 
@@ -102,5 +139,13 @@ private:
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 	
-	void CannonStateTypeChange(ECannonStateType InType);
+protected:
+	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ActivateCannonRangedAttackReadyEffect();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ActivateCannonRangedAttackFireEffect();
+
 };

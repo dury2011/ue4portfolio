@@ -14,5 +14,5 @@ void UCAnimNotify_CannonProjectile::Notify(USkeletalMeshComponent* MeshComp, UAn
 	ACCannon* cannon = Cast<ACCannon>(MeshComp->GetOwner());
 
 	if (cannon)
-		cannon->SpawnCannonProjectile();
+		cannon->OnFireNormalProjectile();
 }

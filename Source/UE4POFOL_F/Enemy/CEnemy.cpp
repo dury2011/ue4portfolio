@@ -21,6 +21,7 @@
 #include "Weapon/CWeapon.h"
 #include "GameplayTagContainer.h"
 #include "Components/SphereComponent.h"
+#include "Player/CCannon.h"
 
 int32 ACEnemy::SpawnCount = 0;
 
@@ -75,18 +76,32 @@ void ACEnemy::BeginPlay()
 
 	// 상대방(Player) 설정
 	{
-		TArray<AActor*> outActorArr;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), outActorArr);
+		if (!InMission2)
+		{
+			TArray<AActor*> outActorArr;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), outActorArr);
 
-		for (int i = 0; i < outActorArr.Num(); i++)
-			Opponent = dynamic_cast<ACPlayer*>(outActorArr[i]);
+			for (int i = 0; i < outActorArr.Num(); i++)
+				Opponent = dynamic_cast<ACPlayer*>(outActorArr[i]);
+		}
+		else if (InMission2)
+		{
+			TArray<AActor*> outActorArr;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACCannon::StaticClass(), outActorArr);
+
+			for (int i = 0; i < outActorArr.Num(); i++)
+				Opponent = dynamic_cast<ACharacter*>(outActorArr[i]);
+		}
 	}
 
 	// 상대방 스킬 공격에 대한 피격 관련 함수 바인딩
 	if (Opponent)
 	{
-		Cast<ACPlayer>(Opponent)->OnPlayerNormalAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentNormalAttack);
-		Cast<ACPlayer>(Opponent)->OnPlayerSkillAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentUsingSkill);
+		if (!InMission2)
+		{
+			Cast<ACPlayer>(Opponent)->OnPlayerSkillAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentUsingSkill);
+			Cast<ACPlayer>(Opponent)->OnPlayerNormalAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentNormalAttack);
+		}
 	}
 
 	// HealthBar 위젯 Hidden 설정

@@ -8,6 +8,7 @@
 #include "Components/BrushComponent.h"
 #include "GameFramework/Character.h"
 #include "Player/CPlayer.h"
+#include "Components/WidgetComponent.h"
 
 ACSpawner::ACSpawner()
 {
@@ -15,10 +16,14 @@ ACSpawner::ACSpawner()
 
 	CapsuleCollision = CreateDefaultSubobject<UCapsuleComponent>("CapsuleCollision");
 	RootComponent = CapsuleCollision;
-	StaticMeshSpawner = CreateDefaultSubobject<UStaticMeshComponent>("StaticMeshSpanwer");
+	//StaticMeshSpawner = CreateDefaultSubobject<UStaticMeshComponent>("StaticMeshSpanwer");
 	StaticMeshSphere = CreateDefaultSubobject<UStaticMeshComponent>("StaticMeshSphere");
-	StaticMeshSpawner->SetupAttachment(CapsuleCollision);
 	StaticMeshSphere->SetupAttachment(CapsuleCollision);
+	HealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>("Health Bar Widget");
+	HealthBarWidgetComponent->SetupAttachment(CapsuleCollision);
+
+	//if (HealthBarWidgetComponent)
+		//HealthBarWidgetComponent->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
 	
 	CapsuleCollision->OnComponentBeginOverlap.AddDynamic(this, &ACSpawner::OnBeginOverlap);
 	CapsuleCollision->OnComponentEndOverlap.AddDynamic(this, &ACSpawner::OnEndOverlap);
@@ -59,16 +64,23 @@ void ACSpawner::Tick(float DeltaTime)
 	//if (Hp <= 5000.0)
 	//	GetWorldTimerManager().UnPauseTimer(SpawnerTimer);
 
+	UpdateHitNumbers();
 	CreateLineTrace();
 }
 
 float ACSpawner::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
-{
+{	
+	if (SpawnedEnemy < 30)
+		return 0.0f;
+
 	Damaged.DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser); // damage float
 	//Damaged.DamageEvent = (FActionDamageEvent*)&DamageEvent;  // Hit 에니메이션 몽타주
 	Damaged.EventInstigator = EventInstigator;
 	Damaged.DamageCauser = DamageCauser; 
 	Damaged.DamageAmount = DamageAmount;
+
+	ShowHitNumber(Damaged.DamageAmount, GetActorLocation());
+	ShowHealthBar();
 
 	if (Damaged.EventInstigator == GetWorld()->GetFirstPlayerController())
 		Hp -= Damaged.DamageAmount / 10.0f;
@@ -153,9 +165,7 @@ void ACSpawner::SpawnEnemy()
 
 	//if (EnemyNormalClass && EnemySpecialClass)
 	//{
-		if (SpawnedEnemy >= 10)
-			return;
-		
+
 		FActorSpawnParameters params;
 		params.Owner = this;
 		params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
@@ -198,4 +208,47 @@ void ACSpawner::DestroySpawner()
 	GetWorldTimerManager().ClearTimer(SpawnerTimer);
 	
 	Destroy();
+}
+
+void ACSpawner::StoreHitNumber(UUserWidget* InHitNumber, FVector InLocation)
+{
+	HitNumbers.Add(InHitNumber, InLocation);
+
+	FTimerHandle HitNumberTimer;
+	FTimerDelegate HitNumberDelegate;
+	HitNumberDelegate.BindUFunction(this, FName("DestroyHitNumber"), InHitNumber);
+	GetWorld()->GetTimerManager().SetTimer(HitNumberTimer, HitNumberDelegate, 1.0f, false);
+}
+
+void ACSpawner::UpdateHitNumbers()
+{
+	for (auto& HitPair : HitNumbers)
+	{
+		UUserWidget* HitNumber{ HitPair.Key };
+		const FVector Location{ HitPair.Value };
+		FVector2D ScreenPosition;
+		UGameplayStatics::ProjectWorldToScreen(GetWorld()->GetFirstPlayerController(), Location, ScreenPosition);
+		HitNumber->SetPositionInViewport(ScreenPosition);
+	}
+}
+
+void ACSpawner::DestroyHitNumber(UUserWidget* InHitNumber)
+{
+	HitNumbers.Remove(InHitNumber);
+	InHitNumber->RemoveFromParent(); // 뷰포트에서 위젯을 지워줄 것이다.
+}
+
+void ACSpawner::ShowHealthBar()
+{
+	GetWorldTimerManager().ClearTimer(HealthBarTimer);
+	GetWorldTimerManager().SetTimer(HealthBarTimer, this, &ACSpawner::HideHealthBar, 1.5f);
+
+	if (HealthBarWidgetComponent)
+		HealthBarWidgetComponent->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Visible);
+}
+
+void ACSpawner::HideHealthBar()
+{
+	if (HealthBarWidgetComponent)
+		HealthBarWidgetComponent->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
 }
