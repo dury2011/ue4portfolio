@@ -133,3 +133,12 @@ void UCCharacterComponent::UpdateMp()
 		Mp = MaxMp;
 }
 
+void UCCharacterComponent::SetMaxHp(float InMaxHp)
+{
+	MaxHp = InMaxHp;
+}
+
+void UCCharacterComponent::SetMaxMp(float InMaxMp)
+{
+	MaxMp = InMaxMp;
+}

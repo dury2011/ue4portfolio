@@ -282,21 +282,79 @@ public:
 	ACPlayer();
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)override;
+	
+	UFUNCTION()
+	void TakeDamage_AttackByBoss(EBossAttackType InType);
+
 	void EnableBind();
-	void Notify_ParkourRotation();
-	void Notify_OnParkourFinish();
+
 	void Notify_BeginNextAction();
 	void Notify_EndThisAction();
-	void Notify_OnSkillAttack();
+
 	void Notify_OnNormalAttack();
-	//void Notify_OnSkillWeaponAttack();
+	void Notify_OnSkillAttack();
 	void Notify_OnSkillLaunch();
 	void Notify_OnSpellFistAttack();
+
+	void Notify_ParkourRotation();
+	void Notify_OnParkourFinish();
+
+	void Notify_SetCurrentPlayerNormalAttackType(EPlayerNormalAttackType InType);
+	void Notify_SetCurrentPlayerSkillType(EPlayerSkillType InType);
+	void Notify_SetCurrentPlayerSpellFistType(EPlayerSpellFistType InType);
+
 	void SpawnWarriorSkillOneProjectile();
 	void SpawnSpellMeteorWeapon();
-	void SpawnGhostTrail();
-	void SetPlayerPortalLocation();
+	//void SpawnGhostTrail();
+	
 	void ShieldDefencing(ACEnemy* InAttacker);
+	
+	void SetPlayerPortalLocation();
+
+	UFUNCTION()
+	void MontageEnded(UAnimMontage* InMontage, bool Ininterrupted);
+
+	UFUNCTION()
+	void OnCollision();
+
+	UFUNCTION()
+	void OffCollision();
+
+	UFUNCTION()
+	void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void OnAttackBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnAttackBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void OnSphereSpellFistBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnSphereSpellFistEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	// ICInterface_PlayerState에서 override
+	virtual float CurrentHp() override;
+	virtual float CurrentMp() override;
+	virtual float CurrentSp() override;
+	virtual float MaxHp() override;
+	virtual float MaxMp() override;
+	virtual float MaxSp() override;
+	virtual EPlayerNormalAttackType GetCurrentPlayerNormalAttackType() override;
+	virtual EPlayerSkillType GetCurrentPlayerSkillType() override;
+	virtual EPlayerSpellFistType GetCurrentPlayerSpellFistType() override;
+	virtual bool GetPlayerIsAttackByBoss() override;
+	virtual void SetPlayerIsAttackByBoss(bool InBool) override;
+	virtual void SetPlayerIsInBossStage(bool InBool) override;
+	virtual bool GetPlayerUsingShield() override;
+	virtual bool GetPlayerActivateSkill() override;
+	virtual void SetPlayerActivateSkill(bool InBool) override;
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ActivateCoolTimeSkillOne();
@@ -343,72 +401,6 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void ActivateShieldDefenceEffect();
 
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
-
-	UFUNCTION()
-	void TakeDamage_AttackByBoss(EBossAttackType InType);
-
-	UFUNCTION()
-	void OnCollision();
-
-	UFUNCTION()
-	void OffCollision();
-
-	UFUNCTION()
-	void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-	void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-	UFUNCTION()
-	void OnAttackBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-	void OnAttackBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-	//UFUNCTION()
-	//void OnBoxSkill3BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-	//
-	//UFUNCTION()
-	//void OnBoxSkill3EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-	//
-	UFUNCTION()
-	void OnSphereSpellFistBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-	void OnSphereSpellFistEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-	UFUNCTION()
-	void MontageEnded(UAnimMontage* InMontage, bool Ininterrupted);
-
-	virtual FGenericTeamId GetGenericTeamId() const override { return FGenericTeamId(TeamId); }
-	void PlayerLog_Debug();
-
-	// ICInterface_PlayerState에서 override
-	virtual float CurrentHp() override;
-	virtual float CurrentMp() override;
-	virtual float CurrentSp() override;
-
-	virtual float MaxHp() override;
-	virtual float MaxMp() override;
-	virtual float MaxSp() override;
-	virtual EPlayerNormalAttackType GetCurrentPlayerNormalAttackType() override;
-	virtual EPlayerSkillType GetCurrentPlayerSkillType() override;
-	virtual EPlayerSpellFistType GetCurrentPlayerSpellFistType() override;
-	virtual bool GetPlayerIsAttackByBoss() override;
-	virtual void SetPlayerIsAttackByBoss(bool InBool) override;
-	virtual void SetPlayerIsInBossStage(bool InBool) override;
-	virtual bool GetPlayerUsingShield() override;
-
-	// Notify 관련
-	void Notify_SetCurrentPlayerNormalAttackType(EPlayerNormalAttackType InType);
-	void Notify_SetCurrentPlayerSkillType(EPlayerSkillType InType);
-	void Notify_SetCurrentPlayerSpellFistType(EPlayerSpellFistType InType);
-
-	// Enemy의 AIController에서 Player의 Skill 사용 여부에 따른 BT 실행 판단을 위한 함수
-	virtual bool GetPlayerActivateSkill() override;
-	virtual void SetPlayerActivateSkill(bool InBool) override;
-
 	FORCEINLINE bool GetbAiming() { return bAiming; }
 	FORCEINLINE bool GetbAttacking() { return bAttacking; }
 	FORCEINLINE void Notify_SetbCanCombo(bool Inbool) { bCanCombo = Inbool; }
@@ -418,40 +410,37 @@ public:
 	FORCEINLINE void SetIsSpellTravel(bool InBool) { IsSpellTravel = InBool; }
 	FORCEINLINE bool GetIsParkouring() { return bParkouring; };
 	FORCEINLINE ACWeapon* GetSpellFistWeapon() { return SpellFistWeapon; }
+	virtual FGenericTeamId GetGenericTeamId() const override { return FGenericTeamId(TeamId); }
 
 
 private:
-	void GetDamageData(int32 InIndex);
 	void OnMoveForward(float AxisValue);
 	void OnMoveRight(float AxisValue);
 	void OnVerticalLook(float AxisValue);
 	void OnHorizontalLook(float AxisValue);
 	void OnZoom(float AxisValue);
 	void InZooming(float Infloat);
-	void OnJump();
-	void OffJump();
 	void OnAim();
 	void OffAim();
 	void OnRun();
 	void OffRun();
-	void OnSpellTravel();
+	void OnJump();
+	void OffJump();
 	void OnParkour();
 	void OffParkour();
+	void OnOnehand();
+	void OnSpell();
+	void OnSpellTravel();
+	void OnSpellFist();
+	void OnShield();
+	void OffShield();
 	void OnAction();
 	void OnSkillOne();
 	void OffSkillOne();
 	void OnSkillTwo();
 	void OnSkillThree();
 	void OnCritical();
-	void OnOnehand();
-	void OnSpell();
-	void OnSpellFist();
-	void OnShield();
-	void OffShield();
-	void OnControllerRotationYaw_Debug();
-	FVector CalculateMeshSocketToVectorLocation(FName InSocketName, FVector InDirectionTo);
 	void ShakeCamera();
-
 	bool OnActionChecker();
 
 	UFUNCTION(BlueprintCallable)
@@ -462,6 +451,12 @@ private:
 
 	UFUNCTION(BlueprintCallable)
 	void OnSkill3Checker(bool CanUseSkill);
+
+	void GetDamageData(int32 InIndex);
+	FVector CalculateMeshSocketToVectorLocation(FName InSocketName, FVector InDirectionTo);
+	
+	void Debug_PlayerLog();
+	void Debug_OnControllerRotationYaw();
 
 protected:
 	virtual void BeginPlay() override;

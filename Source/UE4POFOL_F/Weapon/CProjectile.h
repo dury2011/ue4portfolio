@@ -22,6 +22,9 @@ public:
 	class USphereComponent* Sphere;
 	
 	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
+	class UStaticMeshComponent* Mesh;
+	
+	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
 	class UProjectileMovementComponent* ProjectileComponent;
 
 	//UPROPERTY(BlueprintReadWrite)
@@ -31,17 +34,15 @@ public:
 	//bool bHitted = false;
 
 private:
-	UPROPERTY(VisibleDefaultsOnly)
-	class UStaticMeshComponent* Mesh;
 
 protected:
-	UPROPERTY(EditDefaultsOnly, Category = "Cannon Setting")
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile Setting")
 	int32 AttackDamage = 100;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Cannon Setting")
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile Setting")
 	int32 AttackDamageDeviation = 50;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Cannon Setting")
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile Setting")
 	bool IsCannonRangedProjectile = false;
 
 	//UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Setting")

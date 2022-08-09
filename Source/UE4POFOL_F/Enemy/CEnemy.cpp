@@ -25,6 +25,7 @@
 
 int32 ACEnemy::SpawnCount = 0;
 
+// public: //////////////////////////////////////////////////////////////////////
 ACEnemy::ACEnemy()
 	:HealthBarDisplayTime(2.f)
 {
@@ -38,87 +39,6 @@ ACEnemy::ACEnemy()
 	HealthBarWidgetComponent->SetupAttachment(GetMesh());
 	HealthBarWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	HealthBarWidgetComponent->SetDrawSize(FVector2D(125.0f, 15.0f));
-}
-
-void ACEnemy::BeginPlay()
-{
-	Super::BeginPlay(); 
-
-	// 각종 바인딩
-	{
-		GetComponents<UCapsuleComponent>(CapsuleCollisions);
-
-		for (UShapeComponent* collision : CapsuleCollisions)
-		{
-			collision->OnComponentBeginOverlap.AddDynamic(this, &ACEnemy::OnBeginOverlap);
-			collision->OnComponentEndOverlap.AddDynamic(this, &ACEnemy::OnEndOverlap);
-			collision->OnComponentHit.AddDynamic(this, &ACEnemy::OnHit);
-		}
-	
-		if (GetMesh()->GetAnimInstance())
-			GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACEnemy::OnMontageEnded);
-	}
-
-	// 무기 스폰, 무기 오너 설정
-	{
-		FActorSpawnParameters params;
-		params.Owner = this;
-
-		for (int i = 0; i < WeaponClass.Num(); i++)
-		{
-			if (WeaponClass[i])
-				Weapons.Add(GetWorld()->SpawnActor<ACWeapon>(WeaponClass[i], params));
-
-			if (Weapons[i])
-				Weapons[i]->SetOwner(this);
-		}
-	}
-
-	// 상대방(Player) 설정
-	{
-		if (!InMission2)
-		{
-			TArray<AActor*> outActorArr;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), outActorArr);
-
-			for (int i = 0; i < outActorArr.Num(); i++)
-				Opponent = dynamic_cast<ACPlayer*>(outActorArr[i]);
-		}
-		else if (InMission2)
-		{
-			TArray<AActor*> outActorArr;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACCannon::StaticClass(), outActorArr);
-
-			for (int i = 0; i < outActorArr.Num(); i++)
-				Opponent = dynamic_cast<ACharacter*>(outActorArr[i]);
-		}
-	}
-
-	// 상대방 스킬 공격에 대한 피격 관련 함수 바인딩
-	if (Opponent)
-	{
-		if (!InMission2)
-		{
-			Cast<ACPlayer>(Opponent)->OnPlayerSkillAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentUsingSkill);
-			Cast<ACPlayer>(Opponent)->OnPlayerNormalAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentNormalAttack);
-		}
-	}
-
-	// HealthBar 위젯 Hidden 설정
-	{
-		if (HealthBarWidgetComponent)
-			HealthBarWidgetComponent->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
-	}
-
-	// 열거체 설정
-	{
-		SetCurrentEnemyStateType(EEnemyStateType::IdleOrJustMoving);
-	}
-
-	//// 타이머 설정
-	//{
-	//	GetWorldTimerManager().SetTimer(StrafeTimer, this, &ACEnemy::ChangeStrafing, ChangeStrafingTypeInterval, true);
-	//}
 }
 
 void ACEnemy::Tick(float DeltaTime)
@@ -273,7 +193,7 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 
 		SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
 		
-		if(ActivateDamageLaunch)
+		//if(ActivateDamageLaunch)
 			LaunchCharacter(-direction * 1000.0f, true, false);
 	}
 	
@@ -308,6 +228,178 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 	}
 	
 	return Damaged.DamageAmount;
+}
+
+void ACEnemy::OnAttack()
+{
+	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
+
+	//for (int i = 0; i < ActionDatas.Num(); i++)
+	//	CheckFalse(ActionDatas[i].Montage);
+
+	CheckTrue(CurrentStateType == EEnemyStateType::Attack);
+	SetCurrentEnemyStateType(EEnemyStateType::Attack);
+}
+
+void ACEnemy::BeginStrafing()
+{
+	CanStrafing = true;
+}
+
+void ACEnemy::ChangeStrafing()
+{	
+	CheckTrue(CurrentStateType == EEnemyStateType::Attack);
+	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
+
+	typedef EEnemyStrafingType s;
+
+	int32 select = UKismetMathLibrary::RandomIntegerInRange(0, 3);
+	
+	switch ((EEnemyStrafingType)select)
+	{
+		case s::Front :
+		{
+			//CurrentStrafingType = s::Front;
+			//
+			//StrafeDirection = GetActorForwardVector();
+	
+			break;
+		}
+		case s::Back:
+		{
+			//CurrentStrafingType = s::Back;
+			//
+			//StrafeDirection = GetActorForwardVector() * -1.0f;
+	
+			break;
+		}
+		case s::Left:
+		{
+			CurrentStrafingType = s::Left;
+			
+			StrafeDirection = GetActorRightVector() * -1.0f;
+	
+			break;
+		}
+		case s::Right:
+		{
+			CurrentStrafingType = s::Right;
+	
+			StrafeDirection = GetActorRightVector();
+			
+			break;
+		}
+		default:
+		{
+			StrafeDirection = FVector::ZeroVector;
+	
+			break;
+		}
+	}
+}
+
+void ACEnemy::EndStrafing()
+{
+	CanStrafing = false;
+}
+
+void ACEnemy::BeginDodge()
+{
+	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
+
+	for (int i = 0; i < DodgeDatas.Num(); i++)
+		CheckFalse(DodgeDatas[i].Montage);
+
+	CheckTrue(CurrentStateType == EEnemyStateType::Parkour);
+	SetCurrentEnemyStateType(EEnemyStateType::Parkour);
+
+	int select = UKismetMathLibrary::RandomIntegerInRange(0, 1);
+
+	DodgeDatas[select].PlayMontage(this);
+}
+
+void ACEnemy::OnStateTypeChange(EEnemyStateType InCurrentStateType)
+{
+	PreviousStateType = CurrentStateType;
+	CurrentStateType = InCurrentStateType;
+
+	if (OnEnemyStateTypeChanged.IsBound())
+		OnEnemyStateTypeChanged.Broadcast(PreviousStateType, CurrentStateType);
+}
+
+ACEnemy* ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass)
+{
+	if (InSpawnEnemyClass)
+	{
+		FActorSpawnParameters params;
+		params.Owner = InSpawner;
+
+		return InSpawner->GetWorld()->SpawnActor<ACEnemy>
+			(
+				InSpawnEnemyClass,
+				InSpawner->GetActorTransform(),
+				params
+			);
+	}
+	else return nullptr;
+}
+
+ACEnemy* ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass, FName InSpawnSocketName)
+{
+	if (InSpawnEnemyClass)
+	{
+		FActorSpawnParameters params;
+		params.Owner = InSpawner;
+
+		ACharacter* character = Cast<ACharacter>(InSpawner);
+
+		if (character)
+		{
+			return InSpawner->GetWorld()->SpawnActor<ACEnemy>
+				(
+					InSpawnEnemyClass,
+					character->GetMesh()->GetSocketTransform(InSpawnSocketName),
+					params
+				);
+		}
+		else return nullptr;
+	}
+	else return nullptr;
+}
+
+ACEnemy* ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass, FTransform InSpawnTransform)
+{
+	if (InSpawnEnemyClass)
+	{
+		FActorSpawnParameters params;
+		params.Owner = InSpawner;
+
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		return InSpawner->GetWorld()->SpawnActor<ACEnemy>
+			(
+				InSpawnEnemyClass,
+				InSpawnTransform,
+				params
+			);
+	}
+	else return nullptr;
+}
+
+void ACEnemy::DestroyEnemy()
+{
+	if (IsBoss)
+	{
+		SpawnCount -= 1;
+
+		if (SpawnCount <= 0)
+			SpawnCount = 0;
+	}
+
+	if (OnEnemyDied.IsBound())
+		OnEnemyDied.Broadcast();
+	
+	Destroy();
 }
 
 void ACEnemy::TakeDamage_OpponentNormalAttack()
@@ -571,22 +663,11 @@ void ACEnemy::BlockedByShield()
 		BlockedDatas[0].PlayEffect(GetWorld(), this);
 }
 
-void ACEnemy::GetNormalDamageData(int32 InIndex)
+// private: //////////////////////////////////////////////////////////////////////
+void ACEnemy::CheckDamage()
 {
-	if (NormalDamageDatas[InIndex].Montage)
-		NormalDamageDatas[InIndex].PlayMontage(this);
-
-	if (NormalDamageDatas[InIndex].Effect)
-		NormalDamageDatas[InIndex].PlayEffect(GetWorld(), this);
-}
-
-void ACEnemy::GetSkillDamageData(int32 InIndex)
-{
-	if (SkillDamageDatas[InIndex].Montage)
-		SkillDamageDatas[InIndex].PlayMontage(this);
-
-	if (SkillDamageDatas[InIndex].Effect)
-		SkillDamageDatas[InIndex].PlayEffect(GetWorld(), this);
+	if (Hp > 0.0f)
+		ActivateDamageEffect();
 }
 
 void ACEnemy::DamagedByOpponentNormal_SkillAndFx(float InLaunchSpeed)
@@ -705,10 +786,22 @@ void ACEnemy::DamagedByOpponentSkillWeaponAndFx()
 	}
 }
 
-void ACEnemy::CheckDamage()
+void ACEnemy::GetNormalDamageData(int32 InIndex)
 {
-	if (Hp > 0.0f)
-		ActivateDamageEffect();
+	if (NormalDamageDatas[InIndex].Montage)
+		NormalDamageDatas[InIndex].PlayMontage(this);
+
+	if (NormalDamageDatas[InIndex].Effect)
+		NormalDamageDatas[InIndex].PlayEffect(GetWorld(), this);
+}
+
+void ACEnemy::GetSkillDamageData(int32 InIndex)
+{
+	if (SkillDamageDatas[InIndex].Montage)
+		SkillDamageDatas[InIndex].PlayMontage(this);
+
+	if (SkillDamageDatas[InIndex].Effect)
+		SkillDamageDatas[InIndex].PlayEffect(GetWorld(), this);
 }
 
 void ACEnemy::CheckDead()
@@ -734,94 +827,6 @@ void ACEnemy::CheckDead()
 	}
 }
 
-void ACEnemy::OnAttack()
-{
-	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
-
-	//for (int i = 0; i < ActionDatas.Num(); i++)
-	//	CheckFalse(ActionDatas[i].Montage);
-
-	CheckTrue(CurrentStateType == EEnemyStateType::Attack);
-	SetCurrentEnemyStateType(EEnemyStateType::Attack);
-}
-
-void ACEnemy::ChangeStrafing()
-{	
-	CheckTrue(CurrentStateType == EEnemyStateType::Attack);
-	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
-
-	typedef EEnemyStrafingType s;
-
-	int32 select = UKismetMathLibrary::RandomIntegerInRange(0, 3);
-	
-	switch ((EEnemyStrafingType)select)
-	{
-		case s::Front :
-		{
-			//CurrentStrafingType = s::Front;
-			//
-			//StrafeDirection = GetActorForwardVector();
-	
-			break;
-		}
-		case s::Back:
-		{
-			//CurrentStrafingType = s::Back;
-			//
-			//StrafeDirection = GetActorForwardVector() * -1.0f;
-	
-			break;
-		}
-		case s::Left:
-		{
-			CurrentStrafingType = s::Left;
-			
-			StrafeDirection = GetActorRightVector() * -1.0f;
-	
-			break;
-		}
-		case s::Right:
-		{
-			CurrentStrafingType = s::Right;
-	
-			StrafeDirection = GetActorRightVector();
-			
-			break;
-		}
-		default:
-		{
-			StrafeDirection = FVector::ZeroVector;
-	
-			break;
-		}
-	}
-}
-
-void ACEnemy::BeginStrafing()
-{
-	CanStrafing = true;
-}
-
-void ACEnemy::EndStrafing()
-{
-	CanStrafing = false;
-}
-
-void ACEnemy::BeginDodge()
-{
-	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
-
-	for (int i = 0; i < DodgeDatas.Num(); i++)
-		CheckFalse(DodgeDatas[i].Montage);
-
-	CheckTrue(CurrentStateType == EEnemyStateType::Parkour);
-	SetCurrentEnemyStateType(EEnemyStateType::Parkour);
-
-	int select = UKismetMathLibrary::RandomIntegerInRange(0, 1);
-
-	DodgeDatas[select].PlayMontage(this);
-}
-
 void ACEnemy::RecoverDilation()
 {
 	CustomTimeDilation = 1.0f;
@@ -837,32 +842,95 @@ void ACEnemy::ShakeCamera(FDamaged damage)
 		controller->PlayerCameraManager->StartCameraShake(DamageCameraShakeClass);
 }
 
-void ACEnemy::StoreHitNumber(UUserWidget* InHitNumber, FVector InLocation)
+// protected: //////////////////////////////////////////////////////////////////////
+void ACEnemy::BeginPlay()
 {
-	HitNumbers.Add(InHitNumber, InLocation);
+	Super::BeginPlay(); 
 
-	FTimerHandle HitNumberTimer;
-	FTimerDelegate HitNumberDelegate;
-	HitNumberDelegate.BindUFunction(this, FName("DestroyHitNumber"), InHitNumber);
-	GetWorld()->GetTimerManager().SetTimer(HitNumberTimer, HitNumberDelegate, HitNumberDestroyTime, false);
-}
-
-void ACEnemy::DestroyHitNumber(UUserWidget* InHitNumber)
-{
-	HitNumbers.Remove(InHitNumber);
-	InHitNumber->RemoveFromParent(); // 뷰포트에서 위젯을 지워줄 것이다.
-}
-
-void ACEnemy::UpdateHitNumbers()
-{
-	for (auto& HitPair : HitNumbers)
+	// 각종 바인딩
 	{
-		UUserWidget* HitNumber{ HitPair.Key };
-		const FVector Location{ HitPair.Value };
-		FVector2D ScreenPosition;
-		UGameplayStatics::ProjectWorldToScreen(GetWorld()->GetFirstPlayerController(), Location, ScreenPosition);
-		HitNumber->SetPositionInViewport(ScreenPosition);
+		GetComponents<UCapsuleComponent>(CapsuleCollisions);
+
+		for (UShapeComponent* collision : CapsuleCollisions)
+		{
+			collision->OnComponentBeginOverlap.AddDynamic(this, &ACEnemy::OnBeginOverlap);
+			collision->OnComponentEndOverlap.AddDynamic(this, &ACEnemy::OnEndOverlap);
+			collision->OnComponentHit.AddDynamic(this, &ACEnemy::OnHit);
+		}
+	
+		if (GetMesh()->GetAnimInstance())
+			GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACEnemy::OnMontageEnded);
 	}
+
+	// 무기 스폰, 무기 오너 설정
+	{
+		FActorSpawnParameters params;
+		params.Owner = this;
+
+		for (int i = 0; i < WeaponClass.Num(); i++)
+		{
+			if (WeaponClass[i])
+				Weapons.Add(GetWorld()->SpawnActor<ACWeapon>(WeaponClass[i], params));
+
+			if (Weapons[i])
+				Weapons[i]->SetOwner(this);
+		}
+	}
+
+	// 상대방(Player) 설정
+	{
+		if (IsPlayerFriendly)
+		{
+			TArray<AActor*> outActorArr;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACEnemy::StaticClass(), outActorArr);
+
+			for (int i = 0; i < outActorArr.Num(); i++)
+				Opponent = dynamic_cast<ACEnemy*>(outActorArr[i]);
+		}
+		
+		if (!InMission2)
+		{
+			TArray<AActor*> outActorArr;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), outActorArr);
+
+			for (int i = 0; i < outActorArr.Num(); i++)
+				Opponent = dynamic_cast<ACPlayer*>(outActorArr[i]);
+		}
+		else if (InMission2)
+		{
+			TArray<AActor*> outActorArr;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACCannon::StaticClass(), outActorArr);
+
+			for (int i = 0; i < outActorArr.Num(); i++)
+				Opponent = dynamic_cast<ACharacter*>(outActorArr[i]);
+		}
+	}
+
+	// 상대방 스킬 공격에 대한 피격 관련 함수 바인딩
+	if (Opponent)
+	{
+		if (!InMission2)
+		{
+			Cast<ACPlayer>(Opponent)->OnPlayerSkillAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentUsingSkill);
+			Cast<ACPlayer>(Opponent)->OnPlayerNormalAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentNormalAttack);
+		}
+	}
+
+	// HealthBar 위젯 Hidden 설정
+	{
+		if (HealthBarWidgetComponent)
+			HealthBarWidgetComponent->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
+	}
+
+	// 열거체 설정
+	{
+		SetCurrentEnemyStateType(EEnemyStateType::IdleOrJustMoving);
+	}
+
+	//// 타이머 설정
+	//{
+	//	GetWorldTimerManager().SetTimer(StrafeTimer, this, &ACEnemy::ChangeStrafing, ChangeStrafingTypeInterval, true);
+	//}
 }
 
 void ACEnemy::ShowHealthBar()
@@ -880,37 +948,32 @@ void ACEnemy::HideHealthBar()
 		HealthBarWidgetComponent->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
 }
 
-void ACEnemy::SetCurrentEnemyStateType(EEnemyStateType InType)
+void ACEnemy::StoreHitNumber(UUserWidget* InHitNumber, FVector InLocation)
 {
-	PreviousStateType = CurrentStateType;
-	CurrentStateType = InType;
+	HitNumbers.Add(InHitNumber, InLocation);
 
-	if (OnEnemyStateTypeChanged.IsBound())
-		OnEnemyStateTypeChanged.Broadcast(PreviousStateType, CurrentStateType);
+	FTimerHandle HitNumberTimer;
+	FTimerDelegate HitNumberDelegate;
+	HitNumberDelegate.BindUFunction(this, FName("DestroyHitNumber"), InHitNumber);
+	GetWorld()->GetTimerManager().SetTimer(HitNumberTimer, HitNumberDelegate, HitNumberDestroyTime, false);
 }
 
-void ACEnemy::OnStateTypeChange(EEnemyStateType InCurrentStateType)
+void ACEnemy::UpdateHitNumbers()
 {
-	PreviousStateType = CurrentStateType;
-	CurrentStateType = InCurrentStateType;
-
-	if (OnEnemyStateTypeChanged.IsBound())
-		OnEnemyStateTypeChanged.Broadcast(PreviousStateType, CurrentStateType);
+	for (auto& HitPair : HitNumbers)
+	{
+		UUserWidget* HitNumber{ HitPair.Key };
+		const FVector Location{ HitPair.Value };
+		FVector2D ScreenPosition;
+		UGameplayStatics::ProjectWorldToScreen(GetWorld()->GetFirstPlayerController(), Location, ScreenPosition);
+		HitNumber->SetPositionInViewport(ScreenPosition);
+	}
 }
 
-void ACEnemy::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ACEnemy::DestroyHitNumber(UUserWidget* InHitNumber)
 {
-
-}
-
-void ACEnemy::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-
-}
-
-void ACEnemy::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
-{
-
+	HitNumbers.Remove(InHitNumber);
+	InHitNumber->RemoveFromParent(); // 뷰포트에서 위젯을 지워줄 것이다.
 }
 
 void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool Interrupted)
@@ -971,91 +1034,26 @@ void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool Interrupted)
 	}
 }
 
-ACEnemy* ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass)
+void ACEnemy::SetCurrentEnemyStateType(EEnemyStateType InType)
 {
-	if (InSpawnEnemyClass)
-	{
-		FActorSpawnParameters params;
-		params.Owner = InSpawner;
+	PreviousStateType = CurrentStateType;
+	CurrentStateType = InType;
 
-		return InSpawner->GetWorld()->SpawnActor<ACEnemy>
-			(
-				InSpawnEnemyClass,
-				InSpawner->GetActorTransform(),
-				params
-			);
-	}
-	else return nullptr;
+	if (OnEnemyStateTypeChanged.IsBound())
+		OnEnemyStateTypeChanged.Broadcast(PreviousStateType, CurrentStateType);
 }
 
-ACEnemy* ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass, FName InSpawnSocketName)
+void ACEnemy::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (InSpawnEnemyClass)
-	{
-		FActorSpawnParameters params;
-		params.Owner = InSpawner;
 
-		ACharacter* character = Cast<ACharacter>(InSpawner);
-
-		if (character)
-		{
-			return InSpawner->GetWorld()->SpawnActor<ACEnemy>
-				(
-					InSpawnEnemyClass,
-					character->GetMesh()->GetSocketTransform(InSpawnSocketName),
-					params
-				);
-		}
-		else return nullptr;
-	}
-	else return nullptr;
 }
 
-ACEnemy* ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass, FTransform InSpawnTransform)
+void ACEnemy::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (InSpawnEnemyClass)
-	{
-		FActorSpawnParameters params;
-		params.Owner = InSpawner;
 
-		ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-		return InSpawner->GetWorld()->SpawnActor<ACEnemy>
-			(
-				InSpawnEnemyClass,
-				InSpawnTransform,
-				params
-			);
-	}
-	else return nullptr;
 }
 
-void ACEnemy::DestroyEnemy()
+void ACEnemy::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (IsBoss)
-	{
-		SpawnCount -= 1;
 
-		if (SpawnCount <= 0)
-			SpawnCount = 0;
-	}
-
-	if (OnEnemyDied.IsBound())
-		OnEnemyDied.Broadcast();
-	
-	Destroy();
 }
-
-//void ACEnemy::SpawnEnemyEffectWeapon()
-//{
-//	for (int i = 0; i < EffectWeaponClass.Num(); i++)
-//		CheckFalse(EffectWeaponClass[i]);
-//
-//	ACWeapon* effectWeapon = ACWeapon::SpawnWeapon(this, EffectWeaponClass[EffectWeaponIndex], GetMesh()->GetSocketLocation(EffectWeaponSpawnSocketName));
-//	
-//	if (effectWeapon)
-//	{
-//		effectWeapon->SetOwner(this);
-//		effectWeapon->SetActorRotation(GetActorRotation());
-//	}
-//}

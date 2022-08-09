@@ -32,8 +32,19 @@ void ACEnemy_Meele::OnAttack()
 {
 	Super::OnAttack();
 	
-	int select = UKismetMathLibrary::RandomIntegerInRange(0, 2);
+	if (!IsPlayerFriendly)
+	{
+		int select = UKismetMathLibrary::RandomIntegerInRange(0, 2);
 
-	ActionDatas[select].PlayMontage(this);
+		ActionDatas[select].PlayMontage(this);
+	}
+	else if (IsPlayerFriendly)
+	{
+		// MEMO: 일반 공격 3개는 기본 공격과 동일, 스킬공격 2개 (넉백 공격, 공중 콤보 공격)
+		int select = UKismetMathLibrary::RandomIntegerInRange(0, 4);
+
+		if (FriendlyActionDatas[select].Montage)
+			FriendlyActionDatas[select].PlayMontage(this);
+	}
 }
 

@@ -64,9 +64,21 @@ void ACEnemy_Rifle::OnAttack()
 	{
 		Super::OnAttack();
 		
-		ActionDatas[0].PlayMontage(this);
+		if (!IsPlayerFriendly)
+		{
+			ActionDatas[0].PlayMontage(this);
 
-		GLog->Log("ACEnemy_Rifle::OnAttack()");
+			GLog->Log("ACEnemy_Rifle::OnAttack()");
+		}
+		else if (IsPlayerFriendly)
+		{
+			// MEMO: 일반 공격 2 (단발 1회 공격, 연발 3회 공격) 스킬 공격(박격 유도탄)
+
+			int32 select = UKismetMathLibrary::RandomIntegerInRange(0, 2);
+
+			if (FriendlyActionDatas[select].Montage)
+				FriendlyActionDatas[select].PlayMontage(this);
+		}
 	}
 }
 
@@ -76,14 +88,20 @@ void ACEnemy_Rifle::GetMoveToLocation(FVector& OutLocation)
 		OutLocation = TriggerVolumeSpanwer->GetActorLocation();
 }
 
-void ACEnemy_Rifle::TakeDamageAction_CannonRangedProjectile(float InDamage)
+void ACEnemy_Rifle::TakeDamageAction_CannonRangedProjectile(float InDamage, ACProjectile* InProjectile)
 {
 	Hp -= InDamage;
 
 	// Enemy Projectile 피격시 회전과 넉백 설정
 	{
+		if (NormalDamageDatas[0].Montage)
+			NormalDamageDatas[0].PlayMontage(this);
+		
+		if (NormalDamageDatas[0].Effect)
+			NormalDamageDatas[0].PlayEffect(GetWorld(), this);
+
 		FVector start = GetActorLocation();
-		FVector target = GetOpponent()->GetActorLocation();
+		FVector target = InProjectile->GetActorLocation();
 
 		FVector direction = target - start;
 		direction.Normalize();
@@ -93,8 +111,8 @@ void ACEnemy_Rifle::TakeDamageAction_CannonRangedProjectile(float InDamage)
 
 		SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
 
-		if (ActivateDamageLaunch)
-			LaunchCharacter(-direction * 2000.0f, true, false);
+		//if (ActivateDamageLaunch)
+		LaunchCharacter(-direction * 2000.0f, true, false);
 
 		// 몽타주
 	}

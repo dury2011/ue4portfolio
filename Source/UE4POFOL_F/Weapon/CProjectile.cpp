@@ -128,14 +128,15 @@ void ACProjectile::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 		ACEnemy_Rifle* enemyRifle = Cast<ACEnemy_Rifle>(OtherActor);
 
 		if (enemyRifle)
-			enemyRifle->TakeDamageAction_CannonRangedProjectile(applyDamage);
+			enemyRifle->TakeDamageAction_CannonRangedProjectile(applyDamage, this);
+		else if (!enemyRifle)
+			UGameplayStatics::ApplyDamage(OtherActor, applyDamage, GetOwner()->GetInstigatorController(), this, NULL);
 
 		return;
 	}
 
-	if (OtherActor->ActorHasTag("Enemy") && GetOwner()->ActorHasTag("Player"))
+	if ((OtherActor->ActorHasTag("Enemy") && GetOwner()->ActorHasTag("Player")) || ((OtherActor->ActorHasTag("Player") && GetOwner()->ActorHasTag("Enemy"))))
 	{
-
 		UGameplayStatics::ApplyDamage(OtherActor, applyDamage, GetOwner()->GetInstigatorController(), this, NULL);
 
 		GLog->Log("ACProjectile::BeginOverlap()");

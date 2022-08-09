@@ -70,8 +70,8 @@ void ACSpawner::Tick(float DeltaTime)
 
 float ACSpawner::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {	
-	if (SpawnedEnemy < 30)
-		return 0.0f;
+	//if (SpawnedEnemy < 30)
+		//return 0.0f;
 
 	Damaged.DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser); // damage float
 	//Damaged.DamageEvent = (FActionDamageEvent*)&DamageEvent;  // Hit 에니메이션 몽타주
@@ -79,7 +79,7 @@ float ACSpawner::TakeDamage(float DamageAmount, struct FDamageEvent const& Damag
 	Damaged.DamageCauser = DamageCauser; 
 	Damaged.DamageAmount = DamageAmount;
 
-	ShowHitNumber(Damaged.DamageAmount, GetActorLocation());
+	ShowHitNumber(int32(Damaged.DamageAmount), GetActorLocation());
 	ShowHealthBar();
 
 	if (Damaged.EventInstigator == GetWorld()->GetFirstPlayerController())

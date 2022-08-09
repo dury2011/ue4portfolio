@@ -41,7 +41,7 @@ void ACEnemy_Buff_Red::OnAttack()
 	ActionDatas[select].PlayMontage(this);
 }
 
-void ACEnemy_Buff_Red::GoToOpponent()
-{
-
-}
+//void ACEnemy_Buff_Red::GoToOpponent()
+//{
+//
+//}

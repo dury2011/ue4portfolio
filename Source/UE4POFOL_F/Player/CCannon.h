@@ -12,6 +12,8 @@ enum class ECannonStateType : uint8
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnCannonStateTypeChange, ECannonStateType, InPreviousType, ECannonStateType, InCurrentType);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCannonFire, int32, InCurrentAmmo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCannonReloading, bool, InNowReloading);
 
 UCLASS()
 class UE4POFOL_F_API ACCannon : public ACharacter
@@ -35,6 +37,12 @@ public:
 	TArray<class UCapsuleComponent*> CapsuleCollisions;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Cannon Setting")
+	float MaxHp = 10000.0;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Cannon Setting")
+	float CurrentHp = 10000.0;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Cannon Setting")
 	TSubclassOf<class ACProjectile> CannonProjectileClass;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Cannon Setting")
@@ -49,15 +57,32 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnCannonStateTypeChange OnCannonStateTypeChange;
 
+	UPROPERTY(BlueprintAssignable)
+	FOnCannonFire OnCannonFire;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnCannonReloading OnCannonReloading;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon Setting")
 	float CriticalFireInterval = 0.2f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon Setting")
 	float CriticalHomingProjFireInterval = 1.5f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon Setting")
+	float RangedAvailTime = 4.0f;
+
 private:
+	//struct PlayerInfo
+	//{
+	//	float MaxHp;
+	//	float CurrentHp;
+	//	float MaxMp;
+	//	float CurrentMp;
+	//} PlayerInformation;
 	//UPROPERTY(EditDefaultsOnly, Category = "Setting Cannon")
 	//FActionData FireData;
+
 
 	UPROPERTY()
 	class ACTriggerVolume_Cannon* TriggerVolume;
@@ -80,16 +105,20 @@ private:
 
 	int32 RangedAvailCounter = 0;
 	int32 CriticalAvailCounter = 0;
+	int32 ReloadCounter = 0;
 	FTimerHandle FireTimer;
 	FTimerHandle HomingTimer;
 	FTimerHandle RangedTimer;
 	FTimerHandle CriticalFinishTimer;
+	FTimerHandle ReloadTimer;
 	bool CanOnCriticalFire = false;
 	bool ClickedOnFire = false;
+	bool IsNowReloading = false;
 
 
 protected:
-
+	UPROPERTY(BlueprintReadOnly, Category = "Cannon Setting")
+	int32 CurrentAmmo = 50;
 
 public:
 	ACCannon();
@@ -101,7 +130,7 @@ public:
 	void ActivateNormalFireEffect();
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void ActivateFireCriticalEffect();
+	void ActivateCriticalFireEffect();
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ActivatePossessCannonEffect();
@@ -109,12 +138,22 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void DeactivatePossessCannonEffect();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void ActivateZeroAmmoSound();
+
+	UFUNCTION(BlueprintCallable)
+	int32 GetCurrentAmmo() {return CurrentAmmo;}
+
+	UFUNCTION(BlueprintCallable)
+	float GetHpPercentage();
+
 private:
 	void OnVerticalLook(float AxisValue);
 	void OnHorizontalLook(float AxisValue);
 	
 	void OnFire();
 	void OffFire();
+	void OnReload();
 	
 	void FunctionBindForTimer_OnFireNormal();
 	void SetCanCriticalFireTrue();
@@ -124,6 +163,7 @@ private:
 	void CannonStateTypeChange(ECannonStateType InType);
 	void RangedAvailChecker();
 	void CriticalAvailChecker();
+	void ReloadChecker();
 	
 	UFUNCTION()
 	void PossessCannon(class AActor* InOverlappedTriggerVolume, class AActor* InOtherActor);
@@ -139,6 +179,10 @@ private:
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 	
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)override;
+
+
+
 protected:
 	virtual void BeginPlay() override;
 

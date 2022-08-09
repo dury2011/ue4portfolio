@@ -195,8 +195,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE float GetMaxHp() { return MaxHp; }
 	
+	void SetMaxHp(float InMaxHp);
+	
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE float GetMaxMp() { return MaxMp; }
+
+	void SetMaxMp(float InMaxMp);
 	
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE float GetMaxSp() { return MaxSp; }
