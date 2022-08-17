@@ -114,20 +114,20 @@ void UCBTService_Enemy::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 		collisionQueryParam
 	);
 
-	if (bResult)
-	{
-		for (auto const& overlapResult : overlapResults)
-		{
-			ACharacter* character = Cast<ACharacter>(overlapResult.GetActor());
+	//if (bResult)
+	//{
+	//	for (auto const& overlapResult : overlapResults)
+	//	{
+	//		ACharacter* character = Cast<ACharacter>(overlapResult.GetActor());
 
-			if (character && character->GetController()->IsPlayerController())
-			{
-				OwnerComp.GetBlackboardComponent()->SetValueAsObject("Player", character);
+	//		if (character && character->GetController()->IsPlayerController())
+	//		{
+	//			OwnerComp.GetBlackboardComponent()->SetValueAsObject("Opponent", character);
 
-				return;
-			}
-		}
-	}
+	//			return;
+	//		}
+	//	}
+	//}
 	
 #ifdef LOG_CBTSERVICE_ENEMY
 	// patrol & attack rifle radius

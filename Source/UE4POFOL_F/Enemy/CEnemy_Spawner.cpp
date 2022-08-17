@@ -25,7 +25,7 @@ void ACEnemy_Spawner::OnAttack()
 
 float ACEnemy_Spawner::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
-	ActivateDamageEffect();
+	// ActivateDamageEffect(false, EWeaponType::Unarmed);
 	
 	Hp -= DamageAmount;
 

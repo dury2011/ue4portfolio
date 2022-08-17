@@ -18,7 +18,7 @@ bool UCBTDecorator_IsInAttackRange::CalculateRawConditionValue(UBehaviorTreeComp
 	if (controllingPawn == nullptr)
 		return false;
 
-	auto target = Cast<ACharacter>(OwnerComp.GetBlackboardComponent()->GetValueAsObject("Player"));
+	auto target = Cast<ACharacter>(OwnerComp.GetBlackboardComponent()->GetValueAsObject("Opponent"));
 
 	if (target == nullptr)
 		return false;

@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Weapon/CWeaponStructure.h"
+#include "Component/CCharacterComponent.h"
 #include "GenericTeamAgentInterface.h"
 #include "CEnemy.generated.h"
 
@@ -26,6 +27,7 @@ DECLARE_MULTICAST_DELEGATE(FOnEnemyParkourEnded);
 DECLARE_MULTICAST_DELEGATE(FOnEnemyMontageInterrupted);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyDied);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyDiedStopAI);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyAttack);
 
 UCLASS()
 class UE4POFOL_F_API ACEnemy : public ACharacter, public IGenericTeamAgentInterface
@@ -42,10 +44,22 @@ public:
 	FOnEnemyMontageInterrupted OnEnemyMontageInterrupted;
 	FOnEnemyParkourEnded OnEnemyParkourEnded;
 	FOnEnemyDiedStopAI OnEnemyDiedStopAI;
+	FOnEnemyAttack OnEnemyAttack;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "AI")
+	int32 ID = 0;
+
+	virtual FGenericTeamId GetGenericTeamId() const override { return TeamId; }
 
 private:
 	UPROPERTY()
 	TArray<class UCapsuleComponent*> CapsuleCollisions;
+
+	//UPROPERTY(VisibleDefaultsOnly)
+	//class UBoxComponent* BoxComponentAttack;
+
+	//UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
+	//class USphereComponent* SphereComponentDetectOpponent;
 
 	UPROPERTY()
 	class UBlackboardComponent* Blackboard;
@@ -59,14 +73,22 @@ private:
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
 	float HitNumberDestroyTime = 1.0f;
 
+	//UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
+	//bool IsTest = false;
+
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
 	TMap<UUserWidget*, FVector> HitNumbers;
 	
 	UPROPERTY()
 	class ACharacter* Opponent;
 
+	UPROPERTY()
+	class ACPlayer* Player;
+
 	int32 SkillWeaponAttackCount = 0;
 	static int32 SpawnCount;
+
+	int32 TargettedActor = 0;
 	
 	float DistanceToOpponent;
 	
@@ -77,6 +99,9 @@ private:
 	bool IsAttackBySpellFist = false;
 	bool IsSkillStopHit = false;
 	bool IsBoundUpBySkill = false;
+
+	bool IsEnemyFriendAttackByEnemy = false;
+	bool IsEnemyAttackByEnemyFriend = false;
 
 	FVector CurrentLoc = FVector::ZeroVector;
 	FVector StrafeDirection = FVector::ZeroVector;
@@ -170,6 +195,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
 	bool IsPlayerFriendly = false;
 
+	FGenericTeamId TeamId;
+
 	bool bMontageIsPlaying = false;
 	bool bActivateRotateToOpponent = true;
 	bool CanStrafing = false;
@@ -178,6 +205,7 @@ protected:
 
 public:
 	ACEnemy();
+	virtual void Destroyed() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void OnAttack();
@@ -186,6 +214,9 @@ public:
 	void EndStrafing();
 	void BeginDodge();
 	void OnStateTypeChange(EEnemyStateType InCurrentStateType);
+
+	//////////
+	void SetTarget(bool InBool, AActor* InActor);
 	
 	static ACEnemy* SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass);
 	static ACEnemy* SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass, FName InSpawnSocketName);
@@ -210,6 +241,7 @@ public:
 	void ShowHitNumber(int32 InDamage, FVector InHitLocation);
 
 	FORCEINLINE ACharacter* GetOpponent() { return Opponent; }
+	FORCEINLINE void SetOpponent(bool InSuccess, ACharacter* InCharacter) { Opponent = InCharacter; TargettedActor++; }
 	FORCEINLINE float GetDistanceToOpponent() { return DistanceToOpponent; }
 	FORCEINLINE ACWeapon* GetWeapon(int32 InIndex) { if (Weapons[InIndex]) return Weapons[InIndex]; else return nullptr; }
 	FORCEINLINE bool GetIsAttackByPlayer() { return IsAttackByPlayer; }
@@ -220,14 +252,22 @@ public:
 	FORCEINLINE void SetIsAttackBySpellFist(bool InBool) { IsAttackBySpellFist = InBool; }
 	FORCEINLINE void SetSpawnCount() { ++SpawnCount; }
 	FORCEINLINE int32 GetSpawnCount() { return SpawnCount; }
+	FORCEINLINE void SetIsEnemyFriendAttackByEnemy(bool InBool) { IsEnemyFriendAttackByEnemy = InBool; }
+	FORCEINLINE void SetIsEnemyAttackByEnemyFriend(bool InBool) { IsEnemyAttackByEnemyFriend = InBool; }
+	FORCEINLINE void SetTargettedActorCount() { TargettedActor++; }
+	FORCEINLINE int32 GetTargettedActorCount() { return TargettedActor; }
 
 private:
-	void CheckDamage();
+	//void CheckDamage();
 	void DamagedByOpponentNormal_SkillAndFx(float InLaunchSpeed = 1.0f);
 	void DamagedByOpponentSkillWeaponAndFx();
 	void GetNormalDamageData(int32 InIndex);
 	void GetSkillDamageData(int32 InIndex);
 	void CheckDead();
+
+	UFUNCTION()
+	void ChangeOpponentSpawn();
+
 	void RecoverDilation();
 	void ShakeCamera(FDamaged damage);
 
@@ -257,12 +297,19 @@ protected:
 
 	UFUNCTION()
 	virtual void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	
+	UFUNCTION()
+	virtual void OnBeginOverlapSphereComponentDetectOpponent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	virtual void OnEndOverlapSphereComponentDetectOpponent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
 
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void ActivateDamageEffect();
+	void ActivateDamageEffect(bool InGlow, EWeaponType InWeaponType);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ActivateDamageIceEffect();

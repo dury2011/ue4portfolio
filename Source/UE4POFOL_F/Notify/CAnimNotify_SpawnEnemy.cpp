@@ -13,11 +13,11 @@ void UCAnimNotify_SpawnEnemy::Notify(USkeletalMeshComponent * MeshComp, UAnimSeq
 	
 	ACEnemy* spawnEnemy = ACEnemy::SpawnEnemy(MeshComp->GetOwner(), SpawnEnemyClass, SpawnSocketName);
 
-	if (spawnEnemy)
-	{
-		spawnEnemy->SetSpawnCount();
+	//if (spawnEnemy)
+	//{
+	//	spawnEnemy->SetSpawnCount();
 
-		if (spawnEnemy->GetSpawnCount() > 9)
-			spawnEnemy->DestroyEnemy();
-	}
+	//	if (spawnEnemy->GetSpawnCount() > 9)
+	//		spawnEnemy->DestroyEnemy();
+	//}
 }

@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "Perception/AIPerceptionComponent.h"
 #include "CAIController.generated.h"
 
 UCLASS()
@@ -10,19 +11,17 @@ class UE4POFOL_F_API ACAIController : public AAIController
 {
 	GENERATED_BODY()
 	
-	//UPROPERTY(VisibleDefaultsOnly)
-	//class UAIPerceptionComponent* Perception;
-	//
-	//UPROPERTY()
-	//class UAISenseConfig_Sight* Sight;
-	//
-	//UPROPERTY()
-	//class UBlackboardData* Blackboard;
-//private:
-	//FTimerHandle Timer;
 public:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "AIController Setting")
 	class UBehaviorTree* BehaviorTree;
+	
+	UPROPERTY(VisibleDefaultsOnly)
+	class UAIPerceptionComponent* AIPerceptionComponent;
+
+	class UAISenseConfig_Sight* Sight;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "AIController Setting")
+	bool IsPlayerOnly = false;
 
 private:	
 	UPROPERTY()
@@ -39,9 +38,23 @@ private:
 
 	bool IsSkillActivate = false;
 
+protected:
+	FGenericTeamId TeamId;
 
 public:
-	ACAIController();
+	ACAIController(const FObjectInitializer& ObjectInitializer);
+
+	UFUNCTION()
+	void OnPerception(AActor* Actor, FAIStimulus Stimulus);
+
+	virtual FGenericTeamId GetGenericTeamId() const override { return TeamId; }
+
+private:
+	//UFUNCTION()
+	//void OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors);
+
+	UFUNCTION()
+	void StopEnemyAI();
 
 protected:
 	virtual void BeginPlay() override;
@@ -49,12 +62,5 @@ protected:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;
 
-private:
-	//UFUNCTION()
-	//void OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors);
-
-	void OnRepeatTimer();
-
-	UFUNCTION()
-	void StopEnemyAI();
+	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
 };

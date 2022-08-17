@@ -135,7 +135,7 @@ void ACProjectile::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 		return;
 	}
 
-	if ((OtherActor->ActorHasTag("Enemy") && GetOwner()->ActorHasTag("Player")) || ((OtherActor->ActorHasTag("Player") && GetOwner()->ActorHasTag("Enemy"))))
+	if ((OtherActor->ActorHasTag("Enemy") && GetOwner()->ActorHasTag("PlayerFriend")) || ((OtherActor->ActorHasTag("PlayerFriend") && GetOwner()->ActorHasTag("Enemy")) || ((OtherActor->ActorHasTag("Player") && GetOwner()->ActorHasTag("Enemy")))) || (OtherActor->ActorHasTag("Enemy") && GetOwner()->ActorHasTag("Player")))
 	{
 		UGameplayStatics::ApplyDamage(OtherActor, applyDamage, GetOwner()->GetInstigatorController(), this, NULL);
 

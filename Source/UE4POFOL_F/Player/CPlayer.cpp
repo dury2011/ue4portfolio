@@ -154,6 +154,7 @@ ACPlayer::ACPlayer()
 	if (assetMeteorWeapon.Succeeded())
 		SpellMeteorClass = assetMeteorWeapon.Class;
 	
+	//TeamId = FGenericTeamId(ID);
 }
 
 void ACPlayer::Tick(float DeltaTime)
@@ -177,12 +178,15 @@ void ACPlayer::Tick(float DeltaTime)
 void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-		
+	
+	// TODO: Dash 구현하기
 	PlayerInputComponent->BindAxis("MoveForward", this, &ACPlayer::OnMoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ACPlayer::OnMoveRight);
 	PlayerInputComponent->BindAxis("VerticalLook", this, &ACPlayer::OnVerticalLook);
 	PlayerInputComponent->BindAxis("HorizontalLook", this, &ACPlayer::OnHorizontalLook);
 	PlayerInputComponent->BindAxis("Zoom", this, &ACPlayer::OnZoom);
+	PlayerInputComponent->BindAction("Dash", EInputEvent::IE_DoubleClick, this, &ACPlayer::OnDash);
+	PlayerInputComponent->BindAction("Dash", EInputEvent::IE_Released, this, &ACPlayer::OffDash);
 	PlayerInputComponent->BindAction("Run", EInputEvent::IE_Pressed, this, &ACPlayer::OnRun);
 	PlayerInputComponent->BindAction("Run", EInputEvent::IE_Released, this, &ACPlayer::OffRun);
 	PlayerInputComponent->BindAction("Run", EInputEvent::IE_DoubleClick, this, &ACPlayer::OnSpellTravel);
@@ -203,6 +207,7 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Pressed, this, &ACPlayer::OnJump);
 	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Released, this, &ACPlayer::OffJump);
 	PlayerInputComponent->BindAction("Critical", EInputEvent::IE_Pressed, this, &ACPlayer::OnCritical);
+	PlayerInputComponent->BindAction("Reload", EInputEvent::IE_Pressed, this, &ACPlayer::OnSpawnFriend);
 }
 
 float ACPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
@@ -237,7 +242,11 @@ float ACPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& Damage
 			transform.SetLocation(GetActorLocation());
 
 			SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
-			LaunchCharacter(-direction * 1200.0f, true, false);
+			
+			if (!GetCharacterMovement()->IsFalling())
+			{
+				LaunchCharacter(-direction * 1200.0f, true, false);
+			}
 		}
 	}
 
@@ -322,6 +331,43 @@ void ACPlayer::TakeDamage_AttackByBoss(EBossAttackType InType)
 	}
 }
 
+void ACPlayer::TakeDamage_AttackByEnemy()
+{
+	CurrentCameraEffectType = ECameraEffectType::Damage;
+	CharacterComponent->SetHp(-Damaged.DamageAmount);
+
+	if (bParkouring)
+		return;
+	
+	// Player 회전 & Knockback
+	{	
+		FVector target = Enemy->GetActorLocation();
+
+		FVector start = GetActorLocation();
+		FVector direction = target - start;
+		direction.Normalize();
+
+		FTransform transform;
+		transform.SetLocation(GetActorLocation());
+
+		SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
+		LaunchCharacter(-direction * 500.0f, true, false);
+	}
+
+	SpawnCameraEffect();
+	ShakeCamera();
+}
+
+void ACPlayer::SetIsAttackByEnemy(bool InBool, ACEnemy* InEnemy)
+{
+	IsAttackByEnemy = InBool;
+
+	Enemy = InEnemy;
+
+	InEnemy->OnEnemyAttack.AddDynamic(this, &ACPlayer::TakeDamage_AttackByEnemy);
+
+}
+
 void ACPlayer::EnableBind()
 {
 	TArray<AActor*> outActorArr;
@@ -399,6 +445,21 @@ void ACPlayer::Notify_OnParkourFinish()
 	CharacterComponent->SetIsMontagePlaying(false);
 }
 
+void ACPlayer::Notify_SetCurrentPlayerNormalAttackType(EPlayerNormalAttackType InType)
+{
+	CurrentPlayerNormalAttackType = InType;
+}
+
+void ACPlayer::Notify_SetCurrentPlayerSkillType(EPlayerSkillType InType)
+{
+	CurrentPlayerSkillType = InType;
+}
+
+void ACPlayer::Notify_SetCurrentPlayerSpellFistType(EPlayerSpellFistType InType)
+{
+	CurrentPlayerSpellFistType = InType;
+}
+
 void ACPlayer::SpawnWarriorSkillOneProjectile()
 {
 	if (WarriorSkill1ProjectileClass)
@@ -460,99 +521,109 @@ void ACPlayer::SetPlayerPortalLocation()
 
 void ACPlayer::MontageEnded(UAnimMontage* InMontage, bool Ininterrupted)
 {
-	// 스킬 이펙트 해제 이벤트에 조건 걸어 둠
+	// 스킬 이펙트 해제 (이벤트에 조건 걸어 둠)
 	DestroySkillEffect();
-	
-	// 무기 해제 중
-	if (bUnequipping)
-	{
-		CharacterComponent->SetCurrentWeaponType(EWeaponType::Unarmed);
 
-		bUnequipping = false;
+	if (IsDashing)
+	{
+		OffDash();
+
+		IsDashing = false;
 		IsMontagePlaying = false;
 
 		return;
 	}
+	
+	// 무기 해제 중
+	//if (bUnequipping)
+	//{
+	//	CharacterComponent->SetCurrentWeaponType(EWeaponType::Unarmed);
+	//
+	//	bUnequipping = false;
+	//	IsMontagePlaying = false;
+	//
+	//	return;
+	//}
 
 	// 무기 변경 중
-	if (bChanging)
-	{
-		if (CharacterComponent->GetIsWeaponOnehandMode())
-		{
-			if (IsPressedOnSpell)
-			{
-				CharacterComponent->SetCurrentWeaponType(EWeaponType::Spell);
-				CharacterComponent->GetEquipData(EWeaponType::Spell).PlayMontage(this);
-				
-				bChanging = false;
-				IsPressedOnSpell = false;
-				IsMontagePlaying = false;
-
-				return;
-			}
-			else if (IsPressedOnSpellFist)
-			{
-				CharacterComponent->SetCurrentWeaponType(EWeaponType::SpellFist);
-				SpellFistEquipData[0].PlayMontage(this);
-				
-				bChanging = false;
-				IsPressedOnSpellFist = false;
-				IsMontagePlaying = false;
-
-				return;
-			}
-		}
-		else if (CharacterComponent->GetIsWeaponSpellMode())
-		{
-			if (IsPressedOnOnehand)
-			{
-				CharacterComponent->SetCurrentWeaponType(EWeaponType::Onehand);
-				CharacterComponent->GetEquipData(EWeaponType::Onehand).PlayMontage(this);
-				
-				bChanging = false;
-				IsPressedOnOnehand = false;
-				IsMontagePlaying = false;
-
-				return;
-			}
-			else if (IsPressedOnSpellFist)
-			{
-				CharacterComponent->SetCurrentWeaponType(EWeaponType::SpellFist);
-				SpellFistEquipData[0].PlayMontage(this);
-
-				bChanging = false;
-				IsPressedOnSpellFist = false;
-				IsMontagePlaying = false;
-
-				return;
-			}
-		}
-		else if (CharacterComponent->GetIsWeaponSpellFistMode())
-		{
-			if (IsPressedOnOnehand)
-			{
-				CharacterComponent->SetCurrentWeaponType(EWeaponType::Onehand);
-				CharacterComponent->GetEquipData(EWeaponType::Onehand).PlayMontage(this);
-
-				bChanging = false;
-				IsPressedOnOnehand = false;
-				IsMontagePlaying = false;
-
-				return;
-			}
-			else if (IsPressedOnSpell)
-			{
-				CharacterComponent->SetCurrentWeaponType(EWeaponType::Spell);
-				CharacterComponent->GetEquipData(EWeaponType::Spell).PlayMontage(this);
-
-				bChanging = false;
-				IsPressedOnSpell = false;
-				IsMontagePlaying = false;
-
-				return;
-			}
-		}
-	}
+	//if (bChanging)
+	//{
+	//	if (CharacterComponent->GetIsWeaponOnehandMode())
+	//	{
+	//		if (IsPressedOnSpell)
+	//		{
+	//			CharacterComponent->SetCurrentWeaponType(EWeaponType::Spell);
+	//			CharacterComponent->GetEquipData(EWeaponType::Spell).PlayMontage(this);
+	//			
+	//			bChanging = false;
+	//			IsPressedOnSpell = false;
+	//			IsMontagePlaying = false;
+	//
+	//			return;
+	//		}
+	//		else if (IsPressedOnSpellFist)
+	//		{
+	//			CharacterComponent->SetCurrentWeaponType(EWeaponType::SpellFist);
+	//			SpellFistEquipData[0].PlayMontage(this);
+	//			
+	//			bChanging = false;
+	//			IsPressedOnSpellFist = false;
+	//			IsMontagePlaying = false;
+	//
+	//			return;
+	//		}
+	//	}
+	//	else if (CharacterComponent->GetIsWeaponSpellMode())
+	//	{
+	//		if (IsPressedOnOnehand)
+	//		{
+	//			CharacterComponent->SetCurrentWeaponType(EWeaponType::Onehand);
+	//			CharacterComponent->GetEquipData(EWeaponType::Onehand).PlayMontage(this);
+	//			
+	//			bChanging = false;
+	//			IsPressedOnOnehand = false;
+	//			IsMontagePlaying = false;
+	//
+	//			return;
+	//		}
+	//		else if (IsPressedOnSpellFist)
+	//		{
+	//			CharacterComponent->SetCurrentWeaponType(EWeaponType::SpellFist);
+	//			SpellFistEquipData[0].PlayMontage(this);
+	//
+	//			bChanging = false;
+	//			IsPressedOnSpellFist = false;
+	//			IsMontagePlaying = false;
+	//
+	//			return;
+	//		}
+	//	}
+	//	else if (CharacterComponent->GetIsWeaponSpellFistMode())
+	//	{
+	//		if (IsPressedOnOnehand)
+	//		{
+	//			CharacterComponent->SetCurrentWeaponType(EWeaponType::Onehand);
+	//			CharacterComponent->GetEquipData(EWeaponType::Onehand).PlayMontage(this);
+	//
+	//			bChanging = false;
+	//			IsPressedOnOnehand = false;
+	//			IsMontagePlaying = false;
+	//
+	//			return;
+	//		}
+	//		else if (IsPressedOnSpell)
+	//		{
+	//			CharacterComponent->SetCurrentWeaponType(EWeaponType::Spell);
+	//			CharacterComponent->GetEquipData(EWeaponType::Spell).PlayMontage(this);
+	//
+	//			bChanging = false;
+	//			IsPressedOnSpell = false;
+	//			IsMontagePlaying = false;
+	//
+	//			return;
+	//		}
+	//	}
+	//}
 
 	// 공통 Set
 	{
@@ -578,10 +649,10 @@ void ACPlayer::MontageEnded(UAnimMontage* InMontage, bool Ininterrupted)
 
 	// Player의 공격 에님몽타주가 어떠한 이유로 재생이 정지되면 다시 OnAttack함수를 호출가능하도록 설정해야됨
 	// Player가 공격 중이고 현재 재생중인 에님 몽타주가 방해로 정지되었을 경우 실행
-	if (Ininterrupted && bAttacking)
-	{
-		bAttacking = false;
-	}
+	//if (Ininterrupted && bAttacking)
+	//{
+	//	bAttacking = false;
+	//}
 }
 
 void ACPlayer::OnCollision()
@@ -909,6 +980,29 @@ void ACPlayer::OffJump()
 	CharacterComponent->SetCurrentStateType(EStateType::Idle);
 }
 
+void ACPlayer::OnDash()
+{	
+	CheckTrue(GetCharacterMovement()->IsFalling());
+	
+	if (DashData[0].Montage)
+	{
+		IsDashing = true;
+		
+		DashData[0].PlayMontage(this);
+
+		GetCharacterMovement()->MaxAcceleration = 4096.0f;
+		GetCharacterMovement()->MaxWalkSpeed = 20000.0f;
+
+		IsMontagePlaying = true;
+	}
+}
+
+void ACPlayer::OffDash()
+{
+	GetCharacterMovement()->MaxAcceleration = 2048.0f;
+	GetCharacterMovement()->MaxWalkSpeed = 600.0f;
+}
+
 void ACPlayer::OnParkour()
 {
 	CheckTrue(IsMontagePlaying);
@@ -938,46 +1032,45 @@ void ACPlayer::OffParkour()
 void ACPlayer::OnOnehand()
 {
 	CheckTrue(IsMontagePlaying);
-	//CharacterComponent->SetIsMontagePlaying(true);
-	IsMontagePlaying = true;
 
-	IsPressedOnOnehand = true;
+	//IsMontagePlaying = true;
 
+	//IsPressedOnOnehand = true;
+	
+	// 이미 Onehand 장착일 경우 무기 해제
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
 		bUnequipping = true;
 
-		CharacterComponent->GetUnequipData(EWeaponType::Onehand).PlayMontage(this);
+		CharacterComponent->GetNormalWeapon(EWeaponType::Onehand)->AttachTo("Onehand_Holster");
+		CharacterComponent->SetCurrentWeaponType(EWeaponType::Unarmed);
 
 		GLog->Log("ACPlayer::OnOnehand() Unequip");
+
+		bUnequipping = false;
 		
 		return;
 	}
 
-	if(CharacterComponent->GetIsWeaponSpellMode())
+	// Spell 혹은 Spell Fist일 경우 바로 Onehand 장착
+	if(CharacterComponent->GetIsWeaponSpellMode() || CharacterComponent->GetIsWeaponSpellFistMode())
 	{
 		bChanging = true;
 		
-		CharacterComponent->GetUnequipData(EWeaponType::Spell).PlayMontage(this);
+		IsMontagePlaying = true;
+		CharacterComponent->GetEquipData(EWeaponType::Onehand).PlayMontage(this);
+		CharacterComponent->SetCurrentWeaponType(EWeaponType::Onehand);
 
+		bChanging = false;
+		
 		GLog->Log("ACPlayer::OnOnehand() Change");
 
 		return;
 	}
 
-	if (CharacterComponent->GetIsWeaponSpellFistMode())
-	{
-		bChanging = true;
-
-		SpellFistUnequipData[0].PlayMontage(this);
-
-		GLog->Log("ACPlayer::OnOnehand() Change");
-
-		return;
-	}
-
-	CharacterComponent->SetCurrentWeaponType(EWeaponType::Onehand);
+	IsMontagePlaying = true;
 	CharacterComponent->GetEquipData(EWeaponType::Onehand).PlayMontage(this);
+	CharacterComponent->SetCurrentWeaponType(EWeaponType::Onehand);
 
 	GLog->Log("ACPlayer::OnOnehand() Equip");
 }
@@ -985,45 +1078,60 @@ void ACPlayer::OnOnehand()
 void ACPlayer::OnSpell()
 {
 	CheckTrue(IsMontagePlaying);
-	//CharacterComponent->SetIsMontagePlaying(true);
-	IsMontagePlaying = true;
-	IsPressedOnSpell = true;
+	
+	//IsMontagePlaying = true;
+	//IsPressedOnSpell = true;
 
-	if (CharacterComponent->GetIsWeaponOnehandMode())
-	{
-		bChanging = true;
-
-		CharacterComponent->GetUnequipData(EWeaponType::Onehand).PlayMontage(this);
-
-		GLog->Log("ACPlayer::OnSpell() Change");
-
-		return;
-	}
-
+	// Spell일 경우 무기 장착 해제
 	if (CharacterComponent->GetIsWeaponSpellMode())
 	{
 		bUnequipping = true;
 
-		CharacterComponent->GetUnequipData(EWeaponType::Spell).PlayMontage(this);
+		CharacterComponent->SetCurrentWeaponType(EWeaponType::Unarmed);
+
+		bUnequipping = false;
 
 		GLog->Log("ACPlayer::OnSpell() Unequip");
 
 		return;
 	}
 
+	// Onehand일 경우 무기 장착을 해제하고 Equip에님 몽타주 실행 후 EWeaponType 변경
+	if (CharacterComponent->GetIsWeaponOnehandMode())
+	{
+		bChanging = true;
+
+		CharacterComponent->GetNormalWeapon(EWeaponType::Onehand)->AttachTo("Onehand_Holster");
+		IsMontagePlaying = true;
+		CharacterComponent->GetEquipData(EWeaponType::Spell).PlayMontage(this);
+		CharacterComponent->SetCurrentWeaponType(EWeaponType::Spell);
+		
+		bChanging = false;
+
+		GLog->Log("ACPlayer::OnSpell() Change");
+
+		return;
+	}
+
+	// Spell Fist 일 경우 Equip 에님 몽타주 실행 후 EWeaponType 변경
 	if (CharacterComponent->GetIsWeaponSpellFistMode())
 	{
 		bChanging = true;
 
-		SpellFistUnequipData[0].PlayMontage(this);
+		IsMontagePlaying = true;
+		CharacterComponent->GetEquipData(EWeaponType::Spell).PlayMontage(this);
+		CharacterComponent->SetCurrentWeaponType(EWeaponType::Spell);
+
+		bChanging = false;
 
 		GLog->Log("ACPlayer::OnOnehand() Change");
 
 		return;
 	}
 
-	CharacterComponent->SetCurrentWeaponType(EWeaponType::Spell);
+	IsMontagePlaying = true;
 	CharacterComponent->GetEquipData(EWeaponType::Spell).PlayMontage(this);
+	CharacterComponent->SetCurrentWeaponType(EWeaponType::Spell);
 
 	GLog->Log("ACPlayer::OnSpell() Equip");
 }
@@ -1053,46 +1161,94 @@ void ACPlayer::OnSpellFist()
 {
 	CheckTrue(IsMontagePlaying);
 	//CharacterComponent->SetIsMontagePlaying(true);
-	IsMontagePlaying = true;
-	IsPressedOnSpellFist = true;
+	//IsMontagePlaying = true;
+	//IsPressedOnSpellFist = true;
 
-	if (CharacterComponent->GetIsWeaponOnehandMode())
-	{
-		bChanging = true;
-
-		CharacterComponent->GetUnequipData(EWeaponType::Onehand).PlayMontage(this);
-
-		GLog->Log("ACPlayer::OnSpell() Change");
-
-		return;
-	}
-
-	if (CharacterComponent->GetIsWeaponSpellMode())
-	{
-		bChanging = true;
-
-		CharacterComponent->GetUnequipData(EWeaponType::Spell).PlayMontage(this);
-
-		GLog->Log("ACPlayer::OnSpell() Unequip");
-
-		return;
-	}
-
+	// SpellFist이면 바로 EWeaponType을 Unarmed로 변경
 	if (CharacterComponent->GetIsWeaponSpellFistMode())
 	{
 		bUnequipping = true;
 
-		SpellFistUnequipData[0].PlayMontage(this);
+		CharacterComponent->SetCurrentWeaponType(EWeaponType::Unarmed);
+		CharacterComponent->SetCurrentWeaponType(EWeaponType::SpellFist);
 
 		GLog->Log("ACPlayer::OnOnehand() Change");
 
 		return;
 	}
 
-	CharacterComponent->SetCurrentWeaponType(EWeaponType::SpellFist);
+	// Onehand이면 무기 장착 해제 후 Equip몽타주 실행 후 EWeaponType 변경
+	if (CharacterComponent->GetIsWeaponOnehandMode())
+	{
+		bChanging = true;
+
+		CharacterComponent->GetNormalWeapon(EWeaponType::Onehand)->AttachTo("Onehand_Holster");
+		IsMontagePlaying = true;
+		SpellFistEquipData[0].PlayMontage(this);
+		CharacterComponent->SetCurrentWeaponType(EWeaponType::SpellFist);
+
+		bChanging = false;
+
+		GLog->Log("ACPlayer::OnSpell() Change");
+
+		return;
+	}
+
+	// Spell이면 바로 Equip 몽타주 실행 후 EWeaponType 변경
+	if (CharacterComponent->GetIsWeaponSpellMode())
+	{
+		bChanging = true;
+
+		IsMontagePlaying = true;
+		SpellFistEquipData[0].PlayMontage(this);
+		CharacterComponent->SetCurrentWeaponType(EWeaponType::SpellFist);
+
+		bChanging = false;
+
+		GLog->Log("ACPlayer::OnSpell() Unequip");
+
+		return;
+	}
+
+	IsMontagePlaying = true;
 	SpellFistEquipData[0].PlayMontage(this);
+	CharacterComponent->SetCurrentWeaponType(EWeaponType::SpellFist);
 
 	GLog->Log("ACPlayer::OnSpell() Equip");
+}
+
+void ACPlayer::OnSpawnFriend()
+{
+	if (CharacterComponent->GetIsWeaponOnehandMode())
+	{
+		if (SpawnDatas[0].Montage)
+		{
+			SpawnDatas[0].PlayMontage(this);
+
+			if (OnSpawnPlayerFriend.IsBound())
+				OnSpawnPlayerFriend.Broadcast();
+		}
+	}
+	else if (CharacterComponent->GetIsWeaponSpellMode())
+	{
+		if (SpawnDatas[1].Montage)
+		{
+			SpawnDatas[1].PlayMontage(this);
+
+			if (OnSpawnPlayerFriend.IsBound())
+				OnSpawnPlayerFriend.Broadcast();
+		}
+	}
+	else if (CharacterComponent->GetIsWeaponSpellFistMode())
+	{
+		if (SpawnDatas[2].Montage)
+		{
+			SpawnDatas[2].PlayMontage(this);
+
+			//if (OnSpawnPlayerFriend.IsBound())
+			//	OnSpawnPlayerFriend.Broadcast();
+		}
+	}
 }
 
 void ACPlayer::OnShield()
@@ -1213,6 +1369,8 @@ void ACPlayer::OnAction()
 				 * 1번 째 공격도 가끔씩 클릭 할 때마다 다시 시작하는 것으로 인해 확신하여 수정하였다. */
 			bAttacking = true;
 			SpellFistDatas[Index].PlayMontage(this);
+
+			IsMontagePlaying = true;
 			GLog->Log("ACPlayer::OnAction() SpellFistAttack");
 		}
 	}
@@ -1462,57 +1620,6 @@ FVector ACPlayer::CalculateMeshSocketToVectorLocation(FName InSocketName, FVecto
 	return UKismetMathLibrary::GetDirectionUnitVector(GetMesh()->GetSocketLocation(InSocketName), InDirectionTo);
 }
 
-void ACPlayer::BeginPlay()
-{
-	Super::BeginPlay();
-
-	Zooming = SpringArmComponent->TargetArmLength;
-
-	GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACPlayer::MontageEnded);
-
-	GetComponents<UCapsuleComponent>(CapsuleCollisions);
-	
-	BoxComponentSkill->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnAttackBoxBeginOverlap);
-	BoxComponentSkill->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnAttackBoxEndOverlap);
-
-	//BoxComponentSkill3->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnBoxSkill3BeginOverlap);
-	//BoxComponentSkill3->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnBoxSkill3EndOverlap);
-	//
-	SphereComponentSpellFist->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnSphereSpellFistBeginOverlap);
-	SphereComponentSpellFist->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnSphereSpellFistEndOverlap);
-	
-	for (UShapeComponent* collision : CapsuleCollisions)
-	{
-		collision->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnBeginOverlap);
-		collision->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnEndOverlap);
-	}
-
-	if (SpellFistWeaponClass)
-	{
-		FActorSpawnParameters params;
-		params.Owner = this;
-		
-		SpellFistWeapon = GetWorld()->SpawnActor<ACWeapon>(SpellFistWeaponClass, params);
-	}
-
-	CharacterComponent->SetCurrentWeaponType(EWeaponType::Unarmed);
-	
-	OnTimelineFloat.BindUFunction(this, "InZooming");
-	Timeline.AddInterpFloat(AimCurve, OnTimelineFloat);
-	Timeline.SetPlayRate(200);
-	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-
-	Notify_SetCurrentPlayerSkillType(EPlayerSkillType::Max);
-	Notify_SetCurrentPlayerSpellFistType(EPlayerSpellFistType::Max);
-	
-	UGameplayStatics::GetAllActorsWithTag(GetWorld(), "Enemy", SpellFistedActors);
-
-	// 임시
-	//FTimerHandle timer;
-
-	//GetWorldTimerManager().SetTimer(timer, this, &UCCharacterComponent::SetSp(100.0f), )
-}
-
 void ACPlayer::Debug_PlayerLog()
 {
 	//if (StateComponent)
@@ -1579,28 +1686,8 @@ void ACPlayer::Debug_PlayerLog()
 	
 }
  
+void ACPlayer::Debug_OnControllerRotationYaw()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//void ACPlayer::TakeDamage_Mission2Cannon(float InDamage)
-//{
-//	CharacterComponent->SetHp((int32)-InDamage);
-//}
-
-void ACPlayer::Debug_OnControllerRotationYaw()
 
 {
 	if (bUseControllerRotationYaw)
@@ -1609,57 +1696,54 @@ void ACPlayer::Debug_OnControllerRotationYaw()
 		bUseControllerRotationYaw = true;
 }
 
-
-
-
-void ACPlayer::Notify_SetCurrentPlayerNormalAttackType(EPlayerNormalAttackType InType)
+// protected: //////////////////////////////////////////////////////////////////////
+void ACPlayer::BeginPlay()
 {
-	CurrentPlayerNormalAttackType = InType;
+	Super::BeginPlay();
+
+	Zooming = SpringArmComponent->TargetArmLength;
+
+	GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACPlayer::MontageEnded);
+
+	GetComponents<UCapsuleComponent>(CapsuleCollisions);
+	
+	BoxComponentSkill->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnAttackBoxBeginOverlap);
+	BoxComponentSkill->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnAttackBoxEndOverlap);
+
+	//BoxComponentSkill3->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnBoxSkill3BeginOverlap);
+	//BoxComponentSkill3->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnBoxSkill3EndOverlap);
+	//
+	SphereComponentSpellFist->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnSphereSpellFistBeginOverlap);
+	SphereComponentSpellFist->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnSphereSpellFistEndOverlap);
+	
+	for (UShapeComponent* collision : CapsuleCollisions)
+	{
+		collision->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnBeginOverlap);
+		collision->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnEndOverlap);
+	}
+
+	if (SpellFistWeaponClass)
+	{
+		FActorSpawnParameters params;
+		params.Owner = this;
+		
+		SpellFistWeapon = GetWorld()->SpawnActor<ACWeapon>(SpellFistWeaponClass, params);
+	}
+
+	CharacterComponent->SetCurrentWeaponType(EWeaponType::Unarmed);
+	
+	OnTimelineFloat.BindUFunction(this, "InZooming");
+	Timeline.AddInterpFloat(AimCurve, OnTimelineFloat);
+	Timeline.SetPlayRate(200);
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+
+	Notify_SetCurrentPlayerSkillType(EPlayerSkillType::Max);
+	Notify_SetCurrentPlayerSpellFistType(EPlayerSpellFistType::Max);
+	
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), "Enemy", SpellFistedActors);
+
+	// 임시
+	//FTimerHandle timer;
+
+	//GetWorldTimerManager().SetTimer(timer, this, &UCCharacterComponent::SetSp(100.0f), )
 }
-
-void ACPlayer::Notify_SetCurrentPlayerSkillType(EPlayerSkillType InType)
-{
-	CurrentPlayerSkillType = InType;
-}
-
-void ACPlayer::Notify_SetCurrentPlayerSpellFistType(EPlayerSpellFistType InType)
-{
-	CurrentPlayerSpellFistType = InType;
-}
-
-
-//void ACPlayer::ActivateCoolTimeSkillOne_Implementation()
-//{
-//	FTimerHandle timer;
-//
-//	GetWorld()->GetTimerManager().SetTimer(timer, FTimerDelegate::CreateLambda([&]() 
-//	{
-//		if (OnSkillCoolTimeCounting.IsBound())
-//			OnSkillCoolTimeCounting.Broadcast();
-//
-//	}), 1.0f, true);
-//}
-//
-//void ACPlayer::ActivateCoolTimeSkillTwo_Implementation()
-//{
-//	FTimerHandle timer;
-//
-//	GetWorld()->GetTimerManager().SetTimer(timer, FTimerDelegate::CreateLambda([&]()
-//	{
-//		if (OnSkillCoolTimeCounting.IsBound())
-//			OnSkillCoolTimeCounting.Broadcast();
-//
-//	}), 1.0f, true);
-//}
-//
-//void ACPlayer::ActivateCoolTimeSkillThree_Implementation()
-//{
-//	FTimerHandle timer;
-//
-//	GetWorld()->GetTimerManager().SetTimer(timer, FTimerDelegate::CreateLambda([&]()
-//	{
-//		if (OnSkillCoolTimeCounting.IsBound())
-//			OnSkillCoolTimeCounting.Broadcast();
-//
-//	}), 1.0f, true);
-//}

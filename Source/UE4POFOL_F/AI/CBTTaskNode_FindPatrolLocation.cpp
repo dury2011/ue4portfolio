@@ -31,7 +31,7 @@ EBTNodeResult::Type UCBTTaskNode_FindPatrolLocation::ExecuteTask(UBehaviorTreeCo
 
 	if (navSystem->GetRandomPointInNavigableRadius(current, UKismetMathLibrary::RandomFloatInRange(450.0f, 750.0f), nextPatrol))
 	{
-		current = FVector(nextPatrol.Location.X, nextPatrol.Location.Y - 300.0f, nextPatrol.Location.Z);
+		current = FVector(nextPatrol.Location.X, nextPatrol.Location.Y, nextPatrol.Location.Z) + GraduallyTowardsWorldLoc;
 		
 		OwnerComp.GetBlackboardComponent()->SetValueAsVector("PatrolLocation", current);
 		

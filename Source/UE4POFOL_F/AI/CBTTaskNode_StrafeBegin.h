@@ -22,6 +22,8 @@ private:
 	FTimerHandle EndTimer;
 	FTimerHandle ChangeDirectionTimer;
 
+	bool bFinish = false;
+
 private:
 	UCBTTaskNode_StrafeBegin();
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)override;

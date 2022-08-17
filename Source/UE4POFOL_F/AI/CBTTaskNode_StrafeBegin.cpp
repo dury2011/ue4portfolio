@@ -5,7 +5,7 @@
 
 UCBTTaskNode_StrafeBegin::UCBTTaskNode_StrafeBegin()
 {
-	bNotifyTick = true;
+	//bNotifyTick = true;
 
 	NodeName = "Begin Strafe";
 }
@@ -19,9 +19,11 @@ EBTNodeResult::Type UCBTTaskNode_StrafeBegin::ExecuteTask(UBehaviorTreeComponent
 	if (Enemy == nullptr)
 		return EBTNodeResult::Failed;
 	
-	Enemy->GetWorldTimerManager().SetTimer(EndTimer, this, &UCBTTaskNode_StrafeBegin::EndStrafing, StrafingTime, true);
-	Enemy->GetWorldTimerManager().SetTimer(ChangeDirectionTimer, this, &UCBTTaskNode_StrafeBegin::ChangeStrafing, ChangeDirectionTime, true);
+	Enemy->GetWorldTimerManager().SetTimer(EndTimer, this, &UCBTTaskNode_StrafeBegin::EndStrafing, StrafingTime, false, StrafingTime);
+	Enemy->GetWorldTimerManager().SetTimer(ChangeDirectionTimer, this, &UCBTTaskNode_StrafeBegin::ChangeStrafing, ChangeDirectionTime, false, ChangeDirectionTime);
 	Enemy->BeginStrafing();
+
+	bNotifyTick = true;
 
 	return EBTNodeResult::InProgress;
 }
@@ -30,8 +32,10 @@ void UCBTTaskNode_StrafeBegin::TickTask(UBehaviorTreeComponent& OwnerComp, uint8
 {
 	Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
 
-	if (!Enemy->GetCanStrafing())
+	if (bFinish)
+	{
 		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+	}
 }
 
 void UCBTTaskNode_StrafeBegin::ChangeStrafing()
@@ -44,6 +48,8 @@ void UCBTTaskNode_StrafeBegin::ChangeStrafing()
 void UCBTTaskNode_StrafeBegin::EndStrafing()
 {
 	Enemy->EndStrafing();
+
+	bFinish = true;
 
 	Enemy->GetWorldTimerManager().ClearTimer(EndTimer);
 }

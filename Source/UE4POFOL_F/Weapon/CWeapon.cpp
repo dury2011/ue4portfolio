@@ -120,7 +120,7 @@ void ACWeapon::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	
 	CheckTrue(OwnerCharacter == OtherActor);
 	CheckTrue(OwnerCharacter->GetCapsuleComponent() == OverlappedComponent);
-	CheckTrue(OwnerCharacter->GetClass() == OtherActor->GetClass());
+	//CheckTrue(OwnerCharacter->GetClass() == OtherActor->GetClass());
 	CheckTrue(IsOverlapped);
 
 	// Shield시 BeginOverlap의 주체는 Enemy임
@@ -147,34 +147,32 @@ void ACWeapon::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	}
 
 	if (IsSkillWeapon)
-	{
-		if (OtherActor)
-		{
-			ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
+	{		
+		ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
 
-			if (enemy)
-			{
-				enemy->SetIsAttackBySkillWeapon(true);
-				enemy->TakeDamage_OpponentUsingSkillWeapon();
-				
-				return;
-			}
+		if (enemy)
+		{
+			enemy->SetIsAttackBySkillWeapon(true);
+			enemy->TakeDamage_OpponentUsingSkillWeapon();
+			GLog->Log("ACWeapon::OnBeginOverlap_SkillWeapon");
+			
+			return;
 		}
 	}
 	
-	GLog->Log("ACWeapon::OnBeginOverlap_SkillWeapon");
+	if ((OwnerCharacter->ActorHasTag("Enemy") && OtherActor->ActorHasTag("PlayerFriend")) || (OwnerCharacter->ActorHasTag("PlayerFriend") && OtherActor->ActorHasTag("Enemy")) || (OwnerCharacter->ActorHasTag("Enemy") && OtherActor->ActorHasTag("Player")))
+	{
+		IsOverlapped = true;
 
-	IsOverlapped = true;
-
-	float percentage = UKismetMathLibrary::RandomFloatInRange(0.0f, 100.0f);
-	float randomDeviation = UKismetMathLibrary::RandomIntegerInRange(0,RandomDeviation);
-	int32 pureDamage = PureDamage;
-	int32 criticalDamage = CriticalDamage;
-	
-	/* MEMO: Skill Weapon에 Enemy가 Begin Overlap된 경우
+		float percentage = UKismetMathLibrary::RandomFloatInRange(0.0f, 100.0f);
+		float randomDeviation = UKismetMathLibrary::RandomIntegerInRange(0,RandomDeviation);
+		int32 pureDamage = PureDamage;
+		int32 criticalDamage = CriticalDamage;
+		
+		/* MEMO: Skill Weapon에 Enemy가 Begin Overlap된 경우
 	////* enemy에서 Skill Weapon에 콜리전 됬다고 알려주기
 	////* enemy에서 적절한 함수 호출되도록 하기 */
-	//if (OtherActor->ActorHasTag("Enemy"))
+		//if (OtherActor->ActorHasTag("Enemy"))
 	//{
 	//	ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
 	//
@@ -194,17 +192,18 @@ void ACWeapon::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	//	}
 	//}
 
-	int32 applyDamage = ApplyDamage;
-	
-	if ((percentage / 100) <= CriticalPercentage)
-	{
-		pureDamage += CriticalDamage;
-		applyDamage = pureDamage + randomDeviation;
+		int32 applyDamage = ApplyDamage;
+		
+		if ((percentage / 100) <= CriticalPercentage)
+		{
+			pureDamage += CriticalDamage;
+			applyDamage = pureDamage + randomDeviation;
+		}
+		else
+			applyDamage = pureDamage + randomDeviation;
+		
+		UGameplayStatics::ApplyDamage(OtherActor, applyDamage, OwnerCharacter->GetController(), this, NULL);
 	}
-	else
-		applyDamage = pureDamage + randomDeviation;
-	
-	UGameplayStatics::ApplyDamage(OtherActor, applyDamage, OwnerCharacter->GetController(), this, NULL);
 	
 	//if (OwnerCharacter && (OwnerCharacter->GetController() == GetWorld()->GetFirstPlayerController()))
 	//{

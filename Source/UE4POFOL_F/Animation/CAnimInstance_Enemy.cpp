@@ -22,6 +22,7 @@ void UCAnimInstance_Enemy::NativeUpdateAnimation(float DeltaSeconds)
 	Super::NativeUpdateAnimation(DeltaSeconds);
 	
 	CheckNull(Enemy);
+	CheckNull(Enemy->GetOpponent());
 	
 	Speed = Enemy->GetVelocity().Size2D();
 	Direction = CalculateDirection(Enemy->GetVelocity(), Enemy->GetControlRotation());

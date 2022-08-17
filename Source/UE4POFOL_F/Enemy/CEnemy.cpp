@@ -22,6 +22,7 @@
 #include "GameplayTagContainer.h"
 #include "Components/SphereComponent.h"
 #include "Player/CCannon.h"
+#include "Enemy/CEnemy_Meele.h"
 
 int32 ACEnemy::SpawnCount = 0;
 
@@ -39,12 +40,56 @@ ACEnemy::ACEnemy()
 	HealthBarWidgetComponent->SetupAttachment(GetMesh());
 	HealthBarWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	HealthBarWidgetComponent->SetDrawSize(FVector2D(125.0f, 15.0f));
+
+	//BoxComponentAttack = CreateDefaultSubobject<UBoxComponent>("Box Component Attack");
+
+	//TeamId = FGenericTeamId(ID);
+	//SphereComponentDetectOpponent = CreateDefaultSubobject<USphereComponent>("Sphere Component Detect Opponent");
+	
+	//if (SphereComponentDetectOpponent)
+		//SphereComponentDetectOpponent->SetupAttachment(RootComponent);
+}
+
+void ACEnemy::Destroyed()
+{
+
 }
 
 void ACEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
+	//if (!Opponent)
+	//{
+	//	TArray<AActor*> outActorArr;
+	//
+	//	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("PlayerFriend"), outActorArr);
+	//
+	//	int selectElement = UKismetMathLibrary::RandomIntegerInRange(0, outActorArr.Num() - 1);
+	//
+	//	int32 targettedCount = Cast<ACEnemy>(outActorArr[selectElement])->GetTargettedActorCount();
+	//
+	//	if (targettedCount <= 3)
+	//	{
+	//		if (outActorArr[selectElement])
+	//		{
+	//			Opponent = dynamic_cast<ACEnemy*>(outActorArr[selectElement]);
+	//		}
+	//	}
+	//	else if (targettedCount > 3)
+	//	{
+	//		TArray<AActor*>outPlayerArr;
+	//
+	//		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), outActorArr);
+	//
+	//		for (int i = 0; i < outPlayerArr.Num(); i++)
+	//		{
+	//			if (outPlayerArr[i])
+	//				Opponent = dynamic_cast<ACPlayer*>(outPlayerArr[i]);
+	//		}
+	//	}
+	//}
+
 	// Hp가 0.0 보다 작거나 같을 경우
 	if (Hp <= 0.0f && IsOnce_HpZeroed)
 	{
@@ -107,7 +152,7 @@ void ACEnemy::Tick(float DeltaTime)
 	// Player에게 공격을 받는 중(받을 수 있는 상태)이고 스킬에 의해 공중으로 띄워진 상태인 경우만 코드 실행
 	if (IsAttackByPlayer && IsLaunchBySkill && !IsBoss)
 	{
-		SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y, Opponent->GetActorLocation().Z));
+		SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y, Player->GetActorLocation().Z));
 	}
 
 	// Boss는 scale이 크므로 에어본 공격 적용 안함 하지만 에어본이 안되면 Player 공격 범위에 벗어나므로 강제로 true로 설정
@@ -124,7 +169,7 @@ void ACEnemy::Tick(float DeltaTime)
 	// Player Skill이 StopHit공격일 경우만 코드 실행
 	if (IsSkillStopHit && IsAttackByPlayer && !IsBoss)
 	{
-		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
+		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Player);
 
 		if (playerInterface)
 		{
@@ -181,6 +226,9 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 		Hp -= Damaged.DamageAmount;
 	}
 	// Enemy Projectile 피격시 회전과 넉백 설정
+
+	//if(EventInstigator->GetOwner()->ActorHasTag("Player"))
+	//{
 	{
 		FVector start = GetActorLocation();
 		FVector target = Damaged.EventInstigator->GetPawn()->GetActorLocation();
@@ -193,9 +241,10 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 
 		SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
 		
-		//if(ActivateDamageLaunch)
-			LaunchCharacter(-direction * 1000.0f, true, false);
+		if(ActivateDamageLaunch && !GetCharacterMovement()->IsFalling())
+			LaunchCharacter(direction * -1200.0f , true, true);
 	}
+	//}
 	
 	// DeadCheck
 	{
@@ -203,16 +252,17 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 	}
 
 	// Projectile에 Begin Overlap 되었을 때만 작동하는 곳
-	{
-		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
+	
+	//{
+	//	ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
 
-		if (playerInterface && (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::NormalHit))
-			GetNormalDamageData(0);
-		else if (playerInterface && (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::BoundUpHit))
-			GetNormalDamageData(1);
-		else if (playerInterface && (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::FinalHit))
-			GetNormalDamageData(2);
-	}
+	//	if (playerInterface && (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::NormalHit))
+	//		GetNormalDamageData(0);
+	//	else if (playerInterface && (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::BoundUpHit))
+	//		GetNormalDamageData(1);
+	//	else if (playerInterface && (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::FinalHit))
+	//		GetNormalDamageData(2);
+	//}
 
 	// Widget 및 각종 효과
 	{
@@ -224,7 +274,7 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 	// Damage Check
 	if (Hp > 0.0f)
 	{
-		CheckDamage();
+		ActivateDamageEffect(true, Player->CharacterComponent->GetCurrentWeaponType());
 	}
 	
 	return Damaged.DamageAmount;
@@ -244,6 +294,8 @@ void ACEnemy::OnAttack()
 void ACEnemy::BeginStrafing()
 {
 	CanStrafing = true;
+
+	//StrafeDirection = GetActorForwardVector() * -0.5f;
 }
 
 void ACEnemy::ChangeStrafing()
@@ -253,23 +305,23 @@ void ACEnemy::ChangeStrafing()
 
 	typedef EEnemyStrafingType s;
 
-	int32 select = UKismetMathLibrary::RandomIntegerInRange(0, 3);
+	int32 select = UKismetMathLibrary::RandomIntegerInRange(1, 3);
 	
-	switch ((EEnemyStrafingType)select)
+	switch ((EEnemyStrafingType) select)
 	{
 		case s::Front :
 		{
-			//CurrentStrafingType = s::Front;
-			//
-			//StrafeDirection = GetActorForwardVector();
+			CurrentStrafingType = s::Front;
+			
+			StrafeDirection = GetActorForwardVector() * 1.0f;
 	
 			break;
 		}
 		case s::Back:
 		{
-			//CurrentStrafingType = s::Back;
-			//
-			//StrafeDirection = GetActorForwardVector() * -1.0f;
+			CurrentStrafingType = s::Back;
+			
+			StrafeDirection = GetActorForwardVector() * -1.0f;
 	
 			break;
 		}
@@ -285,7 +337,7 @@ void ACEnemy::ChangeStrafing()
 		{
 			CurrentStrafingType = s::Right;
 	
-			StrafeDirection = GetActorRightVector();
+			StrafeDirection = GetActorRightVector() * 1.0f;
 			
 			break;
 		}
@@ -301,6 +353,8 @@ void ACEnemy::ChangeStrafing()
 void ACEnemy::EndStrafing()
 {
 	CanStrafing = false;
+
+	StrafeDirection = FVector::ZeroVector;
 }
 
 void ACEnemy::BeginDodge()
@@ -325,6 +379,21 @@ void ACEnemy::OnStateTypeChange(EEnemyStateType InCurrentStateType)
 
 	if (OnEnemyStateTypeChanged.IsBound())
 		OnEnemyStateTypeChanged.Broadcast(PreviousStateType, CurrentStateType);
+}
+
+void ACEnemy::SetTarget(bool InBool, AActor* InActor)
+{
+	//if (!Opponent)
+	//{
+		Opponent = Cast<ACharacter>(InActor);
+
+		//if (Opponent)
+		//{
+		//	Cast<ACPlayer>(Opponent)->OnPlayerSkillAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentUsingSkill);
+		//	Cast<ACPlayer>(Opponent)->OnPlayerNormalAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentNormalAttack);
+		//	Cast<ACPlayer>(Opponent)->OnSpawnPlayerFriend.AddDynamic(this, &ACEnemy::ChangeOpponentSpawn);
+		//}
+	//}
 }
 
 ACEnemy* ACEnemy::SpawnEnemy(AActor* InSpawner, TSubclassOf<ACEnemy> InSpawnEnemyClass)
@@ -406,7 +475,7 @@ void ACEnemy::TakeDamage_OpponentNormalAttack()
 {
 	CheckFalse(IsOnce_HpZeroed);
 	
-	ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
+	ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Player);
 	
 	if (playerInterface && IsAttackByPlayer)
 	{
@@ -431,7 +500,7 @@ void ACEnemy::TakeDamage_OpponentNormalAttack()
 
 			ShowHitNumber(applyDamage, this->GetActorLocation());
 			
-			Damaged.EventInstigator = Cast<AController>(Opponent);
+			Damaged.EventInstigator = Cast<AController>(Player);
 			
 			ShakeCamera(Damaged);
 			ShowHealthBar();
@@ -443,7 +512,7 @@ void ACEnemy::TakeDamage_OpponentNormalAttack()
 			bActivateRotateToOpponent = false;
 			
 			FVector start = GetActorLocation();
-			FVector target = Opponent->GetActorLocation();
+			FVector target = Player->GetActorLocation();
 
 			FVector direction = target - start;
 			direction.Normalize();
@@ -460,7 +529,7 @@ void ACEnemy::TakeDamage_OpponentNormalAttack()
 		// 피격 에님 몽타주, 이펙트 재생
 		if (Hp > 0.0f)
 		{
-			ActivateDamageEffect();
+			ActivateDamageEffect(false, Player->CharacterComponent->GetCurrentWeaponType());
 
 			DamagedByOpponentNormal_SkillAndFx(1000.0f);
 			
@@ -480,7 +549,7 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 	
 	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
 	
-	ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
+	ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Player);
 	
 	//Player에게 Skill로 공격당하는 중이면
 	if (IsAttackByPlayer && playerInterface)
@@ -505,6 +574,7 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 		}
 		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::BoundUpHit)
 		{
+			ActivateDamageLaunch = false;
 			DamagedByOpponentNormal_SkillAndFx();
 			GetSkillDamageData(1);
 
@@ -524,9 +594,9 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 			DamagedByOpponentNormal_SkillAndFx();
 			GetSkillDamageData(2);
 
-			if (Opponent && !IsBoss)
+			if (Player && !IsBoss)
 			{
-				FVector targetLoc = Opponent->GetActorLocation();
+				FVector targetLoc = Player->GetActorLocation();
 
 				SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y, targetLoc.Z));
 			}
@@ -547,7 +617,11 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 			IsAttackByPlayer = false;
 
 			if (IsLaunchBySkill)
+			{
 				IsLaunchBySkill = false;
+
+				ActivateDamageLaunch = true;
+			}
 
 			if (IsSkillStopHit)
 			{
@@ -573,7 +647,7 @@ void ACEnemy::TakeDamage_OpponentUsingSkillWeapon()
 	
 	if (IsAttackBySkillWeapon)
 	{
-		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Opponent);
+		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Player);
 		
 		if (playerInterface)
 		{
@@ -584,11 +658,11 @@ void ACEnemy::TakeDamage_OpponentUsingSkillWeapon()
 
 				ShowHitNumber(applyDamage, this->GetActorLocation());
 
-				Damaged.EventInstigator = Cast<AController>(Opponent);
+				Damaged.EventInstigator = Cast<AController>(Player);
 
 				ShakeCamera(Damaged);
 				ShowHealthBar();
-				ActivateDamageEffect();
+				ActivateDamageEffect(false, Player->CharacterComponent->GetCurrentWeaponType());
 			}
 
 			// 피격 회전 설정
@@ -596,7 +670,7 @@ void ACEnemy::TakeDamage_OpponentUsingSkillWeapon()
 				bActivateRotateToOpponent = false;
 
 				FVector start = GetActorLocation();
-				FVector target = Opponent->GetActorLocation();
+				FVector target = Player->GetActorLocation();
 
 				FVector direction = target - start;
 				direction.Normalize();
@@ -642,7 +716,7 @@ void ACEnemy::BlockedByShield()
 	// 블록 회전 
 	{
 		FVector start = GetActorLocation();
-		FVector target = Opponent->GetActorLocation();
+		FVector target = Player->GetActorLocation();
 
 		FVector direction = target - start;
 		direction.Normalize();
@@ -664,11 +738,11 @@ void ACEnemy::BlockedByShield()
 }
 
 // private: //////////////////////////////////////////////////////////////////////
-void ACEnemy::CheckDamage()
-{
-	if (Hp > 0.0f)
-		ActivateDamageEffect();
-}
+//void ACEnemy::CheckDamage()
+//{
+//	if (Hp > 0.0f)
+//		//ActivateDamageEffect();
+//}
 
 void ACEnemy::DamagedByOpponentNormal_SkillAndFx(float InLaunchSpeed)
 {
@@ -682,7 +756,7 @@ void ACEnemy::DamagedByOpponentNormal_SkillAndFx(float InLaunchSpeed)
 	// 피격 회전 
 	{
 		FVector start = GetActorLocation();
-		FVector target = Opponent->GetActorLocation();
+		FVector target = Player->GetActorLocation();
 
 		FVector direction = target - start;
 		direction.Normalize();
@@ -698,7 +772,7 @@ void ACEnemy::DamagedByOpponentNormal_SkillAndFx(float InLaunchSpeed)
 
 	// 피격 효과 
 	{
-		ActivateDamageEffect();
+		ActivateDamageEffect(false, Player->CharacterComponent->GetCurrentWeaponType());
 
 		// 더 추가한 Damage Effect를 5번째 배열 원소에 넣어 둠
 		//if (SkillDamageDatas[5].Effect)
@@ -720,7 +794,7 @@ void ACEnemy::DamagedByOpponentSkillWeaponAndFx()
 
 			ShowHitNumber(applyDamage, this->GetActorLocation());
 
-			Damaged.EventInstigator = Cast<AController>(Opponent);
+			Damaged.EventInstigator = Cast<AController>(Player);
 
 			ShakeCamera(Damaged);
 			ShowHealthBar();
@@ -732,7 +806,7 @@ void ACEnemy::DamagedByOpponentSkillWeaponAndFx()
 			bActivateRotateToOpponent = false;
 
 			FVector start = GetActorLocation();
-			FVector target = Opponent->GetActorLocation();
+			FVector target = Player->GetActorLocation();
 
 			FVector direction = target - start;
 			direction.Normalize();
@@ -743,7 +817,7 @@ void ACEnemy::DamagedByOpponentSkillWeaponAndFx()
 			SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll));
 		}
 
-		ActivateDamageEffect();
+		ActivateDamageEffect(false, Player->CharacterComponent->GetCurrentWeaponType());
 
 		SkillWeaponAttackCount++;
 
@@ -763,7 +837,7 @@ void ACEnemy::DamagedByOpponentSkillWeaponAndFx()
 
 			GetWorldTimerManager().ClearTimer(SkillWeaponTimer);
 
-			ACPlayer* player = Cast<ACPlayer>(Opponent);
+			ACPlayer* player = Cast<ACPlayer>(Player);
 
 			if (player)
 				player->Notify_SetCurrentPlayerSkillType(EPlayerSkillType::Max);
@@ -772,7 +846,7 @@ void ACEnemy::DamagedByOpponentSkillWeaponAndFx()
 		}
 		if (SkillWeaponAttackCount == 5)
 		{
-			ACPlayer* player = Cast<ACPlayer>(Opponent);
+			ACPlayer* player = Cast<ACPlayer>(Player);
 
 			if (player)
 			{
@@ -827,6 +901,71 @@ void ACEnemy::CheckDead()
 	}
 }
 
+/* 플레이어에서 Enemy_Friend를 Spawn하면 
+* Enemy는 Opponent를 Player 혹은 EnemyFriend로 랜덤하게 지정한다. 
+* 단 조건이 있는데 Opponent가 3마리 이상에게 타겟이 이미 되어있다면, Player로 타겟을 선택한다.
+* 타겟이 선택되면 */
+void ACEnemy::ChangeOpponentSpawn()
+{
+	//if (!IsPlayerFriendly)
+	//{
+	//	//int selectSwitch = UKismetMathLibrary::RandomIntegerInRange(0, 1);
+	//	//
+	//	//// Opponent를 Player로 
+	//	//if (selectSwitch == 0)
+	//	//{
+	//	//	TArray<AActor*> outActorArr;
+
+	//	//	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), outActorArr);
+
+	//	//	for (int i = 0; i < outActorArr.Num(); i++)
+	//	//		if (outActorArr[i])
+	//	//			Opponent = dynamic_cast<ACPlayer*>(outActorArr[i]);
+	//	//}
+	//	//// Opponent를 Enemy Friend로
+	//	//else if (selectSwitch == 1)
+	//	{
+	//		FTimerHandle WaitHandle;
+	//		float WaitTime = 1.5f; //시간을 설정하고
+
+	//		GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
+	//		{
+	//			// 여기에 코드를 치면 된다.
+	//			TArray<AActor*> outActorArr;
+
+	//			UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("PlayerFriend"), outActorArr);
+
+	//			int selectElement = UKismetMathLibrary::RandomIntegerInRange(0, outActorArr.Num() - 1);
+
+	//			int32 targettedCount = Cast<ACEnemy>(outActorArr[selectElement])->GetTargettedActorCount();
+
+	//			if (targettedCount <= 3)
+	//			{
+	//				if (outActorArr[selectElement])
+	//				{
+	//					Opponent = dynamic_cast<ACEnemy*>(outActorArr[selectElement]);
+
+	//					Cast<ACEnemy>(Opponent)->SetTargettedActorCount();
+	//					Cast<ACEnemy>(Opponent)->SetOpponent(this);
+
+	//				}
+	//			}
+	//			else if (targettedCount > 3)
+	//			{
+	//				//TArray<AActor*> outActorPlayerArr;
+
+	//				//UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), outActorPlayerArr);
+	//			
+	//				//for (int i = 0; i < outActorPlayerArr.Num(); i++)
+	//				//	if (outActorPlayerArr[i])
+	//				//		Opponent = dynamic_cast<ACPlayer*>(outActorPlayerArr[i]);
+	//			}
+
+	//		}), WaitTime, false);
+	//	}
+	//}
+}
+
 void ACEnemy::RecoverDilation()
 {
 	CustomTimeDilation = 1.0f;
@@ -857,6 +996,20 @@ void ACEnemy::BeginPlay()
 			collision->OnComponentEndOverlap.AddDynamic(this, &ACEnemy::OnEndOverlap);
 			collision->OnComponentHit.AddDynamic(this, &ACEnemy::OnHit);
 		}
+
+		//if (BoxComponentAttack)
+		//{
+			//BoxComponentAttack->OnComponentBeginOverlap.AddDynamic(this, &ACEnemy::OnBeginOverlapBoxCollisionAttack);
+			//BoxComponentAttack->OnComponentEndOverlap.AddDynamic(this, &ACEnemy::OnEndOverlapBoxCollisionAttack);
+		}
+
+		//if (SphereComponentDetectOpponent)
+		{
+			//SphereComponentDetectOpponent->OnComponentBeginOverlap.AddDynamic(this, &ACEnemy::OnBeginOverlapSphereComponentDetectOpponent);
+			//SphereComponentDetectOpponent->OnComponentEndOverlap.AddDynamic(this, &ACEnemy::OnEndOverlapSphereComponentDetectOpponent);
+		//}
+
+				
 	
 		if (GetMesh()->GetAnimInstance())
 			GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACEnemy::OnMontageEnded);
@@ -879,24 +1032,27 @@ void ACEnemy::BeginPlay()
 
 	// 상대방(Player) 설정
 	{
-		if (IsPlayerFriendly)
-		{
-			TArray<AActor*> outActorArr;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACEnemy::StaticClass(), outActorArr);
+		//if (IsPlayerFriendly && !InMission2)
+		//{
+		//	TArray<AActor*> outActorArr;
+		//	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Enemy"), outActorArr);
 
-			for (int i = 0; i < outActorArr.Num(); i++)
-				Opponent = dynamic_cast<ACEnemy*>(outActorArr[i]);
-		}
+		//	int select = UKismetMathLibrary::RandomIntegerInRange(0, outActorArr.Num() - 1);
+
+		//	Opponent = dynamic_cast<ACEnemy*>(outActorArr[select]);
+		//}
 		
-		if (!InMission2)
-		{
-			TArray<AActor*> outActorArr;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), outActorArr);
+		//if (!IsPlayerFriendly && !InMission2)
+		//{
+		//	TArray<AActor*> outActorArr;
+		//	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), outActorArr);
 
-			for (int i = 0; i < outActorArr.Num(); i++)
-				Opponent = dynamic_cast<ACPlayer*>(outActorArr[i]);
-		}
-		else if (InMission2)
+		//	for (int i = 0; i < outActorArr.Num(); i++)
+		//		Opponent = dynamic_cast<ACPlayer*>(outActorArr[i]);
+		//}
+
+
+		if (InMission2)
 		{
 			TArray<AActor*> outActorArr;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACCannon::StaticClass(), outActorArr);
@@ -907,14 +1063,15 @@ void ACEnemy::BeginPlay()
 	}
 
 	// 상대방 스킬 공격에 대한 피격 관련 함수 바인딩
-	if (Opponent)
-	{
-		if (!InMission2)
-		{
-			Cast<ACPlayer>(Opponent)->OnPlayerSkillAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentUsingSkill);
-			Cast<ACPlayer>(Opponent)->OnPlayerNormalAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentNormalAttack);
-		}
-	}
+	//if (Opponent)
+	//{
+	//	if (!InMission2 && !IsPlayerFriendly)
+	//	{
+	//		Cast<ACPlayer>(Opponent)->OnPlayerSkillAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentUsingSkill);
+	//		Cast<ACPlayer>(Opponent)->OnPlayerNormalAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentNormalAttack);
+	//		Cast<ACPlayer>(Opponent)->OnSpawnPlayerFriend.AddDynamic(this, &ACEnemy::ChangeOpponentSpawn);
+	//	}
+	//}
 
 	// HealthBar 위젯 Hidden 설정
 	{
@@ -927,6 +1084,33 @@ void ACEnemy::BeginPlay()
 		SetCurrentEnemyStateType(EEnemyStateType::IdleOrJustMoving);
 	}
 
+	// Player를 찾아서 데미지 관련 함수 바인딩
+	{
+		TArray<AActor*> outPlayers;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), outPlayers);
+
+		for (int i = 0; i < outPlayers.Num(); i++)
+		{
+			Player = Cast<ACPlayer>(outPlayers[i]);
+		}
+		
+		if (Player)
+		{
+			Cast<ACPlayer>(Player)->OnPlayerSkillAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentUsingSkill);
+			Cast<ACPlayer>(Player)->OnPlayerNormalAttack.AddDynamic(this, &ACEnemy::TakeDamage_OpponentNormalAttack);
+			Cast<ACPlayer>(Player)->OnSpawnPlayerFriend.AddDynamic(this, &ACEnemy::ChangeOpponentSpawn);
+		}
+	}
+
+
+	//if (IsTest) 
+	//{
+	//	if (Player)
+	//	{
+	//		Opponent = Player;
+	//		
+	//	}
+	//}
 	//// 타이머 설정
 	//{
 	//	GetWorldTimerManager().SetTimer(StrafeTimer, this, &ACEnemy::ChangeStrafing, ChangeStrafingTypeInterval, true);
@@ -1051,6 +1235,65 @@ void ACEnemy::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* O
 void ACEnemy::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 
+}
+
+void ACEnemy::OnBeginOverlapSphereComponentDetectOpponent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	CheckNull(OtherActor);
+	
+	//if (IsPlayerFriendly)
+	//{
+		//if (OtherActor->ActorHasTag("Enemy"));
+			//TArray<AActor*> InActorArr
+	//}
+
+
+	//if (OtherActor->ActorHasTag("Player"))
+	//{
+	//	ACPlayer* player = Cast<ACPlayer>(OtherActor);
+	//
+	//	if (player)
+	//		player->SetIsAttackByEnemy(true, this);
+	//}
+	//else if (OtherActor->ActorHasTag("PlayerFriend"))
+	//{
+	//	ACEnemy* playerFriend = Cast<ACEnemy>(OtherActor);
+	//
+	//	if (playerFriend)
+	//		playerFriend->SetIsEnemyFriendAttackByEnemy(true);
+	//}
+	//else if (OtherActor->ActorHasTag("Enemy"))
+	//{
+	//	ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
+	//
+	//	if (enemy)
+	//		enemy->SetIsEnemyAttackByEnemyFriend(true);
+	//}
+}
+
+void ACEnemy::OnEndOverlapSphereComponentDetectOpponent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	CheckNull(OtherActor);
+
+	//if (OtherActor->ActorHasTag("Player"))
+	//{
+	//	ACPlayer* player = Cast<ACPlayer>(OtherActor);
+	//
+	//	player->SetIsAttackByEnemy(false, this);
+	//}
+	//else if (OtherActor->ActorHasTag("PlayerFriend"))
+	//{
+	//	ACEnemy* playerFriend = Cast<ACEnemy>(OtherActor);
+	//
+	//	playerFriend->SetIsEnemyFriendAttackByEnemy(false);
+	//}
+	//else if (OtherActor->ActorHasTag("Enemy"))
+	//{
+	//	ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
+	//
+	//	if (enemy)
+	//		enemy->SetIsEnemyAttackByEnemyFriend(false);
+	//}
 }
 
 void ACEnemy::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)

@@ -37,6 +37,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerSkillAttack);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerSpellFistAttack);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerSkillLaunch);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSkillCoolTimeCounting);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSpawnPlayerFriend);
 
 UCLASS()
 class UE4POFOL_F_API ACPlayer : public ACharacter, public IGenericTeamAgentInterface, public ICInterface_PlayerState
@@ -85,6 +86,9 @@ public:
 	ECameraEffectType CurrentCameraEffectType;
 
 	UPROPERTY(BlueprintAssignable)
+	FOnSpawnPlayerFriend OnSpawnPlayerFriend;
+
+	UPROPERTY(BlueprintAssignable)
 	FOnSkillCoolTimeCounting OnSkillCoolTimeCounting;
 	
 	FOnPlayerActiveBlock OnPlayerActiveBlock;
@@ -99,6 +103,9 @@ public:
 	FOnPlayerSkillLaunch OnPlayerSkillLaunch;
 
 	//FOnPlayerSkillWeaponAttack OnPlayerSkillWeaponAttack;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "AI")
+	int32 ID = 1;
 
 private:
 	struct FDamaged
@@ -194,6 +201,9 @@ private:
 	UPROPERTY()
 	class ACEnemy_Boss* Boss;
 
+	UPROPERTY()
+	class ACEnemy* Enemy;
+
 	FTimerHandle ComboCountTimer;
 	FTimerHandle WarriorSkillTimer;
 	int32 Index = 0;
@@ -227,6 +237,9 @@ private:
 	bool CanOnSkill2 = true;
 	bool CanOnSkill3 = true;
 
+	bool IsAttackByEnemy = false;
+
+	bool IsDashing = false;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class ACProjectile> SpellThrowProjectileClass;
@@ -250,6 +263,9 @@ protected:
 	// MEMO: 컴포넌트가 가끔 핫 리로드 문제가 생겨서 일단 여기다가 만들었음
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TArray<FDamageData> DamageDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Player Spawn Setting")
+	TArray<FActionData> SpawnDatas;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TArray<FActionData>WarriorNormalAttackBossDatas;
@@ -275,6 +291,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TArray<FActionData> ShieldDatas;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
+	TArray<FActionData> DashData;
+
 	UPROPERTY()
 	class ACWeapon* SpellFistWeapon;
 
@@ -287,6 +306,11 @@ public:
 	
 	UFUNCTION()
 	void TakeDamage_AttackByBoss(EBossAttackType InType);
+
+	UFUNCTION()
+	void TakeDamage_AttackByEnemy();
+	
+	void SetIsAttackByEnemy(bool InBool, ACEnemy* InEnemy);
 
 	void EnableBind();
 
@@ -412,7 +436,6 @@ public:
 	FORCEINLINE ACWeapon* GetSpellFistWeapon() { return SpellFistWeapon; }
 	virtual FGenericTeamId GetGenericTeamId() const override { return FGenericTeamId(TeamId); }
 
-
 private:
 	void OnMoveForward(float AxisValue);
 	void OnMoveRight(float AxisValue);
@@ -426,12 +449,15 @@ private:
 	void OffRun();
 	void OnJump();
 	void OffJump();
+	void OnDash();
+	void OffDash();
 	void OnParkour();
 	void OffParkour();
 	void OnOnehand();
 	void OnSpell();
 	void OnSpellTravel();
 	void OnSpellFist();
+	void OnSpawnFriend();
 	void OnShield();
 	void OffShield();
 	void OnAction();
@@ -453,6 +479,7 @@ private:
 	void OnSkill3Checker(bool CanUseSkill);
 
 	void GetDamageData(int32 InIndex);
+
 	FVector CalculateMeshSocketToVectorLocation(FName InSocketName, FVector InDirectionTo);
 	
 	void Debug_PlayerLog();

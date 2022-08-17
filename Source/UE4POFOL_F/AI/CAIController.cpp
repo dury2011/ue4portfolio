@@ -8,39 +8,36 @@
 //#include "Enemy/CEnemy_Rifle.h"
 //#include "GameFramework/Character.h"
 //#include "Perception/AIPerceptionComponent.h"
-//#include "Perception/AISenseConfig_Sight.h"
+#include "Perception/AISenseConfig_Sight.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "Enemy/CEnemy.h"
 #include "Component/CCharacterComponent.h"
 #include "Player/CCannon.h"
 
-ACAIController::ACAIController()
+ACAIController::ACAIController(const FObjectInitializer& ObjectInitializer)
 {
-	// create actor component
-	//CHelpers::CreateActorComponent<UAIPerceptionComponent>(this, &Perception, "Perception");
-	//CHelpers::CreateActorComponent<UBlackboardComponent>(this, &Blackboard, "Blackboard");
-	//
+	AIPerceptionComponent = CreateDefaultSubobject<UAIPerceptionComponent>("Perception");
+
 	//Sight 설정
-	//Sight = CreateDefaultSubobject<UAISenseConfig_Sight>("Sight");
-	//Sight->SightRadius = 1000.0f;
-	//Sight->LoseSightRadius = 1000.0f;
-	//Sight->PeripheralVisionAngleDegrees = 120;
-	//Sight->SetMaxAge(2);
-	//Sight->DetectionByAffiliation.bDetectEnemies = true;
-	//Sight->DetectionByAffiliation.bDetectNeutrals = false;
-	//Sight->DetectionByAffiliation.bDetectFriendlies = false;
-	//
+	Sight = CreateDefaultSubobject<UAISenseConfig_Sight>("Sight");
+
 	//Perception 설정
-	//Perception->ConfigureSense(*Sight);
-	//Perception->SetDominantSense(*Sight->GetSenseImplementation());
+	AIPerceptionComponent->ConfigureSense(*Sight);
+	AIPerceptionComponent->SetDominantSense(*Sight->GetSenseImplementation());
 }
 
 void ACAIController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//Perception->OnPerceptionUpdated.AddDynamic(this, &ACAIController::OnPerceptionUpdated);
+	ACEnemy* enemy = Cast<ACEnemy>(GetPawn());
+
+	if (enemy)
+	{
+		Enemy = enemy;
+		TeamId = FGenericTeamId(Enemy->ID);
+	}
 
 }
 
@@ -51,7 +48,7 @@ void ACAIController::Tick(float DeltaTime)
 	if (Enemy)
 	{
 		Blackboard->SetValueAsEnum("State", (uint8)Enemy->GetCurrentEnemyStateType());
-		Blackboard->SetValueAsObject("Player", Enemy->GetOpponent());
+		//Blackboard->SetValueAsObject("Opponent", Enemy->GetOpponent());
 
 		if (Enemy->GetOpponent())
 		{
@@ -84,6 +81,7 @@ void ACAIController::OnPossess(APawn* InPawn)
 	Enemy = Cast<ACEnemy>(InPawn);
 
 	Enemy->OnEnemyDiedStopAI.AddDynamic(this, &ACAIController::StopEnemyAI);
+	AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &ACAIController::OnPerception);
 
 	if (BehaviorTree)
 	{	
@@ -131,48 +129,179 @@ void ACAIController::OnUnPossess()
 
 //void ACAIController::OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors)
 //{
-	////인식할 actor를 저장할 배열
-	//TArray<AActor *> actors;
-	////배열에다가 Percepstion이 인식한 엑터 저장
-	//Perception->GetCurrentlyPerceivedActors(nullptr, actors);
-	////혹시 모를 인식을 막기 위해 nullptr로 초기화
-	//ACPlayer* player = nullptr;
-	////배열 actors for문 돌려서
-	//for (AActor* actor : actors)
-	//{
-	//	//actor가 걸리면 player로 캐스트 (이거는 Enemy는 Player만 인식하면 되니까 이렇게 함)
-	//	player = Cast<ACPlayer>(actor);
-	//	//player 있으면 루프 종료 (앞에 !! 붙이는 이유는 혹시 모를 값이 리턴되서 잘못된 결과가 나올까봐 함)
-	//	if (!!player)
-	//		break;
-	//}
-	////Blackboard에서 Player라는 이름의 키를 찾아 player를 할당
-	//Blackboard->SetValueAsObject("Player", player);
-	//Blackboard->SetValueAsEnum("State", (uint8)Enemy->GetCurrentEnemyStateType());
+//	//인식할 actor를 저장할 배열
+//	TArray<AActor *> actors;
+//	//배열에다가 Percepstion이 인식한 엑터 저장
+//	PerceptionComponent->GetCurrentlyPerceivedActors(nullptr, actors);
+//	//혹시 모를 인식을 막기 위해 nullptr로 초기화
+//	ACPlayer* player = nullptr;
+//	//배열 actors for문 돌려서
+//	for (AActor* actor : actors)
+//	{
+//		//actor가 걸리면 player로 캐스트 (이거는 Enemy는 Player만 인식하면 되니까 이렇게 함)
+//		player = Cast<ACPlayer>(actor);
+//		//player 있으면 루프 종료 (앞에 !! 붙이는 이유는 혹시 모를 값이 리턴되서 잘못된 결과가 나올까봐 함)
+//		if (!!player)
+//			break;
+//	}
+//	//Blackboard에서 Player라는 이름의 키를 찾아 player를 할당
+//	Blackboard->SetValueAsObject("Player", player);
+//	Blackboard->SetValueAsEnum("State", (uint8)Enemy->GetCurrentEnemyStateType());
 //}
 
-void ACAIController::OnRepeatTimer()
-{
-	//auto currentPawn = GetPawn();
-	//
-	//if (currentPawn == nullptr)
-	//	return;
-
-	//UNavigationSystemV1* navSystem = UNavigationSystemV1::GetNavigationSystem(GetWorld());
-
-	//if (navSystem == nullptr)
-	//	return;
-
-	//FNavLocation nextLocation;
-
-	//if (navSystem->GetRandomPointInNavigableRadius(FVector::ZeroVector, 500.0f, nextLocation))
-	//{
-	//	UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, nextLocation.Location);
-	//}
-}
 
 void ACAIController::StopEnemyAI()
 {
 	BrainComponent->StopLogic(FString("Enemy Died"));
 	SetActorTickEnabled(false);
+}
+
+/* https://www.youtube.com/watch?v=HwBdnviT2vs 
+ * 아래 함수에서 리턴값은 어디서 어떻게 사용되는건가? */
+
+ETeamAttitude::Type ACAIController::GetTeamAttitudeTowards(const AActor& Other) const
+{
+	//시야에 들어온 엑터가 폰 이상인지 확인
+	const APawn* OtherPawn = Cast<APawn>(&Other);
+	if(OtherPawn == nullptr)
+	{
+		return ETeamAttitude::Neutral;
+	}
+
+	//엑터가 IGenericTeamAgentInterface를 상속받았는가 확인
+	// Player는 AIController가 없으므로 
+	//auto PlayerTI = Cast <IGenericTeamAgentInterface>(&Other);
+	//const ACPlayer* player = Cast<ACPlayer>(&Other);
+
+	// Bot(Enemy)는 AIContorller가 있으므로 
+	class IGenericTeamAgentInterface* BotTI = Cast<IGenericTeamAgentInterface>(OtherPawn->GetController());
+	
+	if(BotTI == nullptr) //&& player == nullptr)
+	{
+		return ETeamAttitude::Neutral;
+	}
+
+	//Get Actor's TeamId
+	FGenericTeamId OtherActorTeamId = NULL;
+	if (BotTI != nullptr)
+	{
+		OtherActorTeamId = BotTI->GetGenericTeamId();
+	}
+	//else if (player != nullptr)
+	//{
+	//	OtherActorTeamId = player->GetGenericTeamId();
+	//}
+
+	//Check if Hostile
+	FGenericTeamId ThisId = GetGenericTeamId(); // 이 컨트롤러를 빙의한 엑터의 TeamId
+	if(OtherActorTeamId == 8) // OtherActorTeamId가 8이라면 (본인이 원하는 int값으로 변경하여 그 값을 경우 Neutral이 리턴되도록 코딩해도 됨)
+	{
+		return ETeamAttitude::Neutral; // 중립
+	}
+	else if (OtherActorTeamId == ThisId)
+	{
+		return ETeamAttitude::Friendly; // 프렌드
+	}
+	else
+	{
+		return ETeamAttitude::Hostile; // 적
+	}
+}
+
+void ACAIController::OnPerception(AActor* Actor, FAIStimulus Stimulus)
+{	
+	if (Enemy && Stimulus.WasSuccessfullySensed() && !IsPlayerOnly)
+	{
+		TArray<AActor*>Threats;
+		AIPerceptionComponent->GetHostileActors(Threats);
+
+		if (Threats.Num() <= 0)
+		{
+			return;
+		}
+
+		const int32 i = Threats.Find(Actor);
+
+		if (i < 0)
+		{
+			return;
+		}
+		
+		if (Actor)
+		{
+			int32 select = UKismetMathLibrary::RandomIntegerInRange(0, Threats.Num() - 1);
+			
+			if (Enemy->GetOpponent()) return;
+			
+			if (Cast<ACEnemy>(Threats[select])->GetTargettedActorCount() < 3)
+			{
+				Enemy->SetOpponent(Stimulus.WasSuccessfullySensed(), Cast<ACharacter>(Threats[select]));
+				Blackboard->SetValueAsObject("Opponent", Cast<ACharacter>(Threats[select]));
+			}
+			//SetFocus(Stimulus.WasSuccessfullySensed() ? Cast<ACharacter>((Threats[select])) : nullptr);
+
+			//if (!Blackboard->GetValueAsObject("Opponent"))
+			//{
+			//	int32 selectAgain = UKismetMathLibrary::RandomIntegerInRange(0, Threats.Num() - 1);
+			//	Enemy->SetOpponent(Stimulus.WasSuccessfullySensed(), Cast<ACharacter>(Threats[selectAgain]));
+			//	Blackboard->SetValueAsObject("Opponent", Cast<ACharacter>(Threats[selectAgain]));
+			//}
+		}
+	}
+
+	if (IsPlayerOnly)
+	{
+		TArray<AActor*>outPlayerArr;
+
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), outPlayerArr);
+
+		for (int i = 0; i < outPlayerArr.Num(); i++)
+		{
+			if (outPlayerArr[i])
+				Player = Cast<ACPlayer>(outPlayerArr[i]);
+		}
+		
+		if (Player && Enemy)
+		{
+			Blackboard->SetValueAsObject("Opponent", Player);
+			Enemy->SetOpponent(true, Player);
+		}
+	}
+	
+	
+	
+	//IGenericTeamAgentInterface* teamInterface = Cast<IGenericTeamAgentInterface>(Actor);
+
+	// Sight에 인식된 Actor들을 outActorArr에 저장
+	//TArray<AActor*> outActorArr;
+	//Perception->GetPerceivedActors(UAISenseConfig_Sight::StaticClass(), outActorArr);
+
+	//for (int i = 0; i < outActorArr.Num(); i++)
+	//{
+	//	IGenericTeamAgentInterface* teamInterface = Cast<IGenericTeamAgentInterface>(outActorArr[i]);
+
+	//	if (teamInterface)
+	//	{
+	//		if (GetGenericTeamId() == teamInterface->GetGenericTeamId())
+	//		{
+	//			
+	//	
+	//			return;
+	//		}
+	//		else if(GetGenericTeamId() != teamInterface->GetGenericTeamId())
+	//		{
+	//			Enemy->SetOpponent(Cast<ACharacter>(teamInterface));
+	//			Blackboard->SetValueAsObject("Opponent", Cast<ACharacter>(teamInterface));
+	//		}
+	//	}
+	//}
+
+	//if (enemy == nullptr)
+	//{
+	//	return;
+	//}
+	//
+
+	//Enemy->SetTarget(Stimulus.WasSuccessfullySensed(), Actor);
+	//SetFocus(Stimulus.WasSuccessfullySensed() ? enemy : nullptr);
 }
