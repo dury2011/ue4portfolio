@@ -176,7 +176,7 @@ ETeamAttitude::Type ACAIController::GetTeamAttitudeTowards(const AActor& Other) 
 	// Bot(Enemy)는 AIContorller가 있으므로 
 	class IGenericTeamAgentInterface* BotTI = Cast<IGenericTeamAgentInterface>(OtherPawn->GetController());
 	
-	if(BotTI == nullptr) //&& player == nullptr)
+	if(BotTI == nullptr /*&& PlayerTI == nullptr*/)
 	{
 		return ETeamAttitude::Neutral;
 	}
@@ -187,9 +187,9 @@ ETeamAttitude::Type ACAIController::GetTeamAttitudeTowards(const AActor& Other) 
 	{
 		OtherActorTeamId = BotTI->GetGenericTeamId();
 	}
-	//else if (player != nullptr)
+	//else if (PlayerTI != nullptr)
 	//{
-	//	OtherActorTeamId = player->GetGenericTeamId();
+	//	OtherActorTeamId = PlayerTI->GetGenericTeamId();
 	//}
 
 	//Check if Hostile
@@ -210,10 +210,17 @@ ETeamAttitude::Type ACAIController::GetTeamAttitudeTowards(const AActor& Other) 
 
 void ACAIController::OnPerception(AActor* Actor, FAIStimulus Stimulus)
 {	
+	if (IsPlayerOnly && Actor && Actor->ActorHasTag("PlayerFriend"))
+	{
+		IsPlayerOnly = false;
+		Blackboard->SetValueAsObject("Opponent", NULL);
+		Enemy->SetOpponent(false, NULL);
+	}
+	
 	if (Enemy && Stimulus.WasSuccessfullySensed() && !IsPlayerOnly)
 	{
 		TArray<AActor*>Threats;
-		AIPerceptionComponent->GetHostileActors(Threats);
+		PerceptionComponent->GetHostileActors(Threats);
 
 		if (Threats.Num() <= 0)
 		{
@@ -229,23 +236,31 @@ void ACAIController::OnPerception(AActor* Actor, FAIStimulus Stimulus)
 		
 		if (Actor)
 		{
-			int32 select = UKismetMathLibrary::RandomIntegerInRange(0, Threats.Num() - 1);
 			
-			if (Enemy->GetOpponent()) return;
-			
-			if (Cast<ACEnemy>(Threats[select])->GetTargettedActorCount() < 3)
+			// 블랙보드에 Opponent가 할당되어있으면 그냥 함수를 끝낸다
+			if (Blackboard->GetValueAsObject("Opponent")) 
+				return;
+			// 블랙보드에 Opponent가 할당되어있지 않으면 
+			else
 			{
-				Enemy->SetOpponent(Stimulus.WasSuccessfullySensed(), Cast<ACharacter>(Threats[select]));
-				Blackboard->SetValueAsObject("Opponent", Cast<ACharacter>(Threats[select]));
-			}
-			//SetFocus(Stimulus.WasSuccessfullySensed() ? Cast<ACharacter>((Threats[select])) : nullptr);
+				
+				int32 select = UKismetMathLibrary::RandomIntegerInRange(0, Threats.Num() - 1);
+				// 랜덤으로 선택된 Hostile 중 Hostile로 인식된 상대가 공격받는 중인 대상이 4마리 이하이면 Opponent로 설정
+				if (Cast<ACEnemy>(Threats[select])->GetTargettedActorCount() < 5)
+				{	
+					Blackboard->SetValueAsObject("Opponent", Cast<ACharacter>(Threats[select]));
+					Enemy->SetOpponent(Stimulus.WasSuccessfullySensed(), Cast<ACharacter>(Threats[select]));
+					//SetFocus(Stimulus.WasSuccessfullySensed() ? Cast<ACharacter>((Threats[select])) : nullptr);
 
-			//if (!Blackboard->GetValueAsObject("Opponent"))
-			//{
-			//	int32 selectAgain = UKismetMathLibrary::RandomIntegerInRange(0, Threats.Num() - 1);
-			//	Enemy->SetOpponent(Stimulus.WasSuccessfullySensed(), Cast<ACharacter>(Threats[selectAgain]));
-			//	Blackboard->SetValueAsObject("Opponent", Cast<ACharacter>(Threats[selectAgain]));
-			//}
+					return;
+				}
+				// 4마리 초과일 경우 Player로 Target 설정
+				else
+				{
+					Blackboard->SetValueAsObject("Opponent", Cast<ACharacter>(Player));
+					Enemy->SetOpponent(Stimulus.WasSuccessfullySensed(), Cast<ACharacter>(Player));
+				}
+			}
 		}
 	}
 

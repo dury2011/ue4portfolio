@@ -5,7 +5,7 @@
 
 UCBTTaskNode_StrafeBegin::UCBTTaskNode_StrafeBegin()
 {
-	//bNotifyTick = true;
+	bNotifyTick = true;
 
 	NodeName = "Begin Strafe";
 }
@@ -23,7 +23,6 @@ EBTNodeResult::Type UCBTTaskNode_StrafeBegin::ExecuteTask(UBehaviorTreeComponent
 	Enemy->GetWorldTimerManager().SetTimer(ChangeDirectionTimer, this, &UCBTTaskNode_StrafeBegin::ChangeStrafing, ChangeDirectionTime, false, ChangeDirectionTime);
 	Enemy->BeginStrafing();
 
-	bNotifyTick = true;
 
 	return EBTNodeResult::InProgress;
 }

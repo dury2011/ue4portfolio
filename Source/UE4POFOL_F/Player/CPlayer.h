@@ -107,6 +107,15 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "AI")
 	int32 ID = 1;
 
+	UPROPERTY(BlueprintReadWrite)
+	bool CanOnSkill1 = true;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool CanOnSkill2 = true;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool CanOnSkill3 = true;
+
 private:
 	struct FDamaged
 	{
@@ -233,9 +242,6 @@ private:
 	bool IsAttackingBoss = false;
 
 	bool CanOnAction = true;
-	bool CanOnSkill1 = true;
-	bool CanOnSkill2 = true;
-	bool CanOnSkill3 = true;
 
 	bool IsAttackByEnemy = false;
 
@@ -381,13 +387,19 @@ public:
 	virtual void SetPlayerActivateSkill(bool InBool) override;
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void ActivateCoolTimeSkillOne();
+	void WeaponChanged();
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void ActivateCoolTimeSkillTwo();
+	void ActivateSkillCoolTime(EWeaponType OutCurrentWeaponType, ESkillType OutCurrentSkillType);
 
-	UFUNCTION(BlueprintImplementableEvent)
-	void ActivateCoolTimeSkillThree();
+	//UFUNCTION(BlueprintImplementableEvent)
+	//void ActivateCoolTimeSkillOne();
+
+	//UFUNCTION(BlueprintImplementableEvent)
+	//void ActivateCoolTimeSkillTwo();
+
+	//UFUNCTION(BlueprintImplementableEvent)
+	//void ActivateCoolTimeSkillThree();
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void SpawnCameraEffect();

@@ -19,6 +19,8 @@ void ACTriggerVolume::OnBeginOverlap(class AActor* OverlappedActor, class AActor
 	CheckFalse(bCanTrigger);
 	CheckNull(OtherActor);
 	CheckTrue(OtherActor == this);
+	CheckFalse(OtherActor->ActorHasTag("Player"));
+
 	
 	GLog->Log("ACTriggerVolume::OnBeginOverlap()");
 }
@@ -28,6 +30,7 @@ void ACTriggerVolume::OnEndOverlap(class AActor* OverlappedActor, class AActor* 
 	CheckFalse(bCanTrigger);
 	CheckNull(OtherActor);
 	CheckTrue(OtherActor == this);
+	CheckFalse(OtherActor->ActorHasTag("Player"));
 
 	GLog->Log("ACTriggerVolume::OnEndOverlap()");
 }

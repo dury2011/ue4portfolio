@@ -186,8 +186,9 @@ void ACEnemy::Tick(float DeltaTime)
 	/* Player Skill Weapon의 Tag는 "SFWeapon"으로 지정할 것
 	* Player Skill Weapon에서 Follow할 SphereCollision의 Tag는 "Sphere_Following"으로 지정할 것
 	*/
-	// Player Skill이 BoundUp공격일 경우만 코드 실행
-	if (IsBoundUpBySkill && IsAttackByPlayer && !IsBoss)
+	// Player Skill이 BoundUp공격일 경우만 코드 실행 (Spell 3번 째 스킬, Spell Fist 2번 째 스킬에 해당)
+	// Player의 공격 판정 Collision 밖으로 나갔을 때 실행이 종료되면 안됨
+	if (IsBoundUpBySkill /*&& IsAttackByPlayer*/ && !IsBoss)
 	{
 		TArray<AActor*> outWeaponArr;
 		TArray<UActorComponent*> outSphereArr;
@@ -242,7 +243,7 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 		SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
 		
 		if(ActivateDamageLaunch && !GetCharacterMovement()->IsFalling())
-			LaunchCharacter(direction * -1200.0f , true, true);
+			LaunchCharacter(direction * - DamageLaunchDistance, true, true);
 	}
 	//}
 	
@@ -523,7 +524,7 @@ void ACEnemy::TakeDamage_OpponentNormalAttack()
 			SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
 			
 			if(ActivateDamageLaunch)
-				LaunchCharacter(-direction * 1000.0f, true, false);
+				LaunchCharacter(-direction * DamageLaunchDistance, true, false);
 		}
 
 		// 피격 에님 몽타주, 이펙트 재생
@@ -551,6 +552,13 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 	
 	ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Player);
 	
+	// Player의 공격 판정 Collision에서 Enemy가 밖이면 BoundUp 공격 판정이 들어가지 않으므로 !IsAttackByPlayer 밖일 경우를 고려한다.
+	if (playerInterface && !IsAttackByPlayer && playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::BoundUpHit)
+	{
+		DamagedByOpponentNormal_SkillAndFx();
+		GetSkillDamageData(1);
+	}
+
 	//Player에게 Skill로 공격당하는 중이면
 	if (IsAttackByPlayer && playerInterface)
 	{
@@ -575,6 +583,7 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::BoundUpHit)
 		{
 			ActivateDamageLaunch = false;
+			
 			DamagedByOpponentNormal_SkillAndFx();
 			GetSkillDamageData(1);
 
@@ -727,7 +736,7 @@ void ACEnemy::BlockedByShield()
 		SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
 
 		if (ActivateDamageLaunch)
-			LaunchCharacter(-direction * 500.0f, true, false);
+			LaunchCharacter(-direction * DamageLaunchDistance, true, false);
 	}
 
 	if (BlockedDatas[0].Montage)
@@ -767,17 +776,12 @@ void ACEnemy::DamagedByOpponentNormal_SkillAndFx(float InLaunchSpeed)
 		SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
 		
 		if(ActivateDamageLaunch)
-			LaunchCharacter(-direction * InLaunchSpeed, true, false);
+			LaunchCharacter(-direction * DamageLaunchDistance, true, false);
 	}
 
 	// 피격 효과 
 	{
 		ActivateDamageEffect(false, Player->CharacterComponent->GetCurrentWeaponType());
-
-		// 더 추가한 Damage Effect를 5번째 배열 원소에 넣어 둠
-		//if (SkillDamageDatas[5].Effect)
-			//SkillDamageDatas[5].PlayEffect(GetWorld(), this);
-
 		ShowHitNumber(applyDamage, this->GetActorLocation());
 		ShowHealthBar();
 	}
@@ -997,20 +1001,6 @@ void ACEnemy::BeginPlay()
 			collision->OnComponentHit.AddDynamic(this, &ACEnemy::OnHit);
 		}
 
-		//if (BoxComponentAttack)
-		//{
-			//BoxComponentAttack->OnComponentBeginOverlap.AddDynamic(this, &ACEnemy::OnBeginOverlapBoxCollisionAttack);
-			//BoxComponentAttack->OnComponentEndOverlap.AddDynamic(this, &ACEnemy::OnEndOverlapBoxCollisionAttack);
-		}
-
-		//if (SphereComponentDetectOpponent)
-		{
-			//SphereComponentDetectOpponent->OnComponentBeginOverlap.AddDynamic(this, &ACEnemy::OnBeginOverlapSphereComponentDetectOpponent);
-			//SphereComponentDetectOpponent->OnComponentEndOverlap.AddDynamic(this, &ACEnemy::OnEndOverlapSphereComponentDetectOpponent);
-		//}
-
-				
-	
 		if (GetMesh()->GetAnimInstance())
 			GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &ACEnemy::OnMontageEnded);
 	}

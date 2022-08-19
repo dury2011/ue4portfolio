@@ -195,6 +195,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Enemy Setting")
 	bool IsPlayerFriendly = false;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	float DamageLaunchDistance = 500.0f;
+
 	FGenericTeamId TeamId;
 
 	bool bMontageIsPlaying = false;
