@@ -6,6 +6,7 @@
 #include "Weapon/CWeaponStructure.h"
 #include "Component/CCharacterComponent.h"
 #include "GenericTeamAgentInterface.h"
+#include "Interface/CInterface_Interaction.h"
 #include "CEnemy.generated.h"
 
 UENUM(BlueprintType)
@@ -30,7 +31,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyDiedStopAI);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyAttack);
 
 UCLASS()
-class UE4POFOL_F_API ACEnemy : public ACharacter, public IGenericTeamAgentInterface
+class UE4POFOL_F_API ACEnemy : public ACharacter, public IGenericTeamAgentInterface, public ICInterface_Interaction
 {
 	GENERATED_BODY()
 

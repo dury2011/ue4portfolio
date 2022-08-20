@@ -37,6 +37,8 @@ private:
 	bool InMission2 = false;
 
 	bool IsSkillActivate = false;
+	
+	bool IsDamaged = false;
 
 protected:
 	FGenericTeamId TeamId;

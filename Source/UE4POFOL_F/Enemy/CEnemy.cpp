@@ -41,6 +41,8 @@ ACEnemy::ACEnemy()
 	HealthBarWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	HealthBarWidgetComponent->SetDrawSize(FVector2D(125.0f, 15.0f));
 
+	GetCharacterMovement()->GravityScale = 5.0f;
+
 	//BoxComponentAttack = CreateDefaultSubobject<UBoxComponent>("Box Component Attack");
 
 	//TeamId = FGenericTeamId(ID);
@@ -534,6 +536,8 @@ void ACEnemy::TakeDamage_OpponentNormalAttack()
 
 			DamagedByOpponentNormal_SkillAndFx(1000.0f);
 			
+			SetCurrentEnemyStateType(EEnemyStateType::Damage);
+
 			if (playerInterface->GetCurrentPlayerNormalAttackType() == EPlayerNormalAttackType::NormalAttack)
 				GetNormalDamageData(0);
 			else if (playerInterface->GetCurrentPlayerNormalAttackType() == EPlayerNormalAttackType::BoundUpAttack)
@@ -574,6 +578,8 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 					Weapons[i]->DestroyWeapon();
 			}
 		}	
+
+		SetCurrentEnemyStateType(EEnemyStateType::Damage);
 
 		if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::NormalHit)
 		{
@@ -692,6 +698,8 @@ void ACEnemy::TakeDamage_OpponentUsingSkillWeapon()
 		
 			// 피격 몽타주 재생 
 			{
+				SetCurrentEnemyStateType(EEnemyStateType::Damage);
+				
 				if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::NormalHit)
 				{
 					DamagedByOpponentNormal_SkillAndFx();
@@ -736,7 +744,7 @@ void ACEnemy::BlockedByShield()
 		SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
 
 		if (ActivateDamageLaunch)
-			LaunchCharacter(-direction * DamageLaunchDistance, true, false);
+			LaunchCharacter(-direction * 300.0f, true, false);
 	}
 
 	if (BlockedDatas[0].Montage)
@@ -1163,12 +1171,18 @@ void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool Interrupted)
 	//
 	//	return;
 	//}
+	if (!bActivateRotateToOpponent)
+		bActivateRotateToOpponent = true;
+
 	if (IsDeadBySkill)
 	{
 		ActivateDeadEffect();
 
 		IsDeadBySkill = false;
 	}
+
+	if (CurrentStateType == EEnemyStateType::Damage)
+		SetCurrentEnemyStateType(EEnemyStateType::IdleOrJustMoving);
 
 	//// MEMO: 임시 수정 필요
 	//if (!bActivateRotateToOpponent)
@@ -1181,7 +1195,7 @@ void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool Interrupted)
 			if (OnEnemyAttackEnded.IsBound())
 				OnEnemyAttackEnded.Broadcast();
 
-			//SetCurrentEnemyStateType(EEnemyStateType::IdleOrJustMoving);
+			SetCurrentEnemyStateType(EEnemyStateType::IdleOrJustMoving);
 
 			GLog->Log("ACEnemy::OnMontageEnded Normal");
 

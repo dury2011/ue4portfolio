@@ -12,6 +12,7 @@
 #include "Weapon/CWeaponStructure.h"
 #include "Components/TimelineComponent.h"
 #include "Interface/CInterface_PlayerState.h"
+#include "Interface/CInterface_Interaction.h"
 #include "Enemy/CEnemy_Boss.h"
 #include "CPlayer.generated.h"
 
@@ -40,7 +41,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSkillCoolTimeCounting);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSpawnPlayerFriend);
 
 UCLASS()
-class UE4POFOL_F_API ACPlayer : public ACharacter, public IGenericTeamAgentInterface, public ICInterface_PlayerState
+class UE4POFOL_F_API ACPlayer : public ACharacter, public IGenericTeamAgentInterface, public ICInterface_PlayerState, public ICInterface_Interaction
 {
 	GENERATED_BODY()
 
