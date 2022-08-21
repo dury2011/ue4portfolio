@@ -22,12 +22,16 @@ private:
 	FTimerHandle EndTimer;
 	FTimerHandle ChangeDirectionTimer;
 
+	EEnemyStrafingType CurrentStrafingType;
+
+	FVector StrafeDirection = FVector::ZeroVector;
+
 	bool bFinish = false;
 
 private:
 	UCBTTaskNode_StrafeBegin();
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)override;
 	virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)override;
-	void ChangeStrafing();
-	void EndStrafing();
+	//void ChangeStrafing();
+	//void EndStrafing();
 };

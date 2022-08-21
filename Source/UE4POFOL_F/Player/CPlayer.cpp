@@ -691,7 +691,7 @@ void ACPlayer::OnAttackBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent,
 {
 	CheckTrue(OverlappedComponent == GetCapsuleComponent());
 
-	if (OtherActor && ((CharacterComponent->GetCurrentWeaponType() == EWeaponType::Onehand) || (CharacterComponent->GetCurrentWeaponType() == EWeaponType::Spell)))
+	if (OtherActor && ((CharacterComponent->GetCurrentWeaponType() == EWeaponType::Onehand) || (CharacterComponent->GetCurrentWeaponType() == EWeaponType::Spell) || (CharacterComponent->GetCurrentWeaponType() == EWeaponType::Shield)))
 	{
 		ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
 
@@ -704,7 +704,7 @@ void ACPlayer::OnAttackBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, A
 {
 	CheckTrue(OverlappedComponent == GetCapsuleComponent());
 
-	if (OtherActor && ((CharacterComponent->GetCurrentWeaponType() == EWeaponType::Onehand) || (CharacterComponent->GetCurrentWeaponType() == EWeaponType::Spell)))
+	if (OtherActor && ((CharacterComponent->GetCurrentWeaponType() == EWeaponType::Onehand) || (CharacterComponent->GetCurrentWeaponType() == EWeaponType::Spell) || (CharacterComponent->GetCurrentWeaponType() == EWeaponType::Shield)))
 	{
 		ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
 
@@ -1021,6 +1021,9 @@ void ACPlayer::OnParkour()
 void ACPlayer::OffParkour()
 {
 	bParkouring = false;
+
+	if (bAttacking)
+		bAttacking = false;
 }
 
 void ACPlayer::OnOnehand()
@@ -1388,6 +1391,10 @@ void ACPlayer::OnSkillOne()
 	CheckTrue(IsMontagePlaying);
 	CheckFalse(CanOnSkill1);
 	
+	if (CharacterComponent->GetCurrentMp() < 500.0f)
+		return;
+
+
 	SetPlayerActivateSkill(true);
 
 	IsMontagePlaying = true;
@@ -1444,6 +1451,9 @@ void ACPlayer::OffSkillOne()
 {
 	if (CharacterComponent->GetIsWeaponSpellMode())
 	{
+		if (!IsActivateSkill)
+			return;
+		
 		if (Crosshair_SpellMeteor)
 			Crosshair_SpellMeteor->DestroyCrosshair();
 		
@@ -1472,6 +1482,9 @@ void ACPlayer::OnSkillTwo()
 {
 	CheckTrue(IsMontagePlaying);
 	CheckFalse(CanOnSkill2);
+
+	if (CharacterComponent->GetCurrentMp() < 500.0f)
+		return;
 
 	SetPlayerActivateSkill(true);
 	
@@ -1521,6 +1534,9 @@ void ACPlayer::OnSkillThree()
 	CheckTrue(IsMontagePlaying);
 	CheckFalse(CanOnSkill3);
 	
+	if (CharacterComponent->GetCurrentMp() < 500.0f)
+		return;
+
 	SetPlayerActivateSkill(true);
 
 	CharacterComponent->SetMp(-500.0f);

@@ -23,6 +23,13 @@ EBTNodeResult::Type UCBTTaskNode_EnemyAttack::ExecuteTask(UBehaviorTreeComponent
 
 	IsAttacking = true;
 	character->OnEnemyAttackEnded.AddLambda([this]() -> void { IsAttacking = false; });
+
+	FTimerHandle forceFinishTimer;
+
+	GetWorld()->GetTimerManager().SetTimer(forceFinishTimer, FTimerDelegate::CreateLambda([&]()
+	{
+		IsAttacking = false;
+	}), 3.5f, false, 3.5f);
 	
 	return EBTNodeResult::InProgress;
 }

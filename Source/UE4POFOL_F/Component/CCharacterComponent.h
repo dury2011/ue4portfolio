@@ -124,8 +124,9 @@ private:
 	UPROPERTY()
 	class ACGhostTrail* GhostTrail;
 
-	FTimerHandle UpdateSpTimer;
+	FTimerHandle UpdateHpTimer;
 	FTimerHandle UpdateMpTimer;
+	FTimerHandle UpdateSpTimer;
 
 	bool IsMontagePlaying = false;
 	bool bCanMove = true;
@@ -156,10 +157,10 @@ private:
 	void ChangeStateType(EStateType InType);
 
 	void ChangeWeaponType(EWeaponType InType);
-
-	void UpdateSp();
-
+	
+	void UpdateHp();
 	void UpdateMp();
+	void UpdateSp();
 
 public:
 	FORCEINLINE FName GetEquipSocketName(EWeaponType InType) { return EquipSocketName[(int32) InType]; }

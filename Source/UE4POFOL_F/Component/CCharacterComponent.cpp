@@ -38,8 +38,9 @@ void UCCharacterComponent::BeginPlay()
 			}
 		}
 
+		OwnerCharacter->GetWorldTimerManager().SetTimer(UpdateHpTimer, this, &UCCharacterComponent::UpdateHp, 1.0f, true, 1.0f);
+		OwnerCharacter->GetWorldTimerManager().SetTimer(UpdateMpTimer, this, &UCCharacterComponent::UpdateMp, 1.0f, true, 1.0f);
 		OwnerCharacter->GetWorldTimerManager().SetTimer(UpdateSpTimer, this, &UCCharacterComponent::UpdateSp, 1.0f, true, 2.0f);
-		//OwnerCharacter->GetWorldTimerManager().SetTimer(UpdateMpTimer, this, &UCCharacterComponent::UpdateMp, 1.0f, true, 1.0f);
 	}
 }
 
@@ -117,20 +118,28 @@ void UCCharacterComponent::ChangeWeaponType(EWeaponType InType)
 		OnWeaponTypeChange.Broadcast(CurrentWeaponType, PreviousWeaponType);
 }
 
+void UCCharacterComponent::UpdateHp()
+{
+	Hp += 10;
+
+	if (Hp > MaxHp)
+		Hp = MaxHp;
+}
+
+void UCCharacterComponent::UpdateMp()
+{
+	Mp += 200;
+
+	if (Mp > MaxMp)
+		Mp = MaxMp;
+}
+
 void UCCharacterComponent::UpdateSp()
 {
 	Sp += 300;
 
 	if (Sp > MaxSp)
 		Sp = MaxSp;
-}
-
-void UCCharacterComponent::UpdateMp()
-{
-	Mp += 300;
-
-	if (Mp > MaxMp)
-		Mp = MaxMp;
 }
 
 void UCCharacterComponent::SetMaxHp(float InMaxHp)

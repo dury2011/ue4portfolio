@@ -69,7 +69,7 @@ void UCWidgetComponent::CreateLineTrace()
 		ETraceTypeQuery::TraceTypeQuery4,
 		false,
 		lineTraceIgnoreActor,
-		EDrawDebugTrace::ForOneFrame,
+		EDrawDebugTrace::None,
 		HitResult,
 		true,
 		FColor::Red,
@@ -104,7 +104,7 @@ bool UCWidgetComponent::CanCrosshairWidgetColorChange()
 		if (actor)
 		{
 			if (HitResult.Actor == actor)
-				if (HitResult.bBlockingHit)
+				//if (HitResult.bBlockingHit)
 					return true;
 				else
 					return false;

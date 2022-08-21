@@ -124,6 +124,18 @@ void ACWeapon::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	CheckTrue(IsOverlapped);
 
 	// Shield시 BeginOverlap의 주체는 Enemy임
+
+	//if (OtherActor->ActorHasTag("Enemy") && OwnerCharacter->ActorHasTag("PlayerFriend"))
+	//{
+	//	ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
+
+	//	if (enemy)
+	//	{
+	//		if (!enemy->GetOpponent())
+	//			enemy->SetOpponent(true, OwnerCharacter);
+	//	}
+	//}
+
 	if (!IsShield)
 	{
 		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(OtherActor);

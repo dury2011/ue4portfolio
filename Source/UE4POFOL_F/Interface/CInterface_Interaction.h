@@ -23,5 +23,6 @@ public:
 	void decrementTargettedCount() { if (TargettedCount <= 0) return; else --TargettedCount; }
 
 	int32 GetTargettedCount() { return TargettedCount; }
+	
 
 };

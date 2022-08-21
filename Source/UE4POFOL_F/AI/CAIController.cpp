@@ -26,30 +26,6 @@ ACAIController::ACAIController(const FObjectInitializer& ObjectInitializer)
 	//Perception 설정
 	AIPerceptionComponent->ConfigureSense(*Sight);
 	AIPerceptionComponent->SetDominantSense(*Sight->GetSenseImplementation());
-
-	//ACEnemy* enemy = Cast<ACEnemy>(GetOwner());
-
-	//if (enemy)
-	//{
-	//	Enemy = enemy;
-	//	TeamId = FGenericTeamId(Enemy->ID);
-
-	//	Blackboard->SetValueAsInt("ThisTeamID", Enemy->ID);
-
-	//	TArray<AActor*>outPlayerArr;
-
-	//	UGameplayStatics::GetAllActorsWithTag(GetWorld(), "Player", outPlayerArr);
-
-	//	for (int i = 0; i < outPlayerArr.Num(); i++)
-	//	{
-	//		if (outPlayerArr[i])
-	//			Player = Cast<ACPlayer>(outPlayerArr[i]);
-	//	}
-
-	//	if (Player)
-	//		Blackboard->SetValueAsInt("PlayerTeamId", Player->ID);
-	//}
-
 }
 
 void ACAIController::BeginPlay()
@@ -105,19 +81,6 @@ void ACAIController::Tick(float DeltaTime)
 					BrainComponent->RestartLogic();
 				}
 			}
-
-			//if ( (Enemy->GetCurrentEnemyStateType() == EEnemyStateType::Damage) && !IsDamaged)
-			//{
-			//	IsDamaged = true;
-			//	
-			//	BrainComponent->StopLogic(FString("Enemy Skill Damage"));
-			//}
-			//else if ((Enemy->GetCurrentEnemyStateType() != EEnemyStateType::Damage) && IsDamaged)
-			//{
-			//	IsDamaged = false;
-			//	
-			//	BrainComponent->RestartLogic();
-			//}
 		}
 	}
 }
@@ -127,7 +90,7 @@ void ACAIController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 	
 	//GetWorld()->GetTimerManager().SetTimer(Timer, this, &ACAIController::OnRepeatTimer, 2.0f, true);
-	Enemy = Cast<ACEnemy>(InPawn);
+	Enemy = Cast<ACEnemy>(GetPawn());
 
 	if (BehaviorTree)
 	{	
@@ -392,12 +355,19 @@ void ACAIController::OnPerception(AActor* Actor, FAIStimulus Stimulus)
 			int32 select = UKismetMathLibrary::RandomIntegerInRange(0, threats.Num() - 1);
 			ICInterface_Interaction* threatInterface = Cast<ICInterface_Interaction>(threats[select]);
 
+			// 우선순위
+
+
 			if (threatInterface)
 				threatInterface->IncrementTargettedCount();
 
-			if (threatInterface->GetTargettedCount() < 4)
+			if (threatInterface->GetTargettedCount() < 3)
 				Enemy->SetOpponent(Stimulus.WasSuccessfullySensed(), Cast<ACharacter>(threats[select]));
-			
+			else
+			{
+				int32 selectNew = UKismetMathLibrary::RandomIntegerInRange(0, threats.Num() - 1);
+				Enemy->SetOpponent(Stimulus.WasSuccessfullySensed(), Cast<ACharacter>(threats[select]));
+			}
 		}
 	}
 }
