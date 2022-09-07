@@ -19,12 +19,12 @@ enum class EParkourArrowType : uint8
 UENUM(BlueprintType)
 enum class EParkourType : uint8
 {
-	Roll = 0, Slide, Jump, Dash, Hide, Flip, BeginClimb, Climbing, EndClimbUp, EndClimbDown, EndClimbJump, Max,
+	Roll = 0, Slide, Jump, Dash, Hide, Flip, BeginClimbDown, BeginClimbUp, Climbing, EndClimbUp, EndClimbDown, EndClimbJump, HighFalling, Max,
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnParkourTypeChanged, EParkourType, InNewType);
 
-/* 파쿠르 몽타주를 위한 구조체 */
+/* FTableRowBase를 상속하여 DataTable의 행 기준으로 사용가능 */
 USTRUCT(BlueprintType)
 struct FParkourData : public FTableRowBase
 {
@@ -86,6 +86,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Parkour Setting")
 	TEnumAsByte<EDrawDebugTrace::Type> DrawDebugType;
+
+	UPROPERTY(EditAnywhere, Category = "Parkour Setting")
+	float FallingHighPlayDistance = 500.0f;
 	
 	UPROPERTY()
 	class AActor* LineTraceHitActorCeil;
@@ -103,6 +106,9 @@ private:
 	class AActor* LineTraceHitActorFloor;
 
 	UPROPERTY()
+	class AActor* LineTraceHitActorLand;
+
+	UPROPERTY()
 	class AActor* ParkourObstacle;
 
 	TMap<EParkourType, TArray<FParkourData>> ParkourDataMap;
@@ -112,6 +118,7 @@ private:
 	FVector HitActorExtentLeft;
 	FVector HitActorExtentRight;
 	FVector HitActorExtentFloor;
+	FVector HitActorExtentLand;
 	EParkourType ParkourType = EParkourType::Max;
 	EParkourType PrevParkourType = EParkourType::Max;
 	FVector MinBound;
@@ -132,6 +139,9 @@ private:
 	* ABP_Player에서 bool로 포즈 블렌딩을 위한 변수 */
 	bool bHideOrClimb = false;
 	bool bBeginJump = false;
+
+	bool Done_CheckFallingHeight = false;
+	float FallingStartHeight = 0.0f;
 
 public:
 	UCParkourComponent();
@@ -157,7 +167,8 @@ public:
 	void SetJumpMode();
 	void SetHideMode();
 	void SetFlipMode();
-	void SetBeginClimbMode();
+	void SetBeginClimbUpMode();
+	void SetBeginClimbDownMode();
 	void SetClimbingMode();
 	void SetEndClimbUpMode();
 	void SetEndClimbDownMode();
@@ -168,8 +179,8 @@ private:
 	bool CheckSlideMode();
 	bool CheckHideMode();
 	bool CheckFlipMode();
-
-	bool CheckBeginClimbMode();
+	bool CheckBeginClimbUpMode();
+	bool CheckBeginClimbDownMode();
 	
 	/* 낙하 시 낙하 높이에 따른 조건에 해당하는 상태 만들기 */
 	void CheckParkourState(EParkourType InCurrentType);
@@ -179,6 +190,8 @@ private:
 
 	void BeginSlide();
 	void EndSlide();
+
+	void Land();
 
 public:
 	void BeginJump();
@@ -191,8 +204,10 @@ private:
 	void BeginFlip();
 	void EndFlip();
 
-	void BeginClimb();
-	void EndClimb();
+	void BeginClimbUp();
+	void BeginClimbDown();
+	void EndClimbUp();
+	void EndClimbDown();
 	void CompleteClimb();
 
 public:
@@ -214,7 +229,8 @@ public:
 	FORCEINLINE bool IsJumpMode() { return ParkourType == EParkourType::Jump; }
 	FORCEINLINE bool IsHideMode() { return ParkourType == EParkourType::Hide; }
 	FORCEINLINE bool IsFlipMode() { return ParkourType == EParkourType::Flip; }
-	FORCEINLINE bool IsBeginClimbMode() { return ParkourType == EParkourType::BeginClimb; }
+	FORCEINLINE bool IsBeginClimbUpMode() { return ParkourType == EParkourType::BeginClimbUp; }
+	FORCEINLINE bool IsBeginClimbDownMode() { return ParkourType == EParkourType::BeginClimbDown; }
 	FORCEINLINE bool IsClimbingMode() { return ParkourType == EParkourType::Climbing; }
 	FORCEINLINE bool IsEndClimbUpMode() { return ParkourType == EParkourType::EndClimbUp; }
 	FORCEINLINE bool IsEndClimbDownMode() { return ParkourType == EParkourType::EndClimbDown; }

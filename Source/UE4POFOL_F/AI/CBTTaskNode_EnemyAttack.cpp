@@ -14,22 +14,22 @@ EBTNodeResult::Type UCBTTaskNode_EnemyAttack::ExecuteTask(UBehaviorTreeComponent
 {
 	EBTNodeResult::Type result = Super::ExecuteTask(OwnerComp, NodeMemory);
 
-	auto character = Cast<ACEnemy>(OwnerComp.GetAIOwner()->GetPawn());
+	Character = Cast<ACEnemy>(OwnerComp.GetAIOwner()->GetPawn());
 	
-	if (character == nullptr)
+	if (Character == nullptr)
 		return EBTNodeResult::Failed;
 
-	character->OnAttack();
+	Character->OnAttack();
 
 	IsAttacking = true;
-	character->OnEnemyAttackEnded.AddLambda([this]() -> void { IsAttacking = false; });
+	Character->OnEnemyAttackEnded.AddLambda([this]() -> void { IsAttacking = false; });
 
 	FTimerHandle forceFinishTimer;
 
 	GetWorld()->GetTimerManager().SetTimer(forceFinishTimer, FTimerDelegate::CreateLambda([&]()
 	{
 		IsAttacking = false;
-	}), 3.5f, false, 3.5f);
+	}), 30.0f, false, 30.0f);
 	
 	return EBTNodeResult::InProgress;
 }
@@ -40,4 +40,13 @@ void UCBTTaskNode_EnemyAttack::TickTask(UBehaviorTreeComponent& OwnerComp, uint8
 
 	if (!IsAttacking)
 		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+
+	if (Character->GetCurrentEnemyStateType() == EEnemyStateType::Dead)
+		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+
+	//if (Character->IsInterrupted == true)
+	//{
+	//	Character->IsInterrupted = false;
+	//	FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+	//}
 }

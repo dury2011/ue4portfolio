@@ -92,55 +92,69 @@ void ACEnemy::Tick(float DeltaTime)
 	//	}
 	//}
 
-	// Hp가 0.0 보다 작거나 같을 경우
+	// Hp가 0.0 보다 작거나 같을 경우 Boss의 경우는 Level Seq 재생
 	if (Hp <= 0.0f && IsOnce_HpZeroed)
 	{
 		IsOnce_HpZeroed = false;
 		
-		if (OnEnemyDiedStopAI.IsBound())
+		SetCurrentEnemyStateType(EEnemyStateType::Dead);
+		
+		StopLogic();
+
+		if (DeadDatas[0].Montage)
 		{
-			GetComponents<UCapsuleComponent>(CapsuleCollisions);
+			DeadDatas[0].PlayMontage(this);
 
-			for (UShapeComponent* collision : CapsuleCollisions)
-			{
-				collision->SetCollisionProfileName(FName("Died"));
-			}
-			
-			OnEnemyDiedStopAI.Broadcast();
+			ActivateDeadEffect();
+		}
 
-			SetCurrentEnemyStateType(EEnemyStateType::Dead);
+		//if (OnEnemyDiedStopAI.IsBound())
+		//{
+		GetComponents<UCapsuleComponent>(CapsuleCollisions);
 
+		for (UShapeComponent* collision : CapsuleCollisions)
+		{
+			collision->SetCollisionProfileName(FName("Died"));
+		}
+		
+		//OnEnemyDiedStopAI.Broadcast();
+
+		if (!IsBoss)
+		{
 			for (int i = 0; i < Weapons.Num(); i++)
 			{
 				if (Weapons[i])
 					Weapons[i]->DestroyWeapon();
 			}
-
-			if (DeadDatas[0].Montage)
-			{
-				DeadDatas[0].PlayMontage(this);
-
-				ActivateDeadEffect();
-			}
-
-			return;
 		}
+		return;
+		//}
 	}
 
 	// 상대(Player)가 존재하고 상대를 향하여 Yaw회전이 가능한 경우만 코드 실행
-	if (Opponent && bActivateRotateToOpponent)
+	if (Opponent)
 	{
-		CheckTrue(CurrentStateType == EEnemyStateType::Dead);
-		
-		FVector directionToOpponent = Opponent->GetActorLocation() - GetActorLocation();
-		directionToOpponent.Z = 0.0f;
-		FRotator targetRotation = FRotationMatrix::MakeFromX(directionToOpponent).Rotator();
+		if (bActivateRotateToOpponent == false)
+			RotationSpeed = 0.0f;
+		else
+		{
+			RotationSpeed = 3.0f;
+			
+			CheckTrue(CurrentStateType == EEnemyStateType::Dead);
+			
+			FVector directionToOpponent = Opponent->GetActorLocation() - GetActorLocation();
+			directionToOpponent.Z = 0.0f;
+			FRotator targetRotation = FRotationMatrix::MakeFromX(directionToOpponent).Rotator();
 
-		SetActorRotation(FMath::RInterpTo(GetActorRotation(), targetRotation, DeltaTime, RotationSpeed));
+			SetActorRotation(FMath::RInterpTo(GetActorRotation(), targetRotation, DeltaTime, RotationSpeed));
+
+		}
 	}
 
+
+
 	// 상대가 존재할 경우만 코드 실행
-	if (Opponent)
+	if (Opponent && bActivateRotateToOpponent)
 	{
 		DistanceToOpponent = GetDistanceTo(this);
 	}
@@ -233,19 +247,19 @@ float ACEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageE
 	//if(EventInstigator->GetOwner()->ActorHasTag("Player"))
 	//{
 	{
-		FVector start = GetActorLocation();
-		FVector target = Damaged.EventInstigator->GetPawn()->GetActorLocation();
+		//FVector start = GetActorLocation();
+		//FVector target = Damaged.EventInstigator->GetPawn()->GetActorLocation();
 
-		FVector direction = target - start;
-		direction.Normalize();
+		//FVector direction = target - start;
+		//direction.Normalize();
 
-		FTransform transform;
-		transform.SetLocation(GetActorLocation());
+		//FTransform transform;
+		//transform.SetLocation(GetActorLocation());
 
-		SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
-		
-		if(ActivateDamageLaunch && !GetCharacterMovement()->IsFalling())
-			LaunchCharacter(direction * - DamageLaunchDistance, true, true);
+		//SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
+		//
+		//if(ActivateDamageLaunch && !GetCharacterMovement()->IsFalling())
+		//	LaunchCharacter(direction * - DamageLaunchDistance, true, true);
 	}
 	//}
 	
@@ -480,6 +494,8 @@ void ACEnemy::TakeDamage_OpponentNormalAttack()
 	
 	ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Player);
 	
+	IsInterrupted = true;
+
 	if (playerInterface && IsAttackByPlayer)
 	{
 		// 사망 시
@@ -532,6 +548,8 @@ void ACEnemy::TakeDamage_OpponentNormalAttack()
 		// 피격 에님 몽타주, 이펙트 재생
 		if (Hp > 0.0f)
 		{
+			
+			
 			ActivateDamageEffect(false, Player->CharacterComponent->GetCurrentWeaponType());
 
 			DamagedByOpponentNormal_SkillAndFx(1000.0f);
@@ -539,11 +557,18 @@ void ACEnemy::TakeDamage_OpponentNormalAttack()
 			SetCurrentEnemyStateType(EEnemyStateType::Damage);
 
 			if (playerInterface->GetCurrentPlayerNormalAttackType() == EPlayerNormalAttackType::NormalAttack)
+			{
 				GetNormalDamageData(0);
+			}
 			else if (playerInterface->GetCurrentPlayerNormalAttackType() == EPlayerNormalAttackType::BoundUpAttack)
+			{
 				GetNormalDamageData(1);
+			}
 			else if (playerInterface->GetCurrentPlayerNormalAttackType() == EPlayerNormalAttackType::FinalAttack)
+			{
+				bActivateRotateToOpponent = false;
 				GetNormalDamageData(2);
+			}
 		}
 	}
 }
@@ -555,6 +580,8 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 	CheckTrue(CurrentStateType == EEnemyStateType::Dead);
 	
 	ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Player);
+
+	IsInterrupted = true;
 	
 	// Player의 공격 판정 Collision에서 Enemy가 밖이면 BoundUp 공격 판정이 들어가지 않으므로 !IsAttackByPlayer 밖일 경우를 고려한다.
 	if (playerInterface && !IsAttackByPlayer && playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::BoundUpHit)
@@ -626,6 +653,7 @@ void ACEnemy::TakeDamage_OpponentUsingSkill()
 		}
 		else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::FinalHit)
 		{
+			bActivateRotateToOpponent = false;
 			DamagedByOpponentNormal_SkillAndFx();
 			GetSkillDamageData(4);
 			
@@ -660,6 +688,8 @@ void ACEnemy::TakeDamage_OpponentUsingSkillWeapon()
 {
 	CheckFalse(IsOnce_HpZeroed);
 	
+	IsInterrupted = true;
+
 	if (IsAttackBySkillWeapon)
 	{
 		ICInterface_PlayerState* playerInterface = Cast<ICInterface_PlayerState>(Player);
@@ -707,8 +737,44 @@ void ACEnemy::TakeDamage_OpponentUsingSkillWeapon()
 				}
 				else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::BoundUpHit)
 					GetWorldTimerManager().SetTimer(SkillWeaponTimer, this, &ACEnemy::DamagedByOpponentSkillWeaponAndFx, 0.25f, true);
+				else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::StopHit)
+				{
+					IsSkillStopHit = true;
+
+					DamagedByOpponentNormal_SkillAndFx();
+					ActivateDamageIceEffect();
+					GetSkillDamageData(3);
+
+					FTimerHandle finishTimer;
+
+					GetWorldTimerManager().SetTimer(finishTimer, FTimerDelegate::CreateLambda([&]()
+					{
+						if (IsSkillStopHit)
+						{
+							DamagedByOpponentNormal_SkillAndFx();
+							DeactivateDamageIceEffect();
+							GetNormalDamageData(2);
+							CustomTimeDilation = 1.0f;
+
+							IsSkillStopHit = false;
+						}
+					}), 3.0f, false);
+
+				}
 				else if (playerInterface->GetCurrentPlayerSkillType() == EPlayerSkillType::FinalHit)
+				{
+					bActivateRotateToOpponent = false;
+
 					GetNormalDamageData(2);
+
+					if (IsSkillStopHit)
+					{
+						DeactivateDamageIceEffect();
+						CustomTimeDilation = 1.0f;
+
+						IsSkillStopHit = false;
+					}
+				}
 			}
 
 			// 사망 시
@@ -1217,6 +1283,9 @@ void ACEnemy::OnMontageEnded(UAnimMontage* InMontage, bool Interrupted)
 	else if (Interrupted)
 	{
 		GLog->Log("ACEnemy::OnMontageEnded Interrupted!");
+
+		if (!bActivateRotateToOpponent)
+			bActivateRotateToOpponent = true;
 
 		return;
 	}

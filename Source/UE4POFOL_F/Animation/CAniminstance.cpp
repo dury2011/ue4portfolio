@@ -40,6 +40,16 @@ void UCAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	CheckNull(OwnerCharacter);
 	
+	ACPlayer* player = Cast<ACPlayer>(OwnerCharacter);
+	UCParkourComponent* parkourComponent = CHelpers::GetComponent<UCParkourComponent>(player);
+
+	if (player)
+	{
+		IsSpellTravel = player->GetIsSpellTravel();
+		IsParkouring = parkourComponent->GetbParkouring();
+		IsClimbing = player->GetIsParkouringClimbing();
+	}
+
 	if (IKComponent)
 		FeetData = IKComponent->GetFeetData();
 
@@ -52,9 +62,13 @@ void UCAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	Yaw = UKismetMathLibrary::NormalizedDeltaRotator(OwnerCharacter->GetBaseAimRotation(), OwnerCharacter->GetActorRotation()).Yaw;
 	RotationLastTick = OwnerCharacter->GetActorRotation();
 	YawDelta = UKismetMathLibrary::FInterpTo(YawDelta, UKismetMathLibrary::NormalizedDeltaRotator(RotationLastTick, OwnerCharacter->GetActorRotation()).Yaw / DeltaSeconds / 10.0f, DeltaSeconds, 0.0f);
-	Direction = CalculateDirection(OwnerCharacter->GetVelocity(), OwnerCharacter->GetControlRotation());
 	IsRunning = (Speed >= 550.0f);
 
+	if (!IsClimbing)
+		Direction = CalculateDirection(OwnerCharacter->GetVelocity(), OwnerCharacter->GetControlRotation());
+	else
+		Direction = player->ClimbingInput;
+	
 	if (OwnerCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size2D() > 0.0f)
 		bAccelerating = true;
 	else
@@ -65,15 +79,6 @@ void UCAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		bFullBody = true;
 	else 
 		bFullBody = false;
-
-	ACPlayer* player = Cast<ACPlayer>(OwnerCharacter);
-
-	if (player)
-	{
-		IsSpellTravel = player->GetIsSpellTravel();
-		IsParkouring = player->GetIsParkouring();
-	}
-
 
 	
 	//if (UKismetMathLibrary::NearlyEqual_FloatFloat(Yaw, 175.0f, 0.1f))

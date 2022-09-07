@@ -74,7 +74,7 @@ void UCWidgetComponent::CreateLineTrace()
 		true,
 		FColor::Red,
 		FLinearColor::Green,
-		0.0f
+		-1.0f
 	);
 
 	//UKismetSystemLibrary::LineTraceSingleForObjects

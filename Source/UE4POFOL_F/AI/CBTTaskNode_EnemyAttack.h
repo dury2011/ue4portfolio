@@ -12,6 +12,9 @@ class UE4POFOL_F_API UCBTTaskNode_EnemyAttack : public UBTTaskNode
 private:
 	bool IsAttacking = false;
 
+	UPROPERTY()
+	class ACEnemy* Character;
+
 private:
 	UCBTTaskNode_EnemyAttack();
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)override;

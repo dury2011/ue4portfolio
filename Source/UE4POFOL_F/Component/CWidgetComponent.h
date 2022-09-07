@@ -7,7 +7,7 @@
 UENUM(BlueprintType)
 enum class EWarnningTextType : uint8
 {
-	LowHp, LowMp, LowMp_Skill, CoolTime_Skill
+	LowHp, LowMp, LowMp_Skill, CoolTime_Skill, Max
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )

@@ -55,12 +55,12 @@ void ACCrosshair_SpellThrow::Tick(float DeltaTime)
 				ETraceTypeQuery::TraceTypeQuery4,
 				false,
 				lineTraceIgnoreActor,
-				EDrawDebugTrace::ForOneFrame,
+				EDrawDebugTrace::None,
 				hitResult,
 				true,
 				FColor::Green,
 				FLinearColor::Green,
-				0.0f
+				-1.0f
 			);
 
 			FVector playerLocation = FVector(Player->GetActorLocation().X, Player->GetActorLocation().Y, 0.0f);

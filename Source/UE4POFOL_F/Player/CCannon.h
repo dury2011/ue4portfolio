@@ -72,6 +72,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon Setting")
 	float RangedAvailTime = 4.0f;
 
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Cannon Setting")
+	ECannonStateType CurrentCannonType = ECannonStateType::Max;
+
 private:
 	//struct PlayerInfo
 	//{
@@ -96,7 +99,7 @@ private:
 	UPROPERTY()
 	ACProjectile* RangedProjectile;
 	
-	ECannonStateType CurrentCannonType = ECannonStateType::Max;
+	
 	ECannonStateType PreviousCannonType = ECannonStateType::Max;
 
 	float Yaw;

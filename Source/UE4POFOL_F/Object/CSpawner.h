@@ -12,16 +12,25 @@ class UE4POFOL_F_API ACSpawner : public AActor
 	
 public:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly)
+	class UCapsuleComponent* CapsuleCollision;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly)
 	class UStaticMeshComponent* StaticMeshSphere;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Spawner Setting")
 	class UWidgetComponent* HealthBarWidgetComponent;
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Spawner Setting")
-	float Hp = 15000.0f;
+	float Hp = 3000;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Spawner Setting")
 	float SpawnDelaySecond = 5.0f;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool CanSpawn = true;
+
+	UPROPERTY(BlueprintReadOnly)
+	FHitResult HitResult;
 
 private:
 	struct FDamaged
@@ -41,9 +50,6 @@ private:
 	//UPROPERTY(VisibleDefaultsOnly)
 	//class UStaticMeshComponent* StaticMeshSpawner;
 
-	UPROPERTY(VisibleDefaultsOnly)
-	class UCapsuleComponent* CapsuleCollision;
-
 	UPROPERTY()
 	class ACTriggerVolume_Spawner* TriggerVolume;
 	
@@ -52,7 +58,6 @@ private:
 	FTimerHandle HealthBarTimer;
 	FTimerHandle SpawnerTimer;
 
-	FHitResult HitResult;
 
 	TMap<UUserWidget*, FVector> HitNumbers;
 
@@ -102,4 +107,7 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowHitNumber(int32 InDamage, FVector InHitLocation);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "CSpawner")
+	void ActivateDestroySpawnerEffect();
 };

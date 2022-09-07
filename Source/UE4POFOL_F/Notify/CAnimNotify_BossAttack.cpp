@@ -14,5 +14,5 @@ void UCAnimNotify_BossAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSequ
 	ACEnemy_Boss* boss = Cast<ACEnemy_Boss>(MeshComp->GetOwner());
 
 	if (boss)
-		boss->Notify_BossAttack(CurrentBossAttackType);
+		boss->Notify_BossAttack(BossAttackType);
 }

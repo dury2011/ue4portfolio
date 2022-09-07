@@ -72,6 +72,8 @@ float ACSpawner::TakeDamage(float DamageAmount, struct FDamageEvent const& Damag
 {	
 	//if (SpawnedEnemy < 30)
 		//return 0.0f;
+	if (CanSpawn)
+		return 0.0f;
 
 	Damaged.DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser); // damage float
 	//Damaged.DamageEvent = (FActionDamageEvent*)&DamageEvent;  // Hit 에니메이션 몽타주
@@ -79,18 +81,20 @@ float ACSpawner::TakeDamage(float DamageAmount, struct FDamageEvent const& Damag
 	Damaged.DamageCauser = DamageCauser; 
 	Damaged.DamageAmount = DamageAmount;
 
-	ShowHitNumber(int32(Damaged.DamageAmount), GetActorLocation());
+	Hp -= Damaged.DamageAmount;
+
+	ShowHitNumber(Damaged.DamageAmount, GetActorLocation());
 	ShowHealthBar();
 
-	if (Damaged.EventInstigator == GetWorld()->GetFirstPlayerController())
-		Hp -= Damaged.DamageAmount / 10.0f;
-	else 
-		Hp -= Damaged.DamageAmount;
+	//if (Damaged.EventInstigator == GetWorld()->GetFirstPlayerController())
+		//Hp -= Damaged.DamageAmount / 10.0f;
+	//else 
 
 	if (Hp <= 0.0f)
 	{
 		// TODO: 파괴되는 시네마틱 재생 (여기서 해 줄 수 있는지는 공부해야함)
-		
+
+		ActivateDestroySpawnerEffect();
 		DestroySpawner();
 	}
 
@@ -117,7 +121,7 @@ void ACSpawner::ActivateSpawner(class AActor* InOverlappedActor, class AActor* I
 	//if (InOtherActor->GetClass() == ACPlayer::StaticClass())
 		// 아래 코드 if 조건문 true, false 판단전에 InOtherActor Cast 하는 과정에서 InOtherActor가 Projectile이면 Controller가 없으므로 nullptr로 터짐
 		//if (GetWorld()->GetFirstPlayerController() == Cast<ACharacter>(InOtherActor)->GetController())
-		GetWorldTimerManager().SetTimer(SpawnerTimer, this, &ACSpawner::SpawnEnemy, SpawnDelaySecond, true);
+	GetWorldTimerManager().SetTimer(SpawnerTimer, this, &ACSpawner::SpawnEnemy, SpawnDelaySecond, true);
 }
 
 void ACSpawner::CreateLineTrace()
@@ -147,7 +151,7 @@ void ACSpawner::CreateLineTrace()
 		ETraceTypeQuery::TraceTypeQuery4,
 		false,
 		lineTraceIgnoreActors,
-		EDrawDebugTrace::ForOneFrame,
+		EDrawDebugTrace::None,
 		HitResult,
 		true,
 		FColor(1, 0, 0, 1),
@@ -158,49 +162,30 @@ void ACSpawner::CreateLineTrace()
 
 void ACSpawner::SpawnEnemy()
 {
+	CheckFalse(CanSpawn);
+	
 	FVector spawnerFowardVector = GetActorForwardVector();
 	FRotator spawnedEnemyRotation = UKismetMathLibrary::Conv_VectorToRotator(spawnerFowardVector);
 
+	FActorSpawnParameters params;
+	params.Owner = this;
+	params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+
+	ACEnemy* enemy = GetWorld()->SpawnActor<ACEnemy>
+	(
+		EnemyNormalClass,
+		FVector(HitResult.ImpactPoint.X, HitResult.ImpactPoint.Y, HitResult.ImpactPoint.Z + 150.0f),
+		spawnedEnemyRotation,
+		params
+	);
+
+	if (enemy)
+		SpawnedEnemy++;
+
+	GLog->Log("ACSpawner::SpawnEnemy() Normal");
+
 	EnemySpawnParticleEffect();
-
-	//if (EnemyNormalClass && EnemySpecialClass)
-	//{
-
-		FActorSpawnParameters params;
-		params.Owner = this;
-		params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
-		if (Hp > 5000.0f)
-		{
-			ACEnemy* enemy = GetWorld()->SpawnActor<ACEnemy>
-			(
-				EnemyNormalClass,
-				FVector(HitResult.ImpactPoint.X, HitResult.ImpactPoint.Y, HitResult.ImpactPoint.Z + 150.0f),
-				spawnedEnemyRotation,
-				params
-			);
-
-			if (enemy)
-				SpawnedEnemy++;
-
-			GLog->Log("ACSpawner::SpawnEnemy() Normal");
-		}
-		else
-		{
-			ACEnemy* enemy = GetWorld()->SpawnActor<ACEnemy>
-			(
-				EnemySpecialClass,
-				FVector(HitResult.ImpactPoint.X, HitResult.ImpactPoint.Y, HitResult.ImpactPoint.Z + 150.0f),
-				spawnedEnemyRotation,
-				params
-			);
-
-			if (enemy)
-				SpawnedEnemy++;
-
-			GLog->Log("ACSpawner::SpawnEnemy() Special");
-		}
-	//}
 }
 
 void ACSpawner::DestroySpawner()

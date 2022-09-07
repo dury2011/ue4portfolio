@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -8,7 +9,7 @@
 UENUM(BlueprintType)
 enum class EBossAttackType : uint8
 {
-	NormalAttack, BoundUpAttack, GroggyAttack, FinalAttack, Max
+	NormalAttack, BoundUpAttack, AirborneAttack, GroggyAttack, FinalAttack, Max
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBossAttack, EBossAttackType, InType);
@@ -19,6 +20,9 @@ class UE4POFOL_F_API ACEnemy_Boss : public ACEnemy
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(BlueprintReadOnly)
+	bool CanRotateToOpponent = true;
+	
 	FOnBossAttack OnBossAttack;
 
 private:
@@ -30,9 +34,14 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	class UBoxComponent* BoxCollisionAttack;
 
+	FTimerHandle SearchTimer;
+	FTimerHandle FinishSearchTimer;
+	TArray<FVector>SearchedLocations;
+
 	EBossAttackType CurrentBossAttackType;
 
 	bool CanBind = true;
+	bool Once_IsBossFriendCalled = false;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
@@ -41,8 +50,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
 	TArray<FActionData> RangeAttackDatas;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
-	TArray<FActionData> SpecialAttackDatas;
+	//UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
+	//TArray<FActionData> SpecialAttackDatas;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy Setting")
 	TArray<FActionData> NormalSpecialAttackDatas;
@@ -72,4 +81,9 @@ private:
 public:
 	// Notify
 	void Notify_BossAttack(EBossAttackType InType);
+
+	void Notify_SpawnBossRangeAttack1Projectile(TSubclassOf<ACProjectile> InProjectileClass);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void SpawnRangeSpecialAttackEnemySpawnBossEffect();
 };

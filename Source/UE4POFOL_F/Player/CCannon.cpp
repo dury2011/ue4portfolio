@@ -145,6 +145,13 @@ void ACCannon::OnHorizontalLook(float AxisValue)
 
 void ACCannon::OnFire()
 {
+	if (CurrentAmmo <= 0)
+	{
+		ActivateZeroAmmoSound();
+
+		return;
+	}
+	
 	ClickedOnFire = true;
 }
 
@@ -153,11 +160,7 @@ void ACCannon::OffFire()
 	CheckTrue(IsNowReloading);
 	
 	if (CurrentAmmo <= 0)
-	{
-		ActivateZeroAmmoSound();
-
 		return;
-	}
 	
 	CannonStateTypeChange(ECannonStateType::Fire);
 	
@@ -340,7 +343,7 @@ void ACCannon::PossessCannon(class AActor* InOverlappedTriggerVolume, class AAct
 		PlayerController->UnPossess();
 		PlayerController->Possess(this);
 		
-		Player->SetActorLocation(TriggerVolume->GetActorLocation());
+		Player->SetActorLocation(FVector(TriggerVolume->GetActorLocation().X, TriggerVolume->GetActorLocation().Y, TriggerVolume->GetActorLocation().Z - 100.0f));
 
 		CannonStateTypeChange(ECannonStateType::Possessed);
 
@@ -358,7 +361,7 @@ void ACCannon::PossessCannon(class AActor* InOverlappedTriggerVolume, class AAct
 
 void ACCannon::UnpossessCannon()
 {
-	CheckFalse(CurrentCannonType == ECannonStateType::Possessed);
+	//CheckFalse(CurrentCannonType == ECannonStateType::Possessed);
 	
 	if (PlayerController && Player)
 	{

@@ -59,7 +59,11 @@ void UCCharacterComponent::SetHp(float InHp)
 	check += InHp;
 
 	if (check >= MaxHp)
+	{
+		Hp = MaxHp;
+		
 		return;
+	}
 
 	Hp += InHp;
 }
@@ -70,7 +74,11 @@ void UCCharacterComponent::SetMp(float InMp)
 	check += InMp;
 	
 	if (check >= MaxMp)
+	{
+		Mp = MaxMp;
+	
 		return;
+	}
 	
 	Mp += InMp;
 }

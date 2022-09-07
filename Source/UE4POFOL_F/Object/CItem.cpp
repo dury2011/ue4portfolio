@@ -84,5 +84,5 @@ float ACItem::ActivateItemAbility()
 		return 500.0f;
 	}
 	else
-		return 0.0f;
+		return 500.0f;
 }

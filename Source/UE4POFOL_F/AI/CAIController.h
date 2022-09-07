@@ -32,13 +32,30 @@ private:
 
 	UPROPERTY()
 	class ACCannon* Cannon;
+
+	UPROPERTY()
+	TArray<AActor*>Threats;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "AIController Setting")
+	bool InMission1 = false;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AIController Setting")
 	bool InMission2 = false;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AIController Setting")
+	bool InMission3 = false;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AIController Setting")
+	bool IsBossController = false;
+
+	FTimerHandle OpponentCheckTimer;
+	//FTimerHandle DestroyCheckTimer;
 
 	bool IsSkillActivate = false;
 	
 	bool IsDamaged = false;
+
+
 
 protected:
 	FGenericTeamId TeamId;
@@ -52,11 +69,11 @@ public:
 	virtual FGenericTeamId GetGenericTeamId() const override { return TeamId; }
 
 private:
-	//UFUNCTION()
-	//void OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors);
-
 	UFUNCTION()
 	void StopEnemyAI();
+
+	void CheckOpponent();
+	//void CheckDestroy();
 
 protected:
 	virtual void BeginPlay() override;

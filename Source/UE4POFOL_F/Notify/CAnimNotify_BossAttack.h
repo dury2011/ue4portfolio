@@ -9,12 +9,13 @@ UCLASS()
 class UE4POFOL_F_API UCAnimNotify_BossAttack : public UAnimNotify
 {
 	GENERATED_BODY()
-	
+
 private:
-	UPROPERTY(EditAnywhere, Category = "Setting")
-	EBossAttackType CurrentBossAttackType;
-	
+	UPROPERTY(EditAnywhere)
+	EBossAttackType BossAttackType;
+
 private:
 	FString GetNotifyName_Implementation() const override;
+
 	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation);
 };

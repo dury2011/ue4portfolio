@@ -11,8 +11,14 @@ void ACTriggerVolume_LevelChange::OnBeginOverlap(class AActor* OverlappedActor, 
 {
 	Super::OnBeginOverlap(OverlappedActor, OtherActor);
 
+	FLatentActionInfo info;
+	info.CallbackTarget = this;
+
 	if (OtherActor->ActorHasTag(FName("Player")))
-		UGameplayStatics::OpenLevel(GetWorld(), FName("Level2_Boss"));
+	{
+		UGameplayStatics::UnloadStreamLevel(GetWorld(), FName("Level1"), info, false);
+		UGameplayStatics::LoadStreamLevel(GetWorld(), FName("Level2_Boss"), true, false, info);
+	}
 }
 
 void ACTriggerVolume_LevelChange::OnEndOverlap(class AActor* OverlappedActor, class AActor* OtherActor)

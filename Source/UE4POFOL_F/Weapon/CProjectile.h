@@ -61,6 +61,9 @@ public:
 
 	void DestroyProjectile();
 
+	UFUNCTION(BlueprintCallable)
+	void SetAttackDamage(int32 InAttackDamage);
+
 private:
 	UFUNCTION()
 	void Hit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);

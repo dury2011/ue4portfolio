@@ -30,6 +30,12 @@ enum class ESkillType : uint8
 	Skill1, Skill2, Skill3, Max
 };
 
+UENUM(BlueprintType)
+enum class EWarningTextType : uint8
+{
+	SkillCoolTimeActivate, SkillMPShortage, Max
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerCollision);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnPlayerOverlap, class ACharacter*, InAttacker, class AActor*, InAttackCauser, class ACharacter*, InOtherCharacter);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerActiveBlock, bool, IsBlocked);
@@ -39,6 +45,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerSpellFistAttack);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerSkillLaunch);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSkillCoolTimeCounting);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSpawnPlayerFriend);
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSpawnSpellSkill2Projectile);
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFireSpellSkill2Projectile);
 
 UCLASS()
 class UE4POFOL_F_API ACPlayer : public ACharacter, public IGenericTeamAgentInterface, public ICInterface_PlayerState, public ICInterface_Interaction
@@ -58,6 +66,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
 	class UCIKComponent* IKComponent;
 
+	UPROPERTY(BlueprintReadonly, VisibleDefaultsOnly)
+	class UCParkourComponent* ParkourComponent;
+
 	// for skill and critical
 	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
 	class UBoxComponent* BoxComponentSkill;
@@ -70,6 +81,9 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	TArray<class UCapsuleComponent*> CapsuleCollisions; 
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly)
+	class USpringArmComponent* SpringArmComponent;
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Player Setting")
 	float ComboCountExistTime = 2.0f;
@@ -91,6 +105,15 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnSkillCoolTimeCounting OnSkillCoolTimeCounting;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector LockedOnTargetLocation = FVector::ZeroVector;
+
+	//UPROPERTY(BlueprintAssignable)
+	//FOnSpawnSpellSkill2Projectile OnSpawnSpellSkill2Projectile;
+
+	//UPROPERTY(BlueprintAssignable)
+	//FOnFireSpellSkill2Projectile OnFireSpellSkill2Projectile;
 	
 	FOnPlayerActiveBlock OnPlayerActiveBlock;
 
@@ -116,6 +139,16 @@ public:
 
 	UPROPERTY(BlueprintReadWrite)
 	bool CanOnSkill3 = true;
+
+	UPROPERTY(BlueprintReadOnly)
+	bool IsTargettingMode = false;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spell Skill3 Setting")
+	float SpellSkill3MovingTime = 1.0f;
+	
+	FRotator ParkourTargetRot = FRotator::ZeroRotator;
+
+	float ClimbingInput = 0.0f;
 
 private:
 	struct FDamaged
@@ -150,9 +183,6 @@ private:
 	UPROPERTY(VisibleDefaultsOnly)
 	class UArrowComponent* Arrows[6];
 
-	UPROPERTY(VisibleDefaultsOnly)
-	class USpringArmComponent* SpringArmComponent;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	uint8 TeamId = 1;
 
@@ -178,9 +208,9 @@ private:
 	class ACPortalCrosshair* PortalCrosshair;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
-	TSubclassOf<class ACProjectile> WarriorSkill1ProjectileClass;
+	TSubclassOf<class ACProjectile> SpellSkill3ProjectileClass;
 	UPROPERTY()
-	class ACProjectile* WarriorSkill1Projectile;
+	class ACProjectile* SpellSkill3Projectile;
 	
 	UPROPERTY()
 	TSubclassOf<class ACWeapon> SpellMeteorClass;
@@ -206,16 +236,25 @@ private:
 	//UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	EPlayerSpellFistType CurrentPlayerSpellFistType;
 
-	FRotator ParkourTargetRot = FRotator::ZeroRotator;
-
 	UPROPERTY()
 	class ACEnemy_Boss* Boss;
 
 	UPROPERTY()
 	class ACEnemy* Enemy;
 
+	UPROPERTY()
+	class ACProjectile* ProjectileSpellSkill2;
+
+	//UPROPERTY()
+	//TArray<class UArrowComponent*>Arrows;
+	
+	FVector SpellSkill2ProjectileFinalSize;
+
 	FTimerHandle ComboCountTimer;
 	FTimerHandle WarriorSkillTimer;
+	FTimerHandle SpellSkill2Timer;
+	FTimerHandle SpellSkill3DamageIncreaseTimer;
+
 	int32 Index = 0;
 	int32 IndexTargetting = 0;
 	int32 JumpCount = 0;
@@ -248,6 +287,14 @@ private:
 
 	bool IsDashing = false;
 	
+	bool IsSpell3ProjectileSpawned = false;
+	bool IsSpell3ProjectileShoot = false;
+
+	bool IsParkouringClimbing = false;
+	bool IsAirborne = false;
+
+	int32 SpellSkill2ProjectileIncreasedDamage = 100.0f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Player Setting")
 	TSubclassOf<class ACProjectile> SpellThrowProjectileClass;
 
@@ -336,7 +383,8 @@ public:
 	void Notify_SetCurrentPlayerSkillType(EPlayerSkillType InType);
 	void Notify_SetCurrentPlayerSpellFistType(EPlayerSpellFistType InType);
 
-	void SpawnWarriorSkillOneProjectile();
+	void SpawnProjectile();
+	void ShootProjectile();
 	void SpawnSpellMeteorWeapon();
 	//void SpawnGhostTrail();
 	
@@ -391,7 +439,9 @@ public:
 	void WeaponChanged();
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void ActivateSkillCoolTime(EWeaponType OutCurrentWeaponType, ESkillType OutCurrentSkillType);
+	//void ActivateSkillCoolTime_Implementation(ESkillType InCurrentSkillType);
+	void ActivateSkillCoolTime(EWeaponType InWeaponType, ESkillType InCurrentSkillType);
+
 
 	//UFUNCTION(BlueprintImplementableEvent)
 	//void ActivateCoolTimeSkillOne();
@@ -438,6 +488,21 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void ActivateShieldDefenceEffect();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void ToggleSpellSkill3(bool InPlay);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ToggleSpellSkill3Effect(bool InSpawnEffect);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ToggleLockOn();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void SetLockedOnTargetLocation();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void WarningText(EWarningTextType InType);
+
 	FORCEINLINE bool GetbAiming() { return bAiming; }
 	FORCEINLINE bool GetbAttacking() { return bAttacking; }
 	FORCEINLINE void Notify_SetbCanCombo(bool Inbool) { bCanCombo = Inbool; }
@@ -446,6 +511,7 @@ public:
 	FORCEINLINE bool GetIsSpellTravel() { return IsSpellTravel; }
 	FORCEINLINE void SetIsSpellTravel(bool InBool) { IsSpellTravel = InBool; }
 	FORCEINLINE bool GetIsParkouring() { return bParkouring; };
+	FORCEINLINE bool GetIsParkouringClimbing() { return IsParkouringClimbing; }
 	FORCEINLINE ACWeapon* GetSpellFistWeapon() { return SpellFistWeapon; }
 	virtual FGenericTeamId GetGenericTeamId() const override { return FGenericTeamId(TeamId); }
 
@@ -478,6 +544,7 @@ private:
 	void OffSkillOne();
 	void OnSkillTwo();
 	void OnSkillThree();
+	void OffSkillThree();
 	void OnCritical();
 	void ShakeCamera();
 	bool OnActionChecker();

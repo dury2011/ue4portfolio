@@ -75,7 +75,7 @@ void ACPortalCrosshair::CreateLineTrace()
 		ETraceTypeQuery::TraceTypeQuery4,
 		false,
 		lineTraceIgnoreActor,
-		EDrawDebugTrace::ForOneFrame,
+		EDrawDebugTrace::None,
 		HitResult,
 		true,
 		FColor::Red,

@@ -18,6 +18,13 @@ void UCAnimNotify_SpawnWeapon::Notify(USkeletalMeshComponent* MeshComp, UAnimSeq
 	if (character)
 	{
 		ACWeapon* weapon = ACWeapon::SpawnWeapon(character, WeaponClass, character->GetMesh()->GetSocketLocation(SpawnSocketName));
-		weapon->SetOwner(character);
+		
+		if (weapon)
+		{
+			weapon->SetOwner(character);
+			
+			if (IsBossWeapon)
+				weapon->SetActorRotation(character->GetMesh()->GetSocketRotation(SpawnSocketName));
+		}
 	}
 }

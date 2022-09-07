@@ -52,6 +52,8 @@ public:
 
 	virtual FGenericTeamId GetGenericTeamId() const override { return TeamId; }
 
+	bool IsInterrupted = false;
+
 private:
 	UPROPERTY()
 	TArray<class UCapsuleComponent*> CapsuleCollisions;
@@ -308,7 +310,6 @@ protected:
 	UFUNCTION()
 	virtual void OnEndOverlapSphereComponentDetectOpponent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
@@ -323,4 +324,7 @@ protected:
 	
 	UFUNCTION(BlueprintImplementableEvent)
 	void ActivateDeadEffect();
+	
+	UFUNCTION(BlueprintImplementableEvent)
+	void StopLogic();
 };

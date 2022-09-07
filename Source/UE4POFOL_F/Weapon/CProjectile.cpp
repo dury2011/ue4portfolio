@@ -98,6 +98,11 @@ void ACProjectile::DestroyProjectile()
 	Destroy();
 }
 
+void ACProjectile::SetAttackDamage(int32 InAttackDamage)
+{
+	AttackDamage = InAttackDamage;
+}
+
 // private: //////////////////////////////////////////////////////////////////////
 void ACProjectile::Hit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
@@ -135,12 +140,16 @@ void ACProjectile::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 		return;
 	}
 
-	if ((OtherActor->ActorHasTag("Enemy") && GetOwner()->ActorHasTag("PlayerFriend")) || ((OtherActor->ActorHasTag("PlayerFriend") && GetOwner()->ActorHasTag("Enemy")) || ((OtherActor->ActorHasTag("Player") && GetOwner()->ActorHasTag("Enemy")))) || (OtherActor->ActorHasTag("Enemy") && GetOwner()->ActorHasTag("Player")))
+	if ((OtherActor->ActorHasTag("Enemy") && GetOwner()->ActorHasTag("PlayerFriend")) || (OtherActor->ActorHasTag("PlayerFriend") && GetOwner()->ActorHasTag("Enemy")) || (OtherActor->ActorHasTag("Enemy") && GetOwner()->ActorHasTag("Player")) || (OtherActor->ActorHasTag("Player") && GetOwner()->ActorHasTag("Enemy")))
 	{
 		UGameplayStatics::ApplyDamage(OtherActor, applyDamage, GetOwner()->GetInstigatorController(), this, NULL);
 
 		GLog->Log("ACProjectile::BeginOverlap()");
 	}
+	//if ((OtherActor->ActorHasTag("Enemy") && GetOwner()->ActorHasTag("PlayerFriend")) || ((OtherActor->ActorHasTag("PlayerFriend") && GetOwner()->ActorHasTag("Enemy")) || ((OtherActor->ActorHasTag("Player") && GetOwner()->ActorHasTag("Enemy")))) || (OtherActor->ActorHasTag("Enemy") && GetOwner()->ActorHasTag("Player")))
+	//{
+
+	//}
 }
 
 // protected: //////////////////////////////////////////////////////////////////////

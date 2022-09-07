@@ -4,6 +4,7 @@
 #include "Components/ArrowComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Player/CPlayer.h"
 
 // #define DEBUG_PARKOURCOMPONENT
 
@@ -13,58 +14,83 @@ UCParkourComponent::UCParkourComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true; 
 
-	//CHelpers::GetAsset<UDataTable>(&ParkourDataTable, "DataTable'/Game/FORUE4POFOL/Player/DataTable/DT_PlayerParkour.DT_PlayerParkour'");
+	CHelpers::GetAsset<UDataTable>(&ParkourDataTable, "DataTable'/Game/FORUE4POFOL/Player/Asset/DT_PlayerParkour.DT_PlayerParkour'");
 }
 
 void UCParkourComponent::BeginPlay()
 {
-	//Super::BeginPlay();
+	Super::BeginPlay();
 
-	//SetIdleMode();
-	//
-	//OwnerCharacter = Cast<ACharacter>(GetOwner());
-	//AnimInstance = Cast<UAnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance());
-	//
+	SetIdleMode();
+	
+	OwnerCharacter = Cast<ACharacter>(GetOwner());
+	AnimInstance = Cast<UAnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance());
+	
 	////AnimInstance->OnMontageEnded.AddDynamic(this, &UCParkourComponent::CheckStartHideMode);
-	//AnimInstance->OnMontageEnded.AddDynamic(this, &UCParkourComponent::EndParkour);
+	AnimInstance->OnMontageEnded.AddDynamic(this, &UCParkourComponent::EndParkour);
 
-	//USceneComponent* ownerArrowComponent = CHelpers::GetComponent<USceneComponent>(OwnerCharacter, "ArrowGroup");
-	//TArray<USceneComponent*>childArrowComponents;
-	//
-	//ownerArrowComponent->GetChildrenComponents(false, childArrowComponents);
+	USceneComponent* ownerArrowComponent = CHelpers::GetComponent<USceneComponent>(OwnerCharacter, "ArrowGroup");
+	TArray<USceneComponent*>childArrowComponents;
+	
+	ownerArrowComponent->GetChildrenComponents(false, childArrowComponents);
 
-	//for (int i = 0; i < (int32)EParkourArrowType::Max; i++)
-	//	OwnerArrows[i] = Cast<UArrowComponent>(childArrowComponents[i]);
+	for (int i = 0; i < (int32)EParkourArrowType::Max; i++)
+		OwnerArrows[i] = Cast<UArrowComponent>(childArrowComponents[i]);
 
-	//TArray<FParkourData*> parkourDatas;
-	//ParkourDataTable->GetAllRows(" ", parkourDatas);
+	TArray<FParkourData*> parkourDatas;
+	ParkourDataTable->GetAllRows(" ", parkourDatas);
 
-	//for (int32 i = 0; i < (int32)EParkourType::Max; i++)
-	//{
-	//	TArray<FParkourData> temp;
+	for (int32 i = 0; i < (int32)EParkourType::Max; i++)
+	{
+		TArray<FParkourData> temp;
 
-	//	for (auto parkourData : parkourDatas)
-	//	{
-	//		if (parkourData->Type == (EParkourType)i)
-	//			temp.Add(*parkourData);
-	//	}
+		for (auto parkourData : parkourDatas)
+		{
+			if (parkourData->Type == (EParkourType)i)
+				temp.Add(*parkourData);
+		}
 
-	//	ParkourDataMap.Add((EParkourType)i, temp);
-	//}
+		ParkourDataMap.Add((EParkourType)i, temp);
+	}
 }
 
 void UCParkourComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
-//	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-//
-//	LineTraceCeil();
-//	LineTraceCenter();
-//	LineTraceLeftRight();
-//	LineTraceFloor();
-//	LineTraceLand();
-//	
-//	if(ParkourType != EParkourType::Max)
-//		CheckParkourState(ParkourType);
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	LineTraceHitActorCeil = nullptr;
+	LineTraceHitActorCenter = nullptr;
+	LineTraceHitActorFloor = nullptr;
+
+	HitActorDistanceCeil = 0.0f;
+	HitActorDistanceCenter = 0.0f;
+	HitActorDistanceFloor = 0.0f;
+
+	LineTraceCeil();
+	LineTraceCenter();
+	LineTraceLeftRight();
+	LineTraceFloor();
+	LineTraceLand();
+	
+	if(ParkourType != EParkourType::Max)
+		CheckParkourState(ParkourType);
+
+	if (OwnerCharacter->GetMovementComponent()->IsFalling() && !Done_CheckFallingHeight)
+	{
+		Done_CheckFallingHeight = true;
+		
+		FallingStartHeight = HitActorDistanceLand;
+	}
+
+	if (!OwnerCharacter->GetMovementComponent()->IsFalling() && Done_CheckFallingHeight)
+	{
+		Land();
+
+		FallingStartHeight = 0.0f;
+		Done_CheckFallingHeight = false;
+		HitActorDistanceLand = 0.0f;
+	}
+
 //
 //#ifdef DEBUG_PARKOURCOMPONENT
 //	CLog::Print("HitActor_Ceil: " + LineTraceHitActorCeil->GetName(), 20);
@@ -77,227 +103,224 @@ void UCParkourComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 void UCParkourComponent::CreateLineTrace(EParkourArrowType InType)
 {
-	//UArrowComponent* ownerArrows = OwnerArrows[(int32)InType];
-	//FLinearColor lineTraceColor = FLinearColor(ownerArrows->ArrowColor);
-	//FTransform lineTraceTransform = ownerArrows->GetComponentToWorld();
-	//FVector lineTraceStart = lineTraceTransform.GetLocation();
+	UArrowComponent* ownerArrows = OwnerArrows[(int32)InType];
+	FLinearColor lineTraceColor = FLinearColor(ownerArrows->ArrowColor);
+	FTransform lineTraceTransform = ownerArrows->GetComponentToWorld();
+	FVector lineTraceStart = lineTraceTransform.GetLocation();
 
-	//FVector lineTraceEnd = FVector::ZeroVector;
-	//
-	//// STUDY: ÄõÅÍ´Ï¿Â
-	//if (InType != EParkourArrowType::Land) 
-	//	lineTraceEnd = lineTraceStart + FQuat(OwnerCharacter->GetActorRotation()).GetForwardVector() * LineTraceDistance;
-	//else
-	//	lineTraceEnd = lineTraceStart + FQuat(OwnerCharacter->GetActorRotation()).GetUpVector() * -LineTraceDistance * 5000.0f;
+	FVector lineTraceEnd = FVector::ZeroVector;
+	
+	if (InType != EParkourArrowType::Land) 
+		lineTraceEnd = lineTraceStart + FQuat(OwnerCharacter->GetActorRotation()).GetForwardVector() * LineTraceDistance;
+	else
+		lineTraceEnd = lineTraceStart + FQuat(OwnerCharacter->GetActorRotation()).GetUpVector() * -LineTraceDistance * 5000.0f;
 
-	//TArray<AActor*> lineTraceIgnoreActor;
+	TArray<AActor*> lineTraceIgnoreActor;
 
-	//lineTraceIgnoreActor.Add(OwnerCharacter);
+	lineTraceIgnoreActor.Add(OwnerCharacter);
 
-	//UKismetSystemLibrary::LineTraceSingle
-	//(
-	//	GetWorld(),
-	//	lineTraceStart,
-	//	lineTraceEnd,
-	//	ETraceTypeQuery::TraceTypeQuery4,
-	//	false,
-	//	lineTraceIgnoreActor,
-	//	DrawDebugType,
-	//	HitResults[(int32)InType],
-	//	true,
-	//	lineTraceColor,
-	//	FLinearColor::Green,
-	//	0.0f
-	//);
+	UKismetSystemLibrary::LineTraceSingle
+	(
+		GetWorld(),
+		lineTraceStart,
+		lineTraceEnd,
+		ETraceTypeQuery::TraceTypeQuery4,
+		false,
+		lineTraceIgnoreActor,
+		DrawDebugType,
+		HitResults[(int32)InType],
+		true,
+		lineTraceColor,
+		FLinearColor::Green,
+		0.0f
+	);
 }
 
 void UCParkourComponent::LineTraceCeil()
 {
-	//LineTraceHitActorCeil = NULL;
-	//HitActorExtentCeil = FVector::ZeroVector;
-	//HitActorDistanceCeil = 0;
-	//ToFrontYaw = 0;
+	CreateLineTrace(EParkourArrowType::Ceil);
 
-	//CreateLineTrace(EParkourArrowType::Ceil);
+	FHitResult hitResult = HitResults[((int32)EParkourArrowType::Ceil)];
 
-	//FHitResult hitResult = HitResults[((int32)EParkourArrowType::Ceil)];
+	if (hitResult.bBlockingHit)
+	{
+		UStaticMeshComponent* hitMesh = CHelpers::GetComponent<UStaticMeshComponent>(hitResult.GetActor());
 
-	//if (hitResult.bBlockingHit)
-	//{
-	//	UStaticMeshComponent* hitMesh = CHelpers::GetComponent<UStaticMeshComponent>(hitResult.GetActor());
+		if (!!hitMesh)
+		{
+			LineTraceHitActorCeil = hitResult.GetActor();
 
-	//	if (!!hitMesh)
-	//	{
-	//		LineTraceHitActorCeil = hitResult.GetActor();
+			FVector minBound, maxBound;
 
-	//		FVector minBound, maxBound;
+			hitMesh->GetLocalBounds(minBound, maxBound);
 
-	//		hitMesh->GetLocalBounds(minBound, maxBound);
+			//MinBound = minBound;
+			//MaxBound = maxBound;
 
-	//		//MinBound = minBound;
-	//		//MaxBound = maxBound;
+			float x = FMath::Abs(minBound.X - maxBound.X);
+			float y = FMath::Abs(minBound.Y - maxBound.Y);
+			float z = FMath::Abs(minBound.Z - maxBound.Z);
 
-	//		float x = FMath::Abs(minBound.X - maxBound.X);
-	//		float y = FMath::Abs(minBound.Y - maxBound.Y);
-	//		float z = FMath::Abs(minBound.Z - maxBound.Z);
-
-	//		HitActorExtentCeil = FVector(x, y, z);
-	//		HitActorDistanceCeil = hitResult.Distance;
-	//		ToFrontYaw = UKismetMathLibrary::MakeRotFromX(-hitResult.ImpactNormal).Yaw;
-	//	}
-	//}
+			HitActorExtentCeil = FVector(x, y, z);
+			HitActorDistanceCeil = hitResult.Distance;
+			ToFrontYaw = UKismetMathLibrary::MakeRotFromX(-hitResult.ImpactNormal).Yaw;
+		}
+	}
 }
 
 void UCParkourComponent::LineTraceCenter()
-{
-	//LineTraceHitActorCenter = NULL;
-	//HitActorExtentCenter = FVector::ZeroVector;
-	//HitActorDistanceCenter = 0;
-	//ToFrontYaw = 0;
-	//
-	//CreateLineTrace(EParkourArrowType::Center);
+{	
+	CreateLineTrace(EParkourArrowType::Center);
 
-	//FHitResult hitResult = HitResults[((int32)EParkourArrowType::Center)];
-	//
-	//if (hitResult.bBlockingHit)
-	//{
-	//	UStaticMeshComponent* hitMesh = CHelpers::GetComponent<UStaticMeshComponent>(hitResult.GetActor());
+	FHitResult hitResult = HitResults[((int32)EParkourArrowType::Center)];
+	
+	if (hitResult.bBlockingHit)
+	{
+		UStaticMeshComponent* hitMesh = CHelpers::GetComponent<UStaticMeshComponent>(hitResult.GetActor());
 
-	//	if (!!hitMesh)
-	//	{
-	//		LineTraceHitActorCenter = hitResult.GetActor();
+		if (!!hitMesh)
+		{
+			LineTraceHitActorCenter = hitResult.GetActor();
 
-	//		FVector minBound, maxBound;
-	//		
-	//		hitMesh->GetLocalBounds(minBound, maxBound);
-	//		
-	//		MinBound = minBound;
-	//		MaxBound = maxBound;
+			FVector minBound, maxBound;
+			
+			hitMesh->GetLocalBounds(minBound, maxBound);
+			
+			MinBound = minBound;
+			MaxBound = maxBound;
 
-	//		float x = FMath::Abs(minBound.X - maxBound.X);
-	//		float y = FMath::Abs(minBound.Y - maxBound.Y);
-	//		float z = FMath::Abs(minBound.Z - maxBound.Z);
+			float x = FMath::Abs(minBound.X - maxBound.X);
+			float y = FMath::Abs(minBound.Y - maxBound.Y);
+			float z = FMath::Abs(minBound.Z - maxBound.Z);
 
-	//		HitActorExtentCenter = FVector(x, y, z);
-	//		HitActorDistanceCenter = hitResult.Distance;
-	//		ToFrontYaw = UKismetMathLibrary::MakeRotFromX(-hitResult.ImpactNormal).Yaw;
-	//	}
-	//}
+			HitActorExtentCenter = FVector(x, y, z);
+			HitActorDistanceCenter = hitResult.Distance;
+			//ToFrontYaw = UKismetMathLibrary::MakeRotFromX(-hitResult.ImpactNormal).Yaw;
+		}
+	}
 }
 
 void UCParkourComponent::LineTraceLeftRight()
 {
-	//LineTraceHitActorLeft = NULL;
-	//LineTraceHitActorRight = NULL;
-	//HitActorExtentLeft = FVector::ZeroVector;
-	//HitActorExtentRight = FVector::ZeroVector;
-	//HitActorDistanceLeft = 0;
-	//HitActorDistanceRight = 0;
-	//ToFrontYaw = 0;
-	//
-	//CreateLineTrace(EParkourArrowType::Left);
-	//CreateLineTrace(EParkourArrowType::Right);
+	CreateLineTrace(EParkourArrowType::Left);
+	CreateLineTrace(EParkourArrowType::Right);
 
-	//FHitResult hitResultLeft = HitResults[((int32)EParkourArrowType::Left)];
-	//FHitResult hitResultRight = HitResults[((int32)EParkourArrowType::Right)];
+	FHitResult hitResultLeft = HitResults[((int32)EParkourArrowType::Left)];
+	FHitResult hitResultRight = HitResults[((int32)EParkourArrowType::Right)];
 
-	//if (hitResultLeft.bBlockingHit)
-	//{
-	//	UStaticMeshComponent* hitMesh = CHelpers::GetComponent<UStaticMeshComponent>(hitResultLeft.GetActor());
+	if (hitResultLeft.bBlockingHit)
+	{
+		UStaticMeshComponent* hitMesh = CHelpers::GetComponent<UStaticMeshComponent>(hitResultLeft.GetActor());
 
-	//	if (!!hitMesh)
-	//	{
-	//		LineTraceHitActorLeft = hitResultLeft.GetActor();
+		if (!!hitMesh)
+		{
+			LineTraceHitActorLeft = hitResultLeft.GetActor();
 
-	//		FVector minBound, maxBound;
+			FVector minBound, maxBound;
 
-	//		hitMesh->GetLocalBounds(minBound, maxBound);
+			hitMesh->GetLocalBounds(minBound, maxBound);
 
-	//		//MinBound = minBound;
-	//		//MaxBound = maxBound;
+			//MinBound = minBound;
+			//MaxBound = maxBound;
 
-	//		float x = FMath::Abs(minBound.X - maxBound.X);
-	//		float y = FMath::Abs(minBound.Y - maxBound.Y);
-	//		float z = FMath::Abs(minBound.Z - maxBound.Z);
+			float x = FMath::Abs(minBound.X - maxBound.X);
+			float y = FMath::Abs(minBound.Y - maxBound.Y);
+			float z = FMath::Abs(minBound.Z - maxBound.Z);
 
-	//		HitActorExtentLeft = FVector(x, y, z);
-	//		HitActorDistanceLeft = hitResultLeft.Distance;
-	//		ToFrontYaw = UKismetMathLibrary::MakeRotFromX(-hitResultLeft.ImpactNormal).Yaw;
-	//	}
-	//}
+			HitActorExtentLeft = FVector(x, y, z);
+			HitActorDistanceLeft = hitResultLeft.Distance;
+			//ToFrontYaw = UKismetMathLibrary::MakeRotFromX(-hitResultLeft.ImpactNormal).Yaw;
+		}
+	}
 
-	//if (hitResultRight.bBlockingHit)
-	//{
-	//	UStaticMeshComponent* hitMesh = CHelpers::GetComponent<UStaticMeshComponent>(hitResultRight.GetActor());
+	if (hitResultRight.bBlockingHit)
+	{
+		UStaticMeshComponent* hitMesh = CHelpers::GetComponent<UStaticMeshComponent>(hitResultRight.GetActor());
 
-	//	if (!!hitMesh)
-	//	{
-	//		LineTraceHitActorRight = hitResultRight.GetActor();
+		if (!!hitMesh)
+		{
+			LineTraceHitActorRight = hitResultRight.GetActor();
 
-	//		FVector minBound, maxBound;
+			FVector minBound, maxBound;
 
-	//		hitMesh->GetLocalBounds(minBound, maxBound);
+			hitMesh->GetLocalBounds(minBound, maxBound);
 
-	//		//MinBound = minBound;
-	//		//MaxBound = maxBound;
+			//MinBound = minBound;
+			//MaxBound = maxBound;
 
-	//		float x = FMath::Abs(minBound.X - maxBound.X);
-	//		float y = FMath::Abs(minBound.Y - maxBound.Y);
-	//		float z = FMath::Abs(minBound.Z - maxBound.Z);
+			float x = FMath::Abs(minBound.X - maxBound.X);
+			float y = FMath::Abs(minBound.Y - maxBound.Y);
+			float z = FMath::Abs(minBound.Z - maxBound.Z);
 
-	//		HitActorExtentRight = FVector(x, y, z);
-	//		HitActorDistanceRight = hitResultRight.Distance;
-	//		ToFrontYaw = UKismetMathLibrary::MakeRotFromX(-hitResultRight.ImpactNormal).Yaw;
-	//	}
-	//}
+			HitActorExtentRight = FVector(x, y, z);
+			HitActorDistanceRight = hitResultRight.Distance;
+			//ToFrontYaw = UKismetMathLibrary::MakeRotFromX(-hitResultRight.ImpactNormal).Yaw;
+		}
+	}
 }
 
 void UCParkourComponent::LineTraceFloor()
 {
-	//LineTraceHitActorFloor = NULL;
-	//HitActorExtentFloor = FVector::ZeroVector;
-	//HitActorDistanceFloor = 0;
-	//ToFrontYaw = 0;
+	CreateLineTrace(EParkourArrowType::Floor);
 
-	//CreateLineTrace(EParkourArrowType::Floor);
+	FHitResult hitResult = HitResults[((int32)EParkourArrowType::Floor)];
 
-	//FHitResult hitResult = HitResults[((int32)EParkourArrowType::Floor)];
+	if (hitResult.bBlockingHit)
+	{
+		UStaticMeshComponent* hitMesh = CHelpers::GetComponent<UStaticMeshComponent>(hitResult.GetActor());
 
-	//if (hitResult.bBlockingHit)
-	//{
-	//	UStaticMeshComponent* hitMesh = CHelpers::GetComponent<UStaticMeshComponent>(hitResult.GetActor());
+		if (!!hitMesh)
+		{
+			LineTraceHitActorFloor = hitResult.GetActor();
 
-	//	if (!!hitMesh)
-	//	{
-	//		LineTraceHitActorFloor = hitResult.GetActor();
+			FVector minBound, maxBound;
 
-	//		FVector minBound, maxBound;
+			hitMesh->GetLocalBounds(minBound, maxBound);
 
-	//		hitMesh->GetLocalBounds(minBound, maxBound);
+			//MinBound = minBound;
+			//MaxBound = maxBound;
 
-	//		//MinBound = minBound;
-	//		//MaxBound = maxBound;
+			float x = FMath::Abs(minBound.X - maxBound.X);
+			float y = FMath::Abs(minBound.Y - maxBound.Y);
+			float z = FMath::Abs(minBound.Z - maxBound.Z);
 
-	//		float x = FMath::Abs(minBound.X - maxBound.X);
-	//		float y = FMath::Abs(minBound.Y - maxBound.Y);
-	//		float z = FMath::Abs(minBound.Z - maxBound.Z);
-
-	//		HitActorExtentFloor = FVector(x, y, z);
-	//		HitActorDistanceFloor = hitResult.Distance;
-	//		ToFrontYaw = UKismetMathLibrary::MakeRotFromX(-hitResult.ImpactNormal).Yaw;
-	//	}
-	//}
+			HitActorExtentFloor = FVector(x, y, z);
+			HitActorDistanceFloor = hitResult.Distance;
+			//ToFrontYaw = UKismetMathLibrary::MakeRotFromX(-hitResult.ImpactNormal).Yaw;
+		}
+	}
 }
 
 void UCParkourComponent::LineTraceLand()
 {
-	//HitActorDistanceLand = 0.f;
-	//
-	//CreateLineTrace(EParkourArrowType::Land);
+	CreateLineTrace(EParkourArrowType::Land);
 
-	//FHitResult hitResult = HitResults[((int32)EParkourArrowType::Land)];
-	//
-	//HitActorDistanceLand = hitResult.Distance;
+	FHitResult hitResult = HitResults[((int32)EParkourArrowType::Land)];
+	
+	if (hitResult.bBlockingHit)
+	{
+		UStaticMeshComponent* hitMesh = CHelpers::GetComponent<UStaticMeshComponent>(hitResult.GetActor());
+
+		if (!!hitMesh)
+		{
+			LineTraceHitActorLand = hitResult.GetActor();
+
+			FVector minBound, maxBound;
+
+			hitMesh->GetLocalBounds(minBound, maxBound);
+
+			//MinBound = minBound;
+			//MaxBound = maxBound;
+
+			float x = FMath::Abs(minBound.X - maxBound.X);
+			float y = FMath::Abs(minBound.Y - maxBound.Y);
+			float z = FMath::Abs(minBound.Z - maxBound.Z);
+
+			HitActorExtentLand = FVector(x, y, z);
+			HitActorDistanceLand = hitResult.Distance;
+			//ToFrontYaw = UKismetMathLibrary::MakeRotFromX(-hitResult.ImpactNormal).Yaw;
+		}
+	}
 }
 
 void UCParkourComponent::DoParkour()
@@ -316,79 +339,98 @@ void UCParkourComponent::DoParkour()
 	//		)
 	//	);
 
-	//	BeginRoll();
-
 	//	return;
 	//}
 
-	//if (CheckSlideMode())
-	//{
-	//	if (LineTraceHitActorCeil)
-	//	{
-	//		ParkourObstacle = LineTraceHitActorCeil;
-	//		ParkourObstacle->SetActorEnableCollision(false);
-	//	}
+	if (CheckSlideMode())
+	{
+		Cast<ACPlayer>(OwnerCharacter)->ParkourTargetRot = OwnerCharacter->GetLastMovementInputVector().Rotation();
 
-	//	OwnerCharacter->bUseControllerRotationYaw = false;
-	//	
-	//	BeginSlide();
+		BeginSlide();
+		
+		if (LineTraceHitActorCeil)
+		{
+			ParkourObstacle = LineTraceHitActorCeil;
+			ParkourObstacle->SetActorEnableCollision(false);
+		}
 
-	//	return;
-	//}
+		OwnerCharacter->bUseControllerRotationYaw = false;
 
-	//if (CheckHideMode())
-	//{
-	//	BeginHide();
+		return;
+	}
 
-	//	return;
-	//}
+	////if (CheckHideMode())
+	////{
+	////	BeginHide();
 
-	//if (CheckFlipMode())
-	//{
-	//	if (LineTraceHitActorCenter || LineTraceHitActorFloor)
-	//	{
-	//		if (LineTraceHitActorCenter)
-	//		{
-	//			ParkourObstacle = LineTraceHitActorCenter;
-	//			ParkourObstacle->SetActorEnableCollision(false);
-	//		}
-	//		else if (LineTraceHitActorFloor)
-	//		{
-	//			ParkourObstacle = LineTraceHitActorFloor;
-	//			ParkourObstacle->SetActorEnableCollision(false);
-	//		}
-	//	}
+	////	return;
+	////}
 
-	//	OwnerCharacter->bUseControllerRotationYaw = false;
+	if (CheckFlipMode())
+	{
+		Cast<ACPlayer>(OwnerCharacter)->ParkourTargetRot = OwnerCharacter->GetLastMovementInputVector().Rotation();
 
-	//	BeginFlip();
+		if (LineTraceHitActorCenter || LineTraceHitActorFloor)
+		{
+			if (LineTraceHitActorCenter)
+			{
+				ParkourObstacle = LineTraceHitActorCenter;
+				ParkourObstacle->SetActorEnableCollision(false);
+			}
+			else if (LineTraceHitActorFloor)
+			{
+				ParkourObstacle = LineTraceHitActorFloor;
+				ParkourObstacle->SetActorEnableCollision(false);
+			}
+	
+			OwnerCharacter->bUseControllerRotationYaw = false;
 
-	//	return;
-	//}
+			BeginFlip();
 
-	//if (CheckBeginClimbMode())
-	//{
-	//	OwnerCharacter->bUseControllerRotationYaw = false;
-	//	
-	//	BeginClimb();
+			return;
+		}
+	}
 
-	//	return;
-	//}
+	if (CheckBeginClimbUpMode())
+	{
+		Cast<ACPlayer>(OwnerCharacter)->ParkourTargetRot = OwnerCharacter->GetLastMovementInputVector().Rotation();
+		
+		OwnerCharacter->bUseControllerRotationYaw = false;
+
+		BeginClimbUp();
+
+		return;
+	}
+	
+	if (CheckBeginClimbDownMode())
+	{
+		OwnerCharacter->bUseControllerRotationYaw = false;
+		//ParkourObstacle->SetActorEnableCollision(false);
+
+		BeginClimbDown();
+
+		return;
+	}
+
+	Cast<ACPlayer>(OwnerCharacter)->ParkourTargetRot = OwnerCharacter->GetLastMovementInputVector().Rotation();
+	BeginRoll();
 }
 
 void UCParkourComponent::SetIdleMode()
 {
-	//ChangeType(EParkourType::Max);
+	bParkouring = false;
+	
+	ChangeType(EParkourType::Max);
 }	
 
 void UCParkourComponent::SetRollMode()
 {
-	//ChangeType(EParkourType::Roll);
+	ChangeType(EParkourType::Roll);
 }
 
 void UCParkourComponent::SetSlideMode()
 {
-	//ChangeType(EParkourType::Slide);
+	ChangeType(EParkourType::Slide);
 }
 
 void UCParkourComponent::SetJumpMode()
@@ -403,32 +445,37 @@ void UCParkourComponent::SetHideMode()
 
 void UCParkourComponent::SetFlipMode()
 {
-	//ChangeType(EParkourType::Flip);
+	ChangeType(EParkourType::Flip);
 }
 
-void UCParkourComponent::SetBeginClimbMode()
+void UCParkourComponent::SetBeginClimbUpMode()
 {
-	//ChangeType(EParkourType::BeginClimb);
+	ChangeType(EParkourType::BeginClimbUp);
+}
+
+void UCParkourComponent::SetBeginClimbDownMode()
+{
+	ChangeType(EParkourType::BeginClimbDown);
 }
 
 void UCParkourComponent::SetClimbingMode()
 {
-	//ChangeType(EParkourType::Climbing);
+	ChangeType(EParkourType::Climbing);
 }
 
 void UCParkourComponent::SetEndClimbUpMode()
 {
-	//ChangeType(EParkourType::EndClimbUp);
+	ChangeType(EParkourType::EndClimbUp);
 }
 
 void UCParkourComponent::SetEndClimbDownMode()
 {
-	//ChangeType(EParkourType::EndClimbDown);
+	ChangeType(EParkourType::EndClimbDown);
 }
 
 void UCParkourComponent::SetEndClimbJumpMode()
 {
-	//ChangeType(EParkourType::EndClimbJump);
+	ChangeType(EParkourType::EndClimbJump);
 }
 
 bool UCParkourComponent::CheckRollMode()
@@ -438,19 +485,18 @@ bool UCParkourComponent::CheckRollMode()
 	//	return true;
 	//}
 	//else
-		return false;
+	//	return false;
+
+	return false;
 }
 
 bool UCParkourComponent::CheckSlideMode()
 {
-	//if (LineTraceHitActorCeil && !LineTraceHitActorCenter && !LineTraceHitActorFloor)
-	//{
-	//	if (HitActorDistanceCenter <= 200.f)
-	//		return true;
-	//	else
-	//		return false;
-	//}
-	//else
+	if (LineTraceHitActorCeil && !LineTraceHitActorCenter && !LineTraceHitActorFloor)
+		if (HitActorDistanceCeil <= 200.0f)
+			return true;
+		else return false;
+	else
 		return false;
 }
 
@@ -461,108 +507,132 @@ bool UCParkourComponent::CheckHideMode()
 
 bool UCParkourComponent::CheckFlipMode()
 {
-	//if (!LineTraceHitActorCeil && (LineTraceHitActorCenter || LineTraceHitActorFloor))
-	//{
-	//	if (HitActorDistanceCenter <= 200.f)
-	//	{
-	//		SetFlipMode();
-
-	//		return true;
-	//	}
-	//	else
-	//		return false;
-	//}
-	//else
+	if (!LineTraceHitActorCeil && (LineTraceHitActorCenter || LineTraceHitActorFloor))
+	{
+		if (HitActorDistanceCenter <= 200.f)
+			return true;
+		else
+			return false;
+	}
+	else
 		return false;
 }
 
-bool UCParkourComponent::CheckBeginClimbMode()
+bool UCParkourComponent::CheckBeginClimbUpMode()
 {
-	//if (LineTraceHitActorCeil || LineTraceHitActorCenter || LineTraceHitActorFloor)
-	//{
-	//	if (HitActorExtentCenter.Z >= 400.f)
-	//	{
-	//		SetBeginClimbMode();
+	if (LineTraceHitActorCeil && LineTraceHitActorCenter && LineTraceHitActorFloor)
+		if (HitActorDistanceCenter < 50.0f)
+			return true;
+		else return false;
+	else return false;
+}
 
-	//		return true;
-	//	}
-	//	else
-	//		return false;
-	//}
-	//else
-		return false;
+bool UCParkourComponent::CheckBeginClimbDownMode()
+{
+	if (!LineTraceHitActorCeil && !LineTraceHitActorCenter && !LineTraceHitActorFloor && LineTraceHitActorLand)
+		if (HitActorDistanceLand >= 200.0f)
+			return true;
+		else return false;
+	else return false;
 }
 
 void UCParkourComponent::CheckParkourState(EParkourType InCurrentType)
 {
-	//switch(InCurrentType)
-	//{
-	//	case EParkourType::Climbing :
-	//	{
-	//		if (!LineTraceHitActorCenter)
-	//			AbortClimb();
+	switch(InCurrentType)
+	{
+		case EParkourType::Climbing :
+		{
+			//if (!LineTraceHitActorCenter)
+				//AbortClimb();
 
-	//		if (!LineTraceHitActorCeil)
-	//			CompleteClimb();
+			if (HitActorDistanceCeil >= 100.0f || !LineTraceHitActorCeil)
+				CompleteClimb();
 
-	//		break;
-	//	}
-	//
-	//	case EParkourType::EndClimbJump :
-	//	{
-	//		if (HitActorDistanceLand <= 50.f)
-	//		{
-	//			OwnerCharacter->StopAnimMontage();
+			break;
+		}
+	
+		case EParkourType::EndClimbJump :
+		{
+			if (HitActorDistanceLand <= 50.f)
+			{
+				SetIdleMode();
 
-	//			break;
-	//		}
-	//	}
+				break;
+			}
+		}
 
-	//	default:
-	//		break;
-	//}
+		case EParkourType::BeginClimbDown :
+		{
+			if (LineTraceHitActorCeil)
+				Climbing();
+
+			break;
+		}
+
+		default:
+			break;
+	}
 }
 
 void UCParkourComponent::BeginRoll()
 {
-	//SetRollMode();
+	SetRollMode();
 
-	//const TArray<FParkourData>* parkourDatas = ParkourDataMap.Find(EParkourType::Roll);
-	//
-	//bParkouring = true;
-	//
-	//OwnerCharacter->PlayAnimMontage((*parkourDatas)[0].Montage, (*parkourDatas)[0].PlayRatio, (*parkourDatas)[0].SectionName);
-	//
-	//OwnerCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	const TArray<FParkourData>* parkourDatas = ParkourDataMap.Find(EParkourType::Roll);
+	
+	bParkouring = true;
+
+	OwnerCharacter->PlayAnimMontage((*parkourDatas)[0].Montage, (*parkourDatas)[0].PlayRatio, (*parkourDatas)[0].SectionName);
+	
+	OwnerCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 }
 
 void UCParkourComponent::EndRoll()
 {
-	//SetIdleMode();
+	SetIdleMode();
 
 	//GLog->Log("Roll");
 }
 
 void UCParkourComponent::BeginSlide()
 {
-	//SetSlideMode();
+	SetSlideMode();
 
-	//const TArray<FParkourData>* parkourDatas = ParkourDataMap.Find(EParkourType::Slide);
+	const TArray<FParkourData>* parkourDatas = ParkourDataMap.Find(EParkourType::Slide);
 
-	//OwnerCharacter->PlayAnimMontage((*parkourDatas)[0].Montage, (*parkourDatas)[0].PlayRatio, (*parkourDatas)[0].SectionName);
+	OwnerCharacter->PlayAnimMontage((*parkourDatas)[0].Montage, (*parkourDatas)[0].PlayRatio, (*parkourDatas)[0].SectionName);
 
-	//bParkouring = true;
+	bParkouring = true;
 
-	//OwnerCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	OwnerCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 }
 
 void UCParkourComponent::EndSlide()
 {
-	//CheckFalse(IsSlideMode());
+	CheckFalse(IsSlideMode());
 
-	//SetIdleMode();
+	SetIdleMode();
 
-	//GLog->Log("Slide");
+	if (ParkourObstacle)
+		ParkourObstacle->SetActorEnableCollision(true);
+
+	GLog->Log("Slide");
+}
+
+void UCParkourComponent::Land()
+{
+	if (FallingStartHeight >= FallingHighPlayDistance)
+	{
+		const TArray<FParkourData>* parkourDatas = ParkourDataMap.Find(EParkourType::HighFalling);
+
+		OwnerCharacter->PlayAnimMontage((*parkourDatas)[0].Montage, (*parkourDatas)[0].PlayRatio, (*parkourDatas)[0].SectionName);
+
+		SetIdleMode();
+
+		bParkouring = true;
+
+		OwnerCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	}
 }
 
 void UCParkourComponent::BeginJump()
@@ -612,70 +682,97 @@ void UCParkourComponent::EndHide()
 
 void UCParkourComponent::BeginFlip()
 {
-	//SetFlipMode();
+	SetFlipMode();
 
-	//const TArray<FParkourData>* parkourDatas = ParkourDataMap.Find(EParkourType::Flip);
-	//
-	//bParkouring = true;
-	//
-	//OwnerCharacter->PlayAnimMontage((*parkourDatas)[0].Montage, (*parkourDatas)[0].PlayRatio, (*parkourDatas)[0].SectionName);
+	const TArray<FParkourData>* parkourDatas = ParkourDataMap.Find(EParkourType::Flip);
+	
+	bParkouring = true;
+	
+	OwnerCharacter->PlayAnimMontage((*parkourDatas)[0].Montage, (*parkourDatas)[0].PlayRatio, (*parkourDatas)[0].SectionName);
 }
 
 void UCParkourComponent::EndFlip()
 {
-	//CheckFalse(IsFlipMode());
-	//
-	//SetIdleMode();
+	CheckFalse(IsFlipMode());
+	
+	SetIdleMode();
 
-	//GLog->Log("Flip");
+	if (ParkourObstacle)
+		ParkourObstacle->SetActorEnableCollision(true);
+
+	GLog->Log("Flip");
 }
 
-void UCParkourComponent::BeginClimb()
+void UCParkourComponent::BeginClimbUp()
 {
-	//SetBeginClimbMode();
+	SetBeginClimbUpMode();
 
-	//OwnerCharacter->SetActorLocation(HitResults[(int32)EParkourArrowType::Center].ImpactPoint + 10.f);
 	//OwnerCharacter->SetActorRotation(FRotator(0, ToFrontYaw, 0));
 
-	//const TArray<FParkourData>* parkourDatas = ParkourDataMap.Find(EParkourType::BeginClimb);
+	const TArray<FParkourData>* parkourDatas = ParkourDataMap.Find(EParkourType::BeginClimbUp);
+	OwnerCharacter->PlayAnimMontage((*parkourDatas)[0].Montage, (*parkourDatas)[0].PlayRatio, (*parkourDatas)[0].SectionName);
+	
+	//OwnerCharacter->SetActorLocation(HitResults[(int32)EParkourArrowType::Center].ImpactPoint + 10.f);
+	
+	OwnerCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
 
-	//OwnerCharacter->PlayAnimMontage((*parkourDatas)[0].Montage, (*parkourDatas)[0].PlayRatio, (*parkourDatas)[0].SectionName);
-	//
-	//bParkouring = true;
-	//
-	//OwnerCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
-	//
-	//GLog->Log("Begin Climb");
+	bParkouring = true;
+	
+	GLog->Log("Begin Climb");
 }
 
-void UCParkourComponent::EndClimb()
+void UCParkourComponent::BeginClimbDown()
 {
-	//SetIdleMode();
+	SetBeginClimbDownMode();
 
-	//GLog->Log("End Climb");
+	//OwnerCharacter->SetActorLocation(HitResults[(int32)EParkourArrowType::Center].ImpactPoint + 10.f);
+	//OwnerCharacter->SetActorRotation(FRotator(0, -180.0f, 0));
+
+	const TArray<FParkourData>* parkourDatas = ParkourDataMap.Find(EParkourType::BeginClimbDown);
+
+	OwnerCharacter->PlayAnimMontage((*parkourDatas)[0].Montage, (*parkourDatas)[0].PlayRatio, (*parkourDatas)[0].SectionName);
+
+	bParkouring = true;
+
+	OwnerCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
+
+	GLog->Log("Begin Climb");
+}
+
+void UCParkourComponent::EndClimbUp()
+{
+	SetIdleMode();
+
+	GLog->Log("End Climb");
+}
+
+void UCParkourComponent::EndClimbDown()
+{
+	SetIdleMode();
+
+	GLog->Log("End Climb");
 }
 
 void UCParkourComponent::CompleteClimb()
 {
-	//CheckFalse(IsClimbingMode());
+	CheckFalse(IsClimbingMode());
 
-	//if (!LineTraceHitActorCeil)
-	//{
-	//	SetEndClimbUpMode();
+	SetEndClimbUpMode();
 
-	//	const TArray<FParkourData>* parkourDatas = ParkourDataMap.Find(EParkourType::EndClimbUp);
+	const TArray<FParkourData>* parkourDatas = ParkourDataMap.Find(EParkourType::EndClimbUp);
 
-	//	OwnerCharacter->PlayAnimMontage((*parkourDatas)[0].Montage, (*parkourDatas)[0].PlayRatio, (*parkourDatas)[0].SectionName);
+	OwnerCharacter->PlayAnimMontage((*parkourDatas)[0].Montage, (*parkourDatas)[0].PlayRatio, (*parkourDatas)[0].SectionName);
 
-	//	bHideOrClimb = false;
-	//}
-
-	//GLog->Log("Complete Climb");
+	bHideOrClimb = false;
+	
+	GLog->Log("Complete Climb");
 }
 
 void UCParkourComponent::Climbing()
 {
-	//SetClimbingMode();
+	bParkouring = true;
+	
+	SetClimbingMode();
 }
 
 void UCParkourComponent::AbortClimb()
@@ -698,31 +795,33 @@ void UCParkourComponent::EndParkour(UAnimMontage* InMontage, bool InIsInterrupte
 {
 	//if (IsRollMode())
 	//	EndRoll();
-	//else if (IsSlideMode())
-	//	EndSlide();
-	//else if (IsFlipMode())
-	//	EndFlip();
-	//else if (IsEndClimbUpMode())
-	//	EndClimb();
-	//else if (IsEndClimbJumpMode())
-	//	EndClimb();
+	if (IsSlideMode())
+		EndSlide();
+	else if (IsFlipMode())
+		EndFlip();
+	else if (IsEndClimbUpMode())
+		EndClimbUp();
+	else if (IsEndClimbDownMode())
+		EndClimbDown();
+	else if (IsBeginClimbUpMode())
+		Climbing();
+	else if (IsBeginClimbDownMode())
+		Climbing();
 
-	//if (ParkourObstacle)
-	//	ParkourObstacle->SetActorEnableCollision(true);
-	//
-	//CheckTrue(IsBeginClimbMode() || IsClimbingMode());
-	//
-	//OwnerCharacter->bUseControllerRotationYaw = true;
-	//OwnerCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	
+	CheckTrue(IsBeginClimbUpMode() || IsBeginClimbDownMode() || IsClimbingMode());
+	
+	OwnerCharacter->bUseControllerRotationYaw = true;
+	OwnerCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 
-	//bParkouring = false;
+	bParkouring = false;
 }
 
 void UCParkourComponent::ChangeType(EParkourType InNewType)
 {
-	//PrevParkourType = ParkourType;
-	//ParkourType = InNewType;
+	PrevParkourType = ParkourType;
+	ParkourType = InNewType;
 
-	//if (OnParkourTypeChanged.IsBound())
-	//	OnParkourTypeChanged.Broadcast(InNewType);
+	if (OnParkourTypeChanged.IsBound())
+		OnParkourTypeChanged.Broadcast(InNewType);
 }

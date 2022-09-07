@@ -100,6 +100,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character Movement")
 	bool bTurnBack = false;
 
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character Movement")
+	bool IsClimbing = false;
+
 private:
 	UPROPERTY()
 	class ACharacter* OwnerCharacter;

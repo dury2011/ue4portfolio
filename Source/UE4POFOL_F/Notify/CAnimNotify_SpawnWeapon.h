@@ -16,6 +16,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Setting")
 	FName SpawnSocketName;
 
+	UPROPERTY(EditAnywhere, Category = "Setting")
+	bool IsBossWeapon = false;
+
 private:
 	FString GetNotifyName_Implementation() const override;
 

@@ -26,6 +26,7 @@
 #include "Components/SphereComponent.h"
 #include "Interface/CInterface_Item.h"
 #include "Enemy/CEnemy_Boss.h"
+#include "GameFramework/ProjectileMovementComponent.h"
 
 // public: //////////////////////////////////////////////////////////////////////
 ACPlayer::ACPlayer()
@@ -66,6 +67,7 @@ ACPlayer::ACPlayer()
 		IKComponent = CreateDefaultSubobject<UCIKComponent>("CIKComponent");
 		WidgetComponent = CreateDefaultSubobject<UCWidgetComponent>("CWidgetComponent");
 		CharacterComponent = CreateDefaultSubobject<UCCharacterComponent>("CCharacterComponent");
+		ParkourComponent = CreateDefaultSubobject<UCParkourComponent>("CParkourComponent");
 	}
 
 	{
@@ -75,54 +77,54 @@ ACPlayer::ACPlayer()
 		bUseControllerRotationYaw = true;
 	}
 
-	//{
-	//	const UEnum* ptr = FindObject<UEnum>(ANY_PACKAGE, L"EParkourArrowType", true);
-	//
-	//	for (int32 i = 0; i < (int32)EParkourArrowType::Max; i++)
-	//	{
-	//		FName name = FName(ptr->GetNameStringByIndex(i));
-	//		CHelpers::CreateComponent<UArrowComponent>(this, &Arrows[i], name, ArrowGroup);
-	//
-	//		switch ((EParkourArrowType)i)
-	//		{
-	//		case EParkourArrowType::Center:
-	//			Arrows[i]->ArrowColor = FColor::Red;
-	//
-	//			break;
-	//
-	//		case EParkourArrowType::Ceil:
-	//			Arrows[i]->ArrowColor = FColor::Green;
-	//			Arrows[i]->SetRelativeLocation(FVector(0, 0, 100));
-	//
-	//			break;
-	//
-	//		case EParkourArrowType::Floor:
-	//			Arrows[i]->ArrowColor = FColor::Blue;
-	//			Arrows[i]->SetRelativeLocation(FVector(0, 0, -80));
-	//
-	//			break;
-	//
-	//		case EParkourArrowType::Left:
-	//			Arrows[i]->ArrowColor = FColor::Magenta;
-	//			Arrows[i]->SetRelativeLocation(FVector(0, -30, 0));
-	//
-	//			break;
-	//
-	//		case EParkourArrowType::Right:
-	//			Arrows[i]->ArrowColor = FColor::Magenta;
-	//			Arrows[i]->SetRelativeLocation(FVector(0, 30, 0));
-	//
-	//			break;
-	//
-	//		case EParkourArrowType::Land:
-	//			Arrows[i]->ArrowColor = FColor::Red;
-	//			Arrows[i]->SetRelativeLocation(FVector(0, 0, -80));
-	//			Arrows[i]->SetRelativeRotation(FRotator(-90, 0, 0));
-	//
-	//			break;
-	//		}
-	//	}
-	//}
+	{
+		const UEnum* ptr = FindObject<UEnum>(ANY_PACKAGE, L"EParkourArrowType", true);
+	
+		for (int32 i = 0; i < (int32)EParkourArrowType::Max; i++)
+		{
+			FName name = FName(ptr->GetNameStringByIndex(i));
+			CHelpers::CreateComponent<UArrowComponent>(this, &Arrows[i], name, ArrowGroup);
+	
+			switch ((EParkourArrowType)i)
+			{
+			case EParkourArrowType::Center:
+				Arrows[i]->ArrowColor = FColor::Red;
+	
+				break;
+	
+			case EParkourArrowType::Ceil:
+				Arrows[i]->ArrowColor = FColor::Green;
+				Arrows[i]->SetRelativeLocation(FVector(0, 0, 100));
+	
+				break;
+	
+			case EParkourArrowType::Floor:
+				Arrows[i]->ArrowColor = FColor::Blue;
+				Arrows[i]->SetRelativeLocation(FVector(0, 0, -80));
+	
+				break;
+	
+			case EParkourArrowType::Left:
+				Arrows[i]->ArrowColor = FColor::Magenta;
+				Arrows[i]->SetRelativeLocation(FVector(0, -30, 0));
+	
+				break;
+	
+			case EParkourArrowType::Right:
+				Arrows[i]->ArrowColor = FColor::Magenta;
+				Arrows[i]->SetRelativeLocation(FVector(0, 30, 0));
+	
+				break;
+	
+			case EParkourArrowType::Land:
+				Arrows[i]->ArrowColor = FColor::Red;
+				Arrows[i]->SetRelativeLocation(FVector(0, 0, -80));
+				Arrows[i]->SetRelativeRotation(FRotator(-90, 0, 0));
+	
+				break;
+			}
+		}
+	}
 
 	ConstructorHelpers::FClassFinder<ACPortalCrosshair> assetCrosshair_Portal(TEXT("Blueprint'/Game/FORUE4POFOL/Player/Blueprint/BP_CPortalCrosshair.BP_CPortalCrosshair_C'"));
 
@@ -168,7 +170,22 @@ void ACPlayer::Tick(float DeltaTime)
 	if (bParkouring)
 		SetActorRotation(UKismetMathLibrary::RInterpTo(GetActorRotation(), ParkourTargetRot, GetWorld()->GetDeltaSeconds(), 10.0f));
 	
+	if (SpellSkill3Projectile && IsSpell3ProjectileSpawned && !IsSpell3ProjectileShoot)
+	{
+		SpellSkill3Projectile->SetActorLocation(GetMesh()->GetSocketLocation("Spawn_SpellSkill3_Projectile"));
+		SpellSkill2ProjectileFinalSize = SpellSkill3Projectile->GetActorScale();
+	}
 
+	if (ParkourComponent->IsBeginClimbUpMode() || ParkourComponent->IsBeginClimbDownMode() || ParkourComponent->IsClimbingMode())
+		IsParkouringClimbing = true;
+	else
+		IsParkouringClimbing = false;
+
+	if (IsAirborne)
+	{
+		if (Boss)
+			SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y, Boss->GetActorLocation().Z));
+	}
 
 #ifdef LOG_PLAYER
 	PlayerLog();
@@ -197,6 +214,7 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("Skill1", EInputEvent::IE_Released, this, &ACPlayer::OffSkillOne);
 	PlayerInputComponent->BindAction("Skill2", EInputEvent::IE_Pressed, this, &ACPlayer::OnSkillTwo);
 	PlayerInputComponent->BindAction("Skill3", EInputEvent::IE_Pressed, this, &ACPlayer::OnSkillThree);
+	PlayerInputComponent->BindAction("Skill3", EInputEvent::IE_Released, this, &ACPlayer::OffSkillThree);
 	PlayerInputComponent->BindAction("Action", EInputEvent::IE_Pressed, this, &ACPlayer::OnAction);
 	PlayerInputComponent->BindAction("Aim", EInputEvent::IE_Pressed, this, &ACPlayer::OnAim);
 	PlayerInputComponent->BindAction("Aim", EInputEvent::IE_Released, this, &ACPlayer::OffAim);
@@ -208,6 +226,7 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Released, this, &ACPlayer::OffJump);
 	PlayerInputComponent->BindAction("Critical", EInputEvent::IE_Pressed, this, &ACPlayer::OnCritical);
 	PlayerInputComponent->BindAction("Reload", EInputEvent::IE_Pressed, this, &ACPlayer::OnSpawnFriend);
+	PlayerInputComponent->BindAction("Debug", EInputEvent::IE_Pressed, this, &ACPlayer::Debug_OnControllerRotationYaw);
 }
 
 float ACPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
@@ -227,6 +246,14 @@ float ACPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& Damage
 	CharacterComponent->SetCurrentStateType(EStateType::Damage);
 	CurrentCameraEffectType = ECameraEffectType::Damage;
 	//CharacterComponent->SetIsMontagePlaying(true);
+
+	if (Damaged.DamageCauser->ActorHasTag("BossWeapon"))
+	{
+		GetDamageData(3);
+
+		IsMontagePlaying = true;
+		IsAirborne = false;
+	}
 
 	// Player 회전 & Knockback
 	{
@@ -269,7 +296,13 @@ void ACPlayer::TakeDamage_AttackByBoss(EBossAttackType InType)
 {
 	if (IsAttackByBoss)
 	{
-		CharacterComponent->SetHp(-20.0f);
+		if (bAttacking)
+			bAttacking = false;
+		if (IsMontagePlaying)
+			IsMontagePlaying = false;
+		
+		float applyDamage = UKismetMathLibrary::RandomIntegerInRange(50, 70);
+		CharacterComponent->SetHp(-applyDamage);
 		CharacterComponent->SetCurrentStateType(EStateType::Damage);
 		CurrentCameraEffectType = ECameraEffectType::Damage;
 		
@@ -300,21 +333,29 @@ void ACPlayer::TakeDamage_AttackByBoss(EBossAttackType InType)
 				transform.SetLocation(GetActorLocation());
 
 				SetActorRotation(FRotator(GetActorRotation().Pitch, direction.Rotation().Yaw, GetActorRotation().Roll)/*UKismetMathLibrary::FindLookAtRotation(start, target)*/);
-				LaunchCharacter(-direction * 2500.0f, true, false);
+				
+				if (!(InType == EBossAttackType::AirborneAttack))
+					LaunchCharacter(-direction * 10000.0, true, false);
 			}
 		}
 
 		if (InType == EBossAttackType::NormalAttack)
 		{
-			GetDamageData(0);
+			//GetDamageData(0);
 
-			IsMontagePlaying = true;
+			//IsMontagePlaying = true;
 		}
 		else if (InType == EBossAttackType::BoundUpAttack)
 		{
 			GetDamageData(1);
 
 			IsMontagePlaying = true;
+		}
+		else if (InType == EBossAttackType::AirborneAttack)
+		{
+			GetDamageData(4);
+
+			IsAirborne = true;
 		}
 		else if (InType == EBossAttackType::GroggyAttack)
 		{
@@ -326,7 +367,10 @@ void ACPlayer::TakeDamage_AttackByBoss(EBossAttackType InType)
 		{
 			GetDamageData(3);
 
+			bUseControllerRotationYaw = false;
+
 			IsMontagePlaying = true;
+			IsAirborne = false;
 		}
 	}
 }
@@ -460,29 +504,81 @@ void ACPlayer::Notify_SetCurrentPlayerSpellFistType(EPlayerSpellFistType InType)
 	CurrentPlayerSpellFistType = InType;
 }
 
-void ACPlayer::SpawnWarriorSkillOneProjectile()
+void ACPlayer::SpawnProjectile()
 {
-	if (WarriorSkill1ProjectileClass)
+	if (SpellSkill3ProjectileClass)
 	{
 		SpawnWarriorSkillOneEffect();
 
-		WarriorSkill1Projectile = ACProjectile::SpawnProjectile(this, WarriorSkill1ProjectileClass, FName("Spawn_Player_Warrior_Skill1_Projectile"));
-		WarriorSkill1Projectile->SetOwner(this);
-		WarriorSkill1Projectile->SetActorRotation(CameraComponent->GetComponentRotation());
+		SpellSkill3Projectile = ACProjectile::SpawnProjectile(this, SpellSkill3ProjectileClass, FName("Spawn_SpellSkill3_Projectile"));
+		
+		if (SpellSkill3Projectile)
+		{
+			IsSpell3ProjectileSpawned = true;
+			SpellSkill3Projectile->SetOwner(this);
+			SpellSkill3Projectile->SetActorRotation(CameraComponent->GetComponentRotation());
 
-		if (WidgetComponent->GetHitResult().GetActor())
-			WarriorSkill1Projectile->ShootProjectile(UKismetMathLibrary::GetDirectionUnitVector(GetMesh()->GetSocketLocation("Spawn_Player_Warrior_Skill1_Projectile"), WidgetComponent->GetHitResult().ImpactPoint));
-		else
-			WarriorSkill1Projectile->ShootProjectile(CameraComponent->GetForwardVector());
+			GetWorldTimerManager().SetTimer(SpellSkill3DamageIncreaseTimer, FTimerDelegate::CreateLambda([&]()
+			{			
+				SpellSkill3Projectile->SetAttackDamage(SpellSkill2ProjectileIncreasedDamage);
+
+				SpellSkill2ProjectileIncreasedDamage += 30.0f;
+
+			}), 1.0f, true);
+
+			FTimerHandle finishTimer;
+
+			GetWorldTimerManager().SetTimer(finishTimer, FTimerDelegate::CreateLambda([&]()
+			{
+				if (GetWorldTimerManager().IsTimerActive(SpellSkill3DamageIncreaseTimer))
+					GetWorldTimerManager().ClearTimer(SpellSkill3DamageIncreaseTimer);
+
+			}), 6.5f, true);
+			
+			//if (WidgetComponent->GetHitResult().GetActor())
+			//	WarriorSkill1Projectile->ShootProjectile(UKismetMathLibrary::GetDirectionUnitVector(GetMesh()->GetSocketLocation("Spawn_SpellSkill3_Projectile"), WidgetComponent->GetHitResult().ImpactPoint));
+			//else
+			//	WarriorSkill1Projectile->ShootProjectile(CameraComponent->GetForwardVector());
+		}
+	}
+}
+
+void ACPlayer::ShootProjectile()
+{
+	if (SpellSkill3ProjectileClass)
+	{
+		
+		SpellSkill3Projectile = ACProjectile::SpawnProjectile(this, SpellSkill3ProjectileClass, FName("Spawn_SpellSkill3_Projectile"));
+		ToggleSpellSkill3(true);
+		
+		if (SpellSkill3Projectile)
+		{
+			SpellSkill3Projectile->SetOwner(this);
+			SpellSkill3Projectile->SetAttackDamage(SpellSkill2ProjectileIncreasedDamage);
+			SpellSkill3Projectile->SetActorScale3D(SpellSkill2ProjectileFinalSize);
+			SpellSkill3Projectile->SetActorRotation(CameraComponent->GetComponentRotation());
+
+			SpellSkill3Projectile->ProjectileComponent->InitialSpeed = 5000.0f;
+			SpellSkill3Projectile->ProjectileComponent->MaxSpeed = 5000.0f;
+
+			if (WidgetComponent->GetHitResult().GetActor())
+				SpellSkill3Projectile->ShootProjectile(UKismetMathLibrary::GetDirectionUnitVector(GetMesh()->GetSocketLocation("Spawn_SpellSkill3_Projectile"), WidgetComponent->GetHitResult().ImpactPoint));
+			else
+				SpellSkill3Projectile->ShootProjectile(CameraComponent->GetForwardVector());
+		}
+		
 	}
 }
 
 void ACPlayer::SpawnSpellMeteorWeapon()
-{
-	SpellMeteorWeapon = ACWeapon::SpawnWeapon(this, SpellMeteorClass, Cast<ACCrosshair_SpellThrow>(Crosshair_SpellMeteor)->GetImpactPoint());
-	
-	if(SpellMeteorWeapon)
-		SpellMeteorWeapon->SetOwner(this);		
+{	
+	if (SpellMeteorClass)
+	{
+		SpellMeteorWeapon = ACWeapon::SpawnWeapon(this, SpellMeteorClass, Cast<ACCrosshair_SpellThrow>(Crosshair_SpellMeteor)->GetImpactPoint());
+		
+		if(SpellMeteorWeapon)
+			SpellMeteorWeapon->SetOwner(this);		
+	}
 }
 
 // MEMO: 지역 변수가 포인터로 들어오는데 왜 되지?
@@ -523,6 +619,9 @@ void ACPlayer::MontageEnded(UAnimMontage* InMontage, bool Ininterrupted)
 {
 	// 스킬 이펙트 해제 (이벤트에 조건 걸어 둠)
 	DestroySkillEffect();
+
+	if (!bUseControllerRotationYaw)
+		bUseControllerRotationYaw = true;
 
 	if (IsDashing)
 	{
@@ -642,6 +741,8 @@ void ACPlayer::MontageEnded(UAnimMontage* InMontage, bool Ininterrupted)
 		if (IsActivateSkill)
 			SetPlayerActivateSkill(false);
 		
+		bParkouring = false;
+
 		IsMontagePlaying = false;
 
 		GLog->Log("ACPlayer::OnMontageEnded()");
@@ -717,6 +818,8 @@ void ACPlayer::OnSphereSpellFistBeginOverlap(UPrimitiveComponent* OverlappedComp
 {
 	CheckTrue(OverlappedComponent == GetCapsuleComponent());
 	
+	GLog->Log("OnSphereSpellFist Overlapped!");
+
 	if (OtherActor && (CharacterComponent->GetCurrentWeaponType() == EWeaponType::SpellFist))
 	{
 		ACEnemy* enemy = Cast<ACEnemy>(OtherActor);
@@ -831,15 +934,26 @@ void ACPlayer::OnMoveForward(float AxisValue)
 	//	return;
 	//}
 	//CheckFalse(CharacterComponent->GetbCanMove());
-	CheckFalse(CharacterComponent->GetbCanMove());
-	//CheckTrue(IsMontagePlaying);
+	if (!IsParkouringClimbing)
+	{
+		CheckFalse(CharacterComponent->GetbCanMove());
+		//CheckTrue(IsMontagePlaying);
 
-	CharacterComponent->SetCurrentStateType(EStateType::Move);
+		CharacterComponent->SetCurrentStateType(EStateType::Move);
 
-	FRotator rotation = FRotator(0, GetControlRotation().Yaw, 0);
-	FVector direction = FQuat(rotation).GetForwardVector().GetSafeNormal2D();
+		FRotator rotation = FRotator(0, GetControlRotation().Yaw, 0);
+		FVector direction = FQuat(rotation).GetForwardVector().GetSafeNormal2D();
 
-	AddMovementInput(direction, AxisValue);
+		AddMovementInput(direction, AxisValue);
+	}
+	else if (IsParkouringClimbing)
+	{
+		CharacterComponent->SetCurrentStateType(EStateType::Move);
+
+		ClimbingInput = AxisValue;
+			
+		//AddMovementInput(direction, AxisValue);
+	}
 }
 
 void ACPlayer::OnMoveRight(float AxisValue)
@@ -853,6 +967,7 @@ void ACPlayer::OnMoveRight(float AxisValue)
 	//	return;
 	//}
 	CheckFalse(CharacterComponent->GetbCanMove());
+	CheckTrue(ParkourComponent->IsClimbingMode());
 	//CheckTrue(IsMontagePlaying);
 
 	CharacterComponent->SetCurrentStateType(EStateType::Move);
@@ -865,12 +980,14 @@ void ACPlayer::OnMoveRight(float AxisValue)
 
 void ACPlayer::OnVerticalLook(float AxisValue)
 {	
-	AddControllerPitchInput(AxisValue);
+	if (!IsTargettingMode)
+		AddControllerPitchInput(AxisValue);
 }
 
 void ACPlayer::OnHorizontalLook(float AxisValue)
 {	
-	AddControllerYawInput(AxisValue);
+	if (!IsTargettingMode)
+		AddControllerYawInput(AxisValue);
 }
 
 void ACPlayer::OnZoom(float AxisValue)
@@ -1002,25 +1119,19 @@ void ACPlayer::OnParkour()
 	CheckTrue(IsMontagePlaying);
 	CheckTrue(GetCharacterMovement()->IsFalling());
 	CheckTrue(bParkouring);
+	
+	IsMontagePlaying = true;
+	bParkouring = true;
 
-	if (ParkourDatas[0].Montage)
-	{
-		bParkouring = true;
+	ParkourComponent->DoParkour();
 
-		ParkourTargetRot = GetLastMovementInputVector().Rotation();
-
-		ParkourDatas[0].PlayMontage(this);
-
-		//CharacterComponent->SetIsMontagePlaying(true);
-		IsMontagePlaying = true;
-	}
-
-	//bParkouring = true;
+	//if (ParkourComponent->IsRollMode())
+		//ParkourTargetRot = GetLastMovementInputVector().Rotation();
 }
 
 void ACPlayer::OffParkour()
 {
-	bParkouring = false;
+	//bParkouring = false;
 
 	if (bAttacking)
 		bAttacking = false;
@@ -1388,12 +1499,16 @@ void ACPlayer::OnAction()
 
 void ACPlayer::OnSkillOne()
 {
+	if (!CanOnSkill1)
+		WarningText(EWarningTextType::SkillCoolTimeActivate);
+	if (CharacterComponent->GetCurrentMp() < 500.0f)
+		WarningText(EWarningTextType::SkillMPShortage);
+
 	CheckTrue(IsMontagePlaying);
 	CheckFalse(CanOnSkill1);
 	
 	if (CharacterComponent->GetCurrentMp() < 500.0f)
 		return;
-
 
 	SetPlayerActivateSkill(true);
 
@@ -1480,6 +1595,11 @@ void ACPlayer::OffSkillOne()
 
 void ACPlayer::OnSkillTwo()
 {
+	if (!CanOnSkill2)
+		WarningText(EWarningTextType::SkillCoolTimeActivate);
+	if (CharacterComponent->GetCurrentMp() < 500.0f)
+		WarningText(EWarningTextType::SkillMPShortage);
+
 	CheckTrue(IsMontagePlaying);
 	CheckFalse(CanOnSkill2);
 
@@ -1492,7 +1612,6 @@ void ACPlayer::OnSkillTwo()
 
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
-		
 		CharacterComponent->SetCurrentStateType(EStateType::Attack);
 		//CharacterComponent->SetIsMontagePlaying(true);
 		IsMontagePlaying = true;
@@ -1531,25 +1650,28 @@ void ACPlayer::OnSkillTwo()
 
 void ACPlayer::OnSkillThree()
 {
+	if (!CanOnSkill3)
+		WarningText(EWarningTextType::SkillCoolTimeActivate);
+	if (CharacterComponent->GetCurrentMp() < 500.0f)
+		WarningText(EWarningTextType::SkillMPShortage);
+
 	CheckTrue(IsMontagePlaying);
 	CheckFalse(CanOnSkill3);
 	
 	if (CharacterComponent->GetCurrentMp() < 500.0f)
 		return;
 
-	SetPlayerActivateSkill(true);
-
 	CharacterComponent->SetMp(-500.0f);
 	
 	if (CharacterComponent->GetIsWeaponOnehandMode())
 	{
-
 		CharacterComponent->SetCurrentStateType(EStateType::Attack);
-		//CharacterComponent->SetIsMontagePlaying(true);
+
 		IsMontagePlaying = true;
 
 		if (CharacterComponent->GetCriticalDatasOnehand(2).Montage)
 		{
+			SetPlayerActivateSkill(true);
 			//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
 			CharacterComponent->GetCriticalDatasOnehand(2).PlayMontage(this);
 			ActivateSkillCoolTime(CharacterComponent->GetCurrentWeaponType(), ESkillType::Skill3);
@@ -1557,22 +1679,103 @@ void ACPlayer::OnSkillThree()
 	}
 	else if (CharacterComponent->GetIsWeaponSpellMode())
 	{
-		IsMontagePlaying = true;
-		
 		if (CharacterComponent->GetCriticalDatasSpell(2).Montage)
 		{
+			IsMontagePlaying = true;
+			
 			CharacterComponent->GetCriticalDatasSpell(2).PlayMontage(this);
 			ActivateSkillCoolTime(CharacterComponent->GetCurrentWeaponType(), ESkillType::Skill3);
+
+			ToggleSpellSkill3Effect(true);
+			
+			SpawnProjectile();
+
+			//if (OnSpawnSpellSkill2Projectile.IsBound())
+			//	OnSpawnSpellSkill2Projectile.Broadcast();
 		}
 	}
 	else if (CharacterComponent->GetIsWeaponSpellFistMode())
 	{
-		IsMontagePlaying = true;
+		IsTargettingMode = true;
+		ToggleLockOn();
+
+		SetPlayerActivateSkill(true);		
+	}
+}
+
+void ACPlayer::OffSkillThree()
+{
+	if (CharacterComponent->GetIsWeaponSpellMode())
+	{
+		ActivateSkillCoolTime(CharacterComponent->GetCurrentWeaponType(), ESkillType::Skill3);
 		
-		if (SpellFistSkillDatas[2].Montage)
+		IsSpell3ProjectileSpawned = false;
+		
+		// OnSkillThree()에서 Spawn된 Projectile 소멸시킴
+		if (SpellSkill3Projectile)
+			SpellSkill3Projectile->Destroy();
+
+		// Spawn되었던 Projectile Effect 소멸시킴
+		ToggleSpellSkill3Effect(false);
+
+		if (GetWorldTimerManager().IsTimerActive(SpellSkill3DamageIncreaseTimer))
+			GetWorldTimerManager().ClearTimer(SpellSkill3DamageIncreaseTimer);
+
+		if (CharacterComponent->GetCriticalDatasSpell(3).Montage)
 		{
+			CharacterComponent->GetCriticalDatasSpell(3).PlayMontage(this);
+		}
+		
+		IsSpell3ProjectileShoot = true;
+
+		GetWorldTimerManager().SetTimer(SpellSkill2Timer, this, &ACPlayer::ShootProjectile, 0.2f, true);
+
+		FTimerHandle finishTimer;
+
+		GetWorldTimerManager().SetTimer(finishTimer, FTimerDelegate::CreateLambda([&]()
+		{
+			GetWorldTimerManager().ClearTimer(SpellSkill2Timer);
+			
+			ToggleSpellSkill3(false);
+
+			IsSpell3ProjectileShoot = false;
+			SpellSkill2ProjectileIncreasedDamage = 100.0f;
+		}), 11.0f, false);
+
+		IsMontagePlaying = false;
+	}
+	else if (CharacterComponent->GetIsWeaponSpellFistMode())
+	{
+		IsTargettingMode = false;
+		ToggleLockOn();
+
+		CurrentCameraEffectType = ECameraEffectType::Teleport;
+		SpawnCameraEffect();
+
+		//SetActorLocation(LockedOnTargetLocation);
+
+		if (SpellFistSkillDatas[2].Montage)
 			SpellFistSkillDatas[2].PlayMontage(this);
-			ActivateSkillCoolTime(CharacterComponent->GetCurrentWeaponType(), ESkillType::Skill3);
+
+		if (LockedOnTargetLocation != FVector::ZeroVector)
+		{
+			FLatentActionInfo info;
+			info.CallbackTarget = this;
+
+			UKismetSystemLibrary::MoveComponentTo
+			(
+				RootComponent,
+				LockedOnTargetLocation,
+				GetActorRotation(),
+				true,
+				false,
+				SpellSkill3MovingTime,
+				false,
+				EMoveComponentAction::Move,
+				info
+			);
+
+			CurrentCameraEffectType = ECameraEffectType::Max;
 		}
 	}
 }
@@ -1758,6 +1961,8 @@ void ACPlayer::BeginPlay()
 	Notify_SetCurrentPlayerSpellFistType(EPlayerSpellFistType::Max);
 	
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), "Enemy", SpellFistedActors);
+
+	WarningText(EWarningTextType::Max);
 
 	// 임시
 	//FTimerHandle timer;
